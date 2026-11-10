@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>es</string>
+	<key>CFBundleExecutable</key>
+	<string>StackDock</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.blackeye.stackdock</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>StackDock</string>
+	<key>CFBundleDisplayName</key>
+	<string>StackDock</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>4.0.0</string>
+	<key>CFBundleVersion</key>
+	<string>400</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>13.0</string>
+	<key>LSUIElement</key>
+	<true/>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
+	<key>NSSupportsAutomaticGraphicsSwitching</key>
+	<true/>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>StackDock usa Apple Events para vaciar la Papelera y controlar el Dock nativo de Apple.</string>
+	<key>NSAccessibilityUsageDescription</key>
+	<string>StackDock necesita Accesibilidad para desagrupar perfiles de Chrome/navegadores, enfocar ventanas individuales y teletransportarlas entre monitores.</string>
+</dict>
+</plist>

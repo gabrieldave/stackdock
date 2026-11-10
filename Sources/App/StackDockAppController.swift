@@ -1,0 +1,949 @@
+import Cocoa
+import ServiceManagement
+
+// MARK: - Controlador Maestro StackDock v4.0
+
+final class StackDockAppController: NSObject, NSApplicationDelegate {
+    private var panels: [CGDirectDisplayID: (panel: NSPanel, bar: DockGlassBarView)] = [:]
+    private var statusItem: NSStatusItem!
+    private var cachedQuickLaunchEntries: [DockTileEntry] = []
+    private let prefs = UserDefaults.standard
+    private let winService = WindowTeleportAndProfileService.shared
+    private var rebuildDebounceWorkItem: DispatchWorkItem?
+    private var didRegisterSystemEvents = false
+
+    private var isVisible: Bool {
+        get { prefs.object(forKey: "isVisible") == nil ? true : prefs.bool(forKey: "isVisible") }
+        set { prefs.set(newValue, forKey: "isVisible") }
+    }
+    private var uncombineMultiWindows: Bool {
+        get { prefs.object(forKey: "uncombineMultiWindows") == nil ? true : prefs.bool(forKey: "uncombineMultiWindows") }
+        set { prefs.set(newValue, forKey: "uncombineMultiWindows") }
+    }
+    private var isolateAppsPerMonitor: Bool {
+        get { prefs.bool(forKey: "isolateAppsPerMonitor") }
+        set { prefs.set(newValue, forKey: "isolateAppsPerMonitor") }
+    }
+    private var includeAppleDockScreen: Bool {
+        get { prefs.bool(forKey: "includeAppleDockScreen") }
+        set { prefs.set(newValue, forKey: "includeAppleDockScreen") }
+    }
+    /// Mientras StackDock esté visible, mantiene el Dock de Apple en autohide (evita el doble dock).
+    private var replaceAppleDock: Bool {
+        get { prefs.object(forKey: "replaceAppleDock") == nil ? true : prefs.bool(forKey: "replaceAppleDock") }
+        set { prefs.set(newValue, forKey: "replaceAppleDock") }
+    }
+    /// ⌥D / atajo también oculta el Dock nativo de Apple (ambos fuera de pantalla).
+    private var syncAppleDockOnToggle: Bool {
+        get { prefs.object(forKey: "syncAppleDockOnToggle") == nil ? true : prefs.bool(forKey: "syncAppleDockOnToggle") }
+        set { prefs.set(newValue, forKey: "syncAppleDockOnToggle") }
+    }
+    private var clickActiveToHide: Bool {
+        get { prefs.object(forKey: "clickActiveToHide") == nil ? true : prefs.bool(forKey: "clickActiveToHide") }
+        set { prefs.set(newValue, forKey: "clickActiveToHide") }
+    }
+    private var numberShortcutsEnabled: Bool {
+        get { prefs.object(forKey: "numberShortcutsEnabled") == nil ? true : prefs.bool(forKey: "numberShortcutsEnabled") }
+        set { prefs.set(newValue, forKey: "numberShortcutsEnabled") }
+    }
+    private var iconSize: CGFloat {
+        get { let s = prefs.double(forKey: "iconSize"); return s > 0 ? CGFloat(s) : 46 }
+        set { prefs.set(Double(newValue), forKey: "iconSize") }
+    }
+    private var placement: DockPlacement {
+        // Por defecto elevado para no cruzarse con el Dock de Apple si asoma
+        get { DockPlacement(rawValue: prefs.integer(forKey: "placement")) ?? .bottomElevated }
+        set { prefs.set(newValue.rawValue, forKey: "placement") }
+    }
+    private var togglePreset: HotKeyTogglePreset {
+        get { HotKeyTogglePreset(rawValue: prefs.integer(forKey: "togglePreset")) ?? .optionD }
+        set { prefs.set(newValue.rawValue, forKey: "togglePreset") }
+    }
+    private var disabledMonitors: Set<UInt32> {
+        get { Set(prefs.array(forKey: "disabledMonitors") as? [UInt32] ?? []) }
+        set { prefs.set(Array(newValue), forKey: "disabledMonitors") }
+    }
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        setupStatusBar()
+        setupHotKeys()
+        // Nunca spamear el diálogo de Accesibilidad: solo comprobar en silencio.
+        // Si falta permiso, el menú tiene "Autorizar…" (una sola vez a petición).
+        _ = winService.isAXTrusted(prompt: false)
+        if replaceAppleDock {
+            setAppleDockAutohide(true)
+        }
+        rebuildAllMonitors()
+        registerSystemEvents()
+
+        if !LicenseManager.shared.canUseApp {
+            DispatchQueue.main.async { [weak self] in
+                LicenseManager.shared.presentActivationIfNeeded(force: true) {
+                    self?.rebuildAllMonitors()
+                }
+            }
+        }
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        hideAllStackDockPanels()
+    }
+
+    private func setupHotKeys() {
+        let hk = GlobalHotKeyCenter.shared
+        hk.onToggleDocks = { [weak self] in self?.toggleAllDocksAnimated() }
+        hk.onMoveWindowNextMonitor = { [weak self] in
+            self?.winService.moveFrontmostWindowToNextMonitor()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { self?.rebuildAllMonitors() }
+        }
+        hk.onQuickLaunchSlot = { [weak self] slot in
+            guard let self = self, slot < self.cachedQuickLaunchEntries.count else { return }
+            self.activateEntry(self.cachedQuickLaunchEntries[slot])
+        }
+        hk.registerAll(togglePreset: togglePreset, enableNumberShortcuts: numberShortcutsEnabled)
+    }
+
+    private func setupStatusBar() {
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        if let btn = statusItem.button {
+            btn.target = self
+            btn.action = #selector(statusBarClicked(_:))
+            btn.sendAction(on: [.leftMouseUp, .rightMouseUp])
+        }
+        refreshStatusBarIcon()
+    }
+
+    private func refreshStatusBarIcon() {
+        guard let btn = statusItem.button else { return }
+        let sym = isVisible ? "dock.rectangle" : "rectangle.slash"
+        if let img = NSImage(systemSymbolName: sym, accessibilityDescription: "StackDock") {
+            img.isTemplate = true
+            btn.image = img
+        } else {
+            btn.title = isVisible ? "▣" : "▢"
+        }
+        btn.alphaValue = isVisible ? 1.0 : 0.5
+        btn.toolTip = "StackDock • \(togglePreset.title) mostrar/ocultar | ⌃⌥W mover ventana de monitor"
+    }
+
+    @objc private func statusBarClicked(_ sender: NSStatusBarButton) {
+        guard let ev = NSApp.currentEvent else { return }
+        if ev.modifierFlags.contains(.option) {
+            toggleAllDocksAnimated()
+            return
+        }
+        statusItem.menu = buildMasterMenu()
+        statusItem.button?.performClick(nil)
+        DispatchQueue.main.async { [weak self] in self?.statusItem.menu = nil }
+    }
+
+    // MARK: - Construcción de Entradas (con Desagrupación de Perfiles de Chrome)
+
+    private func buildTileEntries(for targetScreen: NSScreen) -> [DockTileEntry] {
+        var baseApps: [(url: URL, bid: String?, running: NSRunningApplication?)] = []
+        var seen = Set<String>()
+
+        var runByBID: [String: NSRunningApplication] = [:]
+        var runByPath: [String: NSRunningApplication] = [:]
+        for r in NSWorkspace.shared.runningApplications where r.activationPolicy == .regular {
+            if let b = r.bundleIdentifier?.lowercased() { runByBID[b] = r }
+            if let u = r.bundleURL { runByPath[u.standardizedFileURL.path] = r }
+        }
+
+        func addURL(_ url: URL) {
+            guard FileManager.default.fileExists(atPath: url.path) else { return }
+            let path = url.standardizedFileURL.path
+            let bid = Bundle(url: url)?.bundleIdentifier?.lowercased()
+            let key = bid ?? path
+            guard !seen.contains(key) else { return }
+            seen.insert(key)
+            let run = (bid != nil ? runByBID[bid!] : nil) ?? runByPath[path]
+            baseApps.append((url, bid, run))
+        }
+
+        addURL(URL(fileURLWithPath: "/System/Library/CoreServices/Finder.app"))
+
+        if let dom = UserDefaults.standard.persistentDomain(forName: "com.apple.dock"),
+           let list = dom["persistent-apps"] as? [[String: Any]] {
+            for item in list {
+                if let td = item["tile-data"] as? [String: Any],
+                   let fd = td["file-data"] as? [String: Any],
+                   let str = fd["_CFURLString"] as? String,
+                   let u = str.hasPrefix("file://") ? URL(string: str) : URL(fileURLWithPath: str) {
+                    addURL(u)
+                }
+            }
+        }
+
+        for r in NSWorkspace.shared.runningApplications where r.activationPolicy == .regular {
+            if let u = r.bundleURL { addURL(u) }
+        }
+
+        var entries: [DockTileEntry] = []
+        let screenQFrame = winService.quartzFullFrame(for: targetScreen)
+
+        for item in baseApps {
+            let title = FileManager.default.displayName(atPath: item.url.path).replacingOccurrences(of: ".app", with: "")
+            let icon = NSWorkspace.shared.icon(forFile: item.url.path)
+
+            guard let run = item.running else {
+                if !isolateAppsPerMonitor {
+                    entries.append(DockTileEntry(appURL: item.url, bundleID: item.bid, appTitle: title, icon: icon, runningApp: nil, specificWindow: nil, totalWindowsCount: 0))
+                }
+                continue
+            }
+
+            let windows = winService.fetchWindows(for: run)
+            let filteredWindows = isolateAppsPerMonitor
+                ? windows.filter { screenQFrame.contains(CGPoint(x: $0.quartzFrame.midX, y: $0.quartzFrame.midY)) }
+                : windows
+
+            if isolateAppsPerMonitor && filteredWindows.isEmpty && item.bid != "com.apple.finder" {
+                continue
+            }
+
+            let shouldSplit = uncombineMultiWindows
+                && item.bid.map { winService.multiInstanceBundleIDs.contains($0) } == true
+                && filteredWindows.count >= 2
+
+            let launcher = BrowserProfileLaunchService.shared
+
+            if shouldSplit {
+                // Dibuja un icono independiente por cada perfil/ventana abierta de Chrome/Cursor
+                for win in filteredWindows {
+                    let hint = win.badgeLabel + " " + win.title
+                    let tileIcon = launcher.supportsProfiles(item.bid)
+                        ? launcher.dockIcon(appIcon: icon, bundleID: item.bid, badgeOrTitle: hint)
+                        : icon
+                    entries.append(DockTileEntry(
+                        appURL: item.url,
+                        bundleID: item.bid,
+                        appTitle: "\(title) — \(win.title)",
+                        icon: tileIcon,
+                        runningApp: run,
+                        specificWindow: win,
+                        totalWindowsCount: 1
+                    ))
+                }
+            } else {
+                let first = filteredWindows.first
+                let hint = first.map { $0.badgeLabel + " " + $0.title }
+                let tileIcon = (launcher.supportsProfiles(item.bid) && hint != nil)
+                    ? launcher.dockIcon(appIcon: icon, bundleID: item.bid, badgeOrTitle: hint)
+                    : icon
+                entries.append(DockTileEntry(
+                    appURL: item.url,
+                    bundleID: item.bid,
+                    appTitle: title,
+                    icon: tileIcon,
+                    runningApp: run,
+                    specificWindow: first,
+                    totalWindowsCount: max(1, filteredWindows.count)
+                ))
+            }
+        }
+
+        return entries
+    }
+
+    // MARK: - Pantallas y Renderizado
+
+    private func screenID(_ s: NSScreen) -> CGDirectDisplayID {
+        (s.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID) ?? 0
+    }
+
+    private func appleNativeDockScreenID() -> CGDirectDisplayID? {
+        let screens = NSScreen.screens
+        guard screens.count > 1 else { return nil }
+        let dom = UserDefaults.standard.persistentDomain(forName: "com.apple.dock")
+        if (dom?["autohide"] as? Bool) == true { return nil }
+        let orient = (dom?["orientation"] as? String) ?? "bottom"
+        if orient == "bottom", let lowest = screens.min(by: { $0.frame.minY < $1.frame.minY }) {
+            return screenID(lowest)
+        }
+        return nil
+    }
+
+    private func enabledScreens() -> [NSScreen] {
+        let all = NSScreen.screens
+        if all.count <= 1 { return all }
+        let skipID = includeAppleDockScreen ? nil : appleNativeDockScreenID()
+        return all.filter { s in
+            let id = screenID(s)
+            if disabledMonitors.contains(id) { return false }
+            if let skip = skipID, id == skip { return false }
+            return true
+        }
+    }
+
+    private func makePanel() -> (panel: NSPanel, bar: DockGlassBarView) {
+        let p = NSPanel(
+            contentRect: NSRect(x: 0, y: 0, width: 400, height: 72),
+            styleMask: [.borderless, .nonactivatingPanel],
+            backing: .buffered,
+            defer: false
+        )
+        p.isFloatingPanel = true
+        p.becomesKeyOnlyIfNeeded = true
+        p.level = .floating
+        p.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary]
+        p.isOpaque = false
+        p.backgroundColor = .clear
+        p.hasShadow = true
+
+        let bar = DockGlassBarView(frame: p.contentView!.bounds)
+        bar.material = .hudWindow
+        bar.blendingMode = .behindWindow
+        bar.state = .active
+        bar.wantsLayer = true
+        bar.layer?.cornerRadius = 20
+        bar.layer?.masksToBounds = true
+        bar.layer?.borderWidth = 0.8
+        bar.layer?.borderColor = NSColor.white.withAlphaComponent(0.24).cgColor
+        bar.menuProvider = { [weak self] in self?.buildMasterMenu() ?? NSMenu() }
+        p.contentView = bar
+        return (p, bar)
+    }
+
+    /// Debounce 100ms ante ráfagas (sleep/wake, cambios de pantalla, activación de apps).
+    @objc private func scheduleRebuildDebounced() {
+        rebuildDebounceWorkItem?.cancel()
+        let work = DispatchWorkItem { [weak self] in
+            self?.rebuildAllMonitors()
+        }
+        rebuildDebounceWorkItem = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: work)
+    }
+
+    @objc private func rebuildAllMonitors() {
+        refreshStatusBarIcon()
+        let targets = enabledScreens()
+        guard !targets.isEmpty else {
+            hideAllStackDockPanels()
+            return
+        }
+        let activeIDs = Set(targets.map { screenID($0) })
+
+        for (id, pair) in panels where !activeIDs.contains(id) {
+            pair.panel.orderOut(nil)
+            panels.removeValue(forKey: id)
+        }
+
+        // Trial expirado sin licencia: pausar docks (secundarios / todos los paneles StackDock)
+        guard LicenseManager.shared.canUseApp else {
+            hideAllStackDockPanels()
+            LicenseManager.shared.presentActivationIfNeeded {
+                self.rebuildAllMonitors()
+            }
+            return
+        }
+
+        guard isVisible else {
+            hideAllStackDockPanels()
+            return
+        }
+
+        for (idx, scr) in targets.enumerated() {
+            let id = screenID(scr)
+            let pair = panels[id] ?? {
+                let created = makePanel()
+                panels[id] = created
+                return created
+            }()
+            let entries = buildTileEntries(for: scr)
+            if idx == 0 { cachedQuickLaunchEntries = entries }
+            layoutDock(pair.bar, panel: pair.panel, on: scr, entries: entries)
+            pair.panel.alphaValue = 1.0
+            pair.panel.orderFrontRegardless()
+        }
+    }
+
+    private func layoutDock(_ bar: DockGlassBarView, panel: NSPanel, on screen: NSScreen, entries: [DockTileEntry]) {
+        bar.subviews.forEach { $0.removeFromSuperview() }
+
+        let maxW = max(120, screen.frame.width - 28)
+        let spacing: CGFloat = 3
+        let pad: CGFloat = 10
+        let dividerW: CGFloat = 13
+        let totalSlots = max(1, CGFloat(entries.count + 2)) // + Descargas + Papelera
+
+        var sz = iconSize
+        let needed = pad * 2 + dividerW + totalSlots * (sz + 12) + max(0, totalSlots - 1) * spacing
+        if needed > maxW {
+            sz = max(26, ((maxW - pad * 2 - dividerW - (totalSlots - 1) * spacing) / totalSlots) - 12)
+        }
+
+        let tileW = sz + 12
+        let barH = sz + 24
+        var x = pad
+
+        for entry in entries {
+            let isMulti = entry.bundleID.map { winService.multiInstanceBundleIDs.contains($0) } == true
+            let badge = (uncombineMultiWindows && entry.specificWindow != nil && isMulti)
+                ? entry.specificWindow?.badgeLabel
+                : nil
+
+            let tip = entry.isRunning
+                ? "\(entry.appTitle)\n• Clic: Enfocar | Shift+Clic o Doble Clic: Mover de monitor | ⌥⌘+Clic o menú: Cerrar"
+                : entry.appTitle
+
+            let tile = DockTileView(
+                icon: entry.icon,
+                tooltipText: tip,
+                badgeText: badge,
+                runningCount: entry.isRunning ? entry.totalWindowsCount : 0,
+                iconSize: sz
+            )
+            tile.frame.origin = NSPoint(x: x, y: 0)
+            tile.onSingleClick = { [weak self] in self?.activateEntry(entry) }
+            tile.onTeleportTrigger = { [weak self] in
+                self?.winService.smartSummonOrNextMonitor(entry: entry, clickedScreen: screen)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { self?.rebuildAllMonitors() }
+            }
+            tile.onMiddleClickQuit = { [weak self] in self?.closeEntry(entry, force: false) }
+            tile.menuBuilder = { [weak self] in self?.buildEntryContextMenu(entry, on: screen) ?? NSMenu() }
+            bar.addSubview(tile)
+            x += tileW + spacing
+        }
+
+        let div = NSView(frame: NSRect(x: x + 5, y: 12, width: 1, height: barH - 24))
+        div.wantsLayer = true
+        div.layer?.backgroundColor = NSColor.white.withAlphaComponent(0.28).cgColor
+        bar.addSubview(div)
+        x += dividerW
+
+        // Carpeta rápida Descargas
+        let dlPath = NSHomeDirectory() + "/Downloads"
+        let dlTile = DockTileView(
+            icon: NSWorkspace.shared.icon(forFile: dlPath),
+            tooltipText: "Descargas",
+            badgeText: nil,
+            runningCount: 0,
+            iconSize: sz
+        )
+        dlTile.frame.origin = NSPoint(x: x, y: 0)
+        dlTile.onSingleClick = { NSWorkspace.shared.open(URL(fileURLWithPath: dlPath)) }
+        dlTile.menuBuilder = { [weak self] in self?.buildMasterMenu() ?? NSMenu() }
+        bar.addSubview(dlTile)
+        x += tileW + spacing
+
+        // Papelera
+        let trashPath = NSHomeDirectory() + "/.Trash"
+        let hasTrash = ((try? FileManager.default.contentsOfDirectory(atPath: trashPath))?.isEmpty == false)
+        let trashIcon = NSImage(named: hasTrash ? NSImage.trashFullName : NSImage.trashEmptyName) ?? NSWorkspace.shared.icon(forFile: trashPath)
+        let trashTile = DockTileView(
+            icon: trashIcon,
+            tooltipText: "Papelera",
+            badgeText: nil,
+            runningCount: 0,
+            iconSize: sz
+        )
+        trashTile.frame.origin = NSPoint(x: x, y: 0)
+        trashTile.onSingleClick = { NSWorkspace.shared.open(URL(fileURLWithPath: trashPath)) }
+        trashTile.menuBuilder = { [weak self] in self?.buildTrashMenu() ?? NSMenu() }
+        bar.addSubview(trashTile)
+        x += tileW
+
+        let totalW = x + pad
+        let originX = screen.frame.midX - (totalW / 2)
+        let originY: CGFloat
+        switch placement {
+        case .bottomOriginal: originY = screen.frame.minY + 6
+        case .bottomElevated: originY = screen.frame.minY + 28
+        case .topUnderMenu:   originY = screen.visibleFrame.maxY - barH - 8
+        }
+
+        panel.setFrame(NSRect(x: originX, y: originY, width: totalW, height: barH), display: true)
+        bar.frame = NSRect(x: 0, y: 0, width: totalW, height: barH)
+    }
+
+    // MARK: - Acciones sobre Apps y Ventanas Individuales
+
+    private func activateEntry(_ entry: DockTileEntry) {
+        if let run = entry.runningApp, let specWin = entry.specificWindow, uncombineMultiWindows {
+            winService.focusSpecificWindow(specWin, of: run)
+            return
+        }
+        if let run = entry.runningApp, !entry.isFinder {
+            if run.isActive && clickActiveToHide {
+                run.hide()
+                return
+            }
+            if run.isHidden { run.unhide() }
+            run.activate(options: [.activateIgnoringOtherApps])
+            return
+        }
+        let cfg = NSWorkspace.OpenConfiguration()
+        cfg.activates = true
+        NSWorkspace.shared.openApplication(at: entry.appURL, configuration: cfg, completionHandler: nil)
+    }
+
+    private func closeEntry(_ entry: DockTileEntry, force: Bool) {
+        guard !entry.isFinder, let run = entry.runningApp else { return }
+        if !force, let specWin = entry.specificWindow,
+           let bid = entry.bundleID, winService.multiInstanceBundleIDs.contains(bid),
+           winService.fetchWindows(for: run).count > 1 {
+            // Si hay varios Chromes abiertos, cierra SOLO este perfil/ventana
+            winService.closeSpecificWindow(specWin)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in self?.rebuildAllMonitors() }
+            return
+        }
+        if force { run.forceTerminate() } else { run.terminate() }
+    }
+
+    private func buildEntryContextMenu(_ entry: DockTileEntry, on currentScreen: NSScreen) -> NSMenu {
+        let menu = NSMenu()
+        let head = NSMenuItem(title: String(entry.appTitle.prefix(48)), action: nil, keyEquivalent: "")
+        head.isEnabled = false
+        menu.addItem(head)
+        menu.addItem(.separator())
+
+        let launcher = BrowserProfileLaunchService.shared
+        if launcher.supportsNewWindow(entry.bundleID) {
+            let newWin = NSMenuItem(title: "Nueva ventana", action: #selector(ctxOpenNewWindow(_:)), keyEquivalent: "")
+            newWin.representedObject = entry
+            newWin.target = self
+            menu.addItem(newWin)
+
+            if launcher.supportsProfiles(entry.bundleID) {
+                let profiles = launcher.listProfiles(for: entry.bundleID)
+                if !profiles.isEmpty {
+                    let profileSub = NSMenu()
+                    for p in profiles {
+                        let pItem = NSMenuItem(title: p.displayName, action: #selector(ctxOpenProfile(_:)), keyEquivalent: "")
+                        pItem.representedObject = (entry.appURL, p.directory)
+                        pItem.target = self
+                        profileSub.addItem(pItem)
+                    }
+                    let profileRoot = NSMenuItem(title: "Abrir perfil…", action: nil, keyEquivalent: "")
+                    profileRoot.submenu = profileSub
+                    menu.addItem(profileRoot)
+                }
+            }
+            menu.addItem(.separator())
+        }
+
+        if let run = entry.runningApp {
+            // Submenú para elegir cualquier ventana/perfil si están agrupados
+            let allWins = winService.fetchWindows(for: run)
+            if allWins.count > 1 {
+                for w in allWins {
+                    let wItem = NSMenuItem(title: "● \(String(w.title.prefix(45)))", action: #selector(ctxFocusSpecificWin(_:)), keyEquivalent: "")
+                    wItem.representedObject = (run, w)
+                    wItem.target = self
+                    menu.addItem(wItem)
+                }
+                menu.addItem(.separator())
+            }
+
+            // Mover a cualquier monitor (Monitor 1, 2, 3, 4+)
+            if NSScreen.screens.count > 1 {
+                let summonItem = NSMenuItem(title: "⇄ Traer / Mover de Monitor (Shift+Clic)", action: #selector(ctxQuickTeleport(_:)), keyEquivalent: "")
+                summonItem.representedObject = (entry, currentScreen)
+                summonItem.target = self
+                menu.addItem(summonItem)
+
+                let moveSub = NSMenu()
+                for (i, scr) in NSScreen.screens.enumerated() {
+                    let mItem = NSMenuItem(title: "Enviar a Monitor \(i + 1): \(scr.localizedName)", action: #selector(ctxMoveToScreen(_:)), keyEquivalent: "")
+                    mItem.representedObject = (entry, scr)
+                    mItem.target = self
+                    moveSub.addItem(mItem)
+                }
+                let moveRoot = NSMenuItem(title: "Mover ventana a pantalla…", action: nil, keyEquivalent: "")
+                moveRoot.submenu = moveSub
+                menu.addItem(moveRoot)
+                menu.addItem(.separator())
+            }
+
+            if !entry.isFinder {
+                if let spec = entry.specificWindow, allWins.count > 1 {
+                    let closeWin = NSMenuItem(title: "Cerrar solo esta ventana/perfil", action: #selector(ctxCloseSingleWin(_:)), keyEquivalent: "")
+                    closeWin.representedObject = spec
+                    closeWin.target = self
+                    menu.addItem(closeWin)
+                }
+
+                let quitAll = NSMenuItem(title: "Cerrar toda la app", action: #selector(ctxQuitApp(_:)), keyEquivalent: "")
+                quitAll.representedObject = entry
+                quitAll.target = self
+                menu.addItem(quitAll)
+
+                let forceQ = NSMenuItem(title: "Forzar salida", action: #selector(ctxForceQuitApp(_:)), keyEquivalent: "")
+                forceQ.representedObject = entry
+                forceQ.target = self
+                menu.addItem(forceQ)
+            }
+        } else {
+            let openIt = NSMenuItem(title: "Abrir aplicación", action: #selector(ctxOpenEntry(_:)), keyEquivalent: "")
+            openIt.representedObject = entry
+            openIt.target = self
+            menu.addItem(openIt)
+        }
+
+        menu.addItem(.separator())
+        let reveal = NSMenuItem(title: "Mostrar en Finder", action: #selector(ctxReveal(_:)), keyEquivalent: "")
+        reveal.representedObject = entry
+        reveal.target = self
+        menu.addItem(reveal)
+
+        return menu
+    }
+
+    @objc private func ctxOpenNewWindow(_ s: NSMenuItem) {
+        guard let entry = s.representedObject as? DockTileEntry else { return }
+        BrowserProfileLaunchService.shared.openNewWindow(appURL: entry.appURL, bundleID: entry.bundleID)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in self?.rebuildAllMonitors() }
+    }
+
+    @objc private func ctxOpenProfile(_ s: NSMenuItem) {
+        guard let (appURL, directory) = s.representedObject as? (URL, String) else { return }
+        BrowserProfileLaunchService.shared.openProfile(appURL: appURL, profileDirectory: directory)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in self?.rebuildAllMonitors() }
+    }
+
+    @objc private func ctxFocusSpecificWin(_ s: NSMenuItem) {
+        guard let (run, w) = s.representedObject as? (NSRunningApplication, AXWindowHandle) else { return }
+        winService.focusSpecificWindow(w, of: run)
+    }
+
+    @objc private func ctxQuickTeleport(_ s: NSMenuItem) {
+        guard let (entry, scr) = s.representedObject as? (DockTileEntry, NSScreen) else { return }
+        winService.smartSummonOrNextMonitor(entry: entry, clickedScreen: scr)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in self?.rebuildAllMonitors() }
+    }
+
+    @objc private func ctxMoveToScreen(_ s: NSMenuItem) {
+        guard let (entry, dst) = s.representedObject as? (DockTileEntry, NSScreen),
+              let run = entry.runningApp,
+              let win = entry.specificWindow ?? winService.fetchWindows(for: run).first else { return }
+        winService.moveWindow(win, of: run, to: dst)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in self?.rebuildAllMonitors() }
+    }
+
+    @objc private func ctxCloseSingleWin(_ s: NSMenuItem) {
+        guard let w = s.representedObject as? AXWindowHandle else { return }
+        winService.closeSpecificWindow(w)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in self?.rebuildAllMonitors() }
+    }
+
+    @objc private func ctxQuitApp(_ s: NSMenuItem) {
+        guard let e = s.representedObject as? DockTileEntry else { return }
+        e.runningApp?.terminate()
+    }
+
+    @objc private func ctxForceQuitApp(_ s: NSMenuItem) {
+        guard let e = s.representedObject as? DockTileEntry else { return }
+        e.runningApp?.forceTerminate()
+    }
+
+    @objc private func ctxOpenEntry(_ s: NSMenuItem) {
+        guard let e = s.representedObject as? DockTileEntry else { return }
+        activateEntry(e)
+    }
+
+    @objc private func ctxReveal(_ s: NSMenuItem) {
+        guard let e = s.representedObject as? DockTileEntry else { return }
+        NSWorkspace.shared.activateFileViewerSelecting([e.appURL])
+    }
+
+    private func buildTrashMenu() -> NSMenu {
+        let m = NSMenu()
+        let openT = NSMenuItem(title: "Abrir Papelera", action: #selector(openTrash), keyEquivalent: "")
+        openT.target = self
+        m.addItem(openT)
+        let emptyT = NSMenuItem(title: "Vaciar Papelera…", action: #selector(emptyTrash), keyEquivalent: "")
+        emptyT.target = self
+        m.addItem(emptyT)
+        return m
+    }
+
+    @objc private func openTrash() {
+        NSWorkspace.shared.open(URL(fileURLWithPath: NSHomeDirectory() + "/.Trash"))
+    }
+
+    @objc private func emptyTrash() {
+        let script = NSAppleScript(source: "tell application \"Finder\" to empty trash")
+        script?.executeAndReturnError(nil)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in self?.rebuildAllMonitors() }
+    }
+
+    // MARK: - Menú Maestro en Barra de Menús
+
+    /// Oculta de golpe todos los paneles StackDock (todos los monitores).
+    private func hideAllStackDockPanels() {
+        for (_, pair) in panels {
+            pair.panel.alphaValue = 0
+            pair.panel.orderOut(nil)
+        }
+    }
+
+    private func isAppleDockAutohide() -> Bool {
+        let dom = UserDefaults.standard.persistentDomain(forName: "com.apple.dock")
+        return (dom?["autohide"] as? Bool) ?? false
+    }
+
+    private func normalizeAppleDockHideTimingIfNeeded() {
+        let dom = UserDefaults.standard.persistentDomain(forName: "com.apple.dock") ?? [:]
+        let delay = (dom["autohide-delay"] as? Double)
+            ?? (dom["autohide-delay"] as? Int).map(Double.init)
+            ?? 0
+        guard delay > 1.0 else { return }
+        // Tu Mac tenía autohide-delay≈1000s: el Dock de Apple no se retiraba nunca.
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/defaults")
+        task.arguments = ["write", "com.apple.dock", "autohide-delay", "-float", "0"]
+        try? task.run()
+        task.waitUntilExit()
+        let task2 = Process()
+        task2.executableURL = URL(fileURLWithPath: "/usr/bin/defaults")
+        task2.arguments = ["write", "com.apple.dock", "autohide-time-modifier", "-float", "0.35"]
+        try? task2.run()
+        task2.waitUntilExit()
+        let kill = Process()
+        kill.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
+        kill.arguments = ["Dock"]
+        try? kill.run()
+        kill.waitUntilExit()
+    }
+
+    private func setAppleDockAutohide(_ enabled: Bool) {
+        // Preferir `defaults` + killall Dock: no depende de Automatización/System Events
+        // y es lo que evita el “doble dock” al probar.
+        let already = isAppleDockAutohide()
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/defaults")
+        task.arguments = ["write", "com.apple.dock", "autohide", "-bool", enabled ? "true" : "false"]
+        try? task.run()
+        task.waitUntilExit()
+
+        if enabled {
+            // Delay alto al REVELAR con el mouse: el Dock de Apple casi no asoma debajo de StackDock
+            let d1 = Process()
+            d1.executableURL = URL(fileURLWithPath: "/usr/bin/defaults")
+            d1.arguments = ["write", "com.apple.dock", "autohide-delay", "-float", "2.5"]
+            try? d1.run()
+            d1.waitUntilExit()
+            let d2 = Process()
+            d2.executableURL = URL(fileURLWithPath: "/usr/bin/defaults")
+            d2.arguments = ["write", "com.apple.dock", "autohide-time-modifier", "-float", "0.2"]
+            try? d2.run()
+            d2.waitUntilExit()
+        }
+
+        if already != enabled {
+            let kill = Process()
+            kill.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
+            kill.arguments = ["Dock"]
+            try? kill.run()
+            kill.waitUntilExit()
+        }
+    }
+
+    @objc private func toggleAllDocksAnimated() {
+        isVisible.toggle()
+        refreshStatusBarIcon()
+        if isVisible {
+            // Al mostrar StackDock: Dock de Apple sigue en autohide para no volver al doble dock
+            if replaceAppleDock || syncAppleDockOnToggle {
+                setAppleDockAutohide(true)
+            }
+            rebuildAllMonitors()
+        } else {
+            // Ocultar StackDock en TODOS los monitores + Dock nativo (vídeo a pantalla limpia)
+            hideAllStackDockPanels()
+            if syncAppleDockOnToggle {
+                setAppleDockAutohide(true)
+            }
+        }
+    }
+
+    private func buildMasterMenu() -> NSMenu {
+        let m = NSMenu()
+        let h = NSMenuItem(title: isVisible ? "StackDock v4 • ENCENDIDO" : "StackDock v4 • OCULTO", action: nil, keyEquivalent: "")
+        h.isEnabled = false
+        m.addItem(h)
+
+        let tItem = NSMenuItem(title: isVisible ? "Ocultar Docks (\(togglePreset.title))" : "Mostrar Docks (\(togglePreset.title))", action: #selector(toggleAllDocksAnimated), keyEquivalent: "")
+        tItem.target = self
+        m.addItem(tItem)
+
+        let moveNow = NSMenuItem(title: "Mover ventana activa al otro monitor (⌃⌥W)", action: #selector(moveActiveWinMenu), keyEquivalent: "")
+        moveNow.target = self
+        m.addItem(moveNow)
+
+        m.addItem(.separator())
+
+        let licenseItem = NSMenuItem(title: LicenseManager.shared.menuStatusTitle, action: #selector(openLicenseDialog), keyEquivalent: "")
+        licenseItem.target = self
+        m.addItem(licenseItem)
+
+        m.addItem(.separator())
+
+        let uncomb = NSMenuItem(title: "Separar perfiles/ventanas de Chrome en iconos propios", action: #selector(toggleUncombine), keyEquivalent: "")
+        uncomb.state = uncombineMultiWindows ? .on : .off
+        uncomb.target = self
+        m.addItem(uncomb)
+
+        let iso = NSMenuItem(title: "Mostrar en cada monitor solo sus propias ventanas", action: #selector(toggleIsolatePerMonitor), keyEquivalent: "")
+        iso.state = isolateAppsPerMonitor ? .on : .off
+        iso.target = self
+        m.addItem(iso)
+
+        let replaceApple = NSMenuItem(title: "Reemplazar Dock de Apple (autohide mientras StackDock está activo)", action: #selector(toggleReplaceAppleDock), keyEquivalent: "")
+        replaceApple.state = replaceAppleDock ? .on : .off
+        replaceApple.target = self
+        m.addItem(replaceApple)
+
+        let syncApple = NSMenuItem(title: "Atajo oculta también el Dock de Apple", action: #selector(toggleSyncAppleDock), keyEquivalent: "")
+        syncApple.state = syncAppleDockOnToggle ? .on : .off
+        syncApple.target = self
+        m.addItem(syncApple)
+
+        if !winService.isAXTrusted(prompt: false) {
+            let axBtn = NSMenuItem(title: "⚠️ Autorizar Permiso para Mover Ventanas y Perfiles Chrome…", action: #selector(requestAXPermission), keyEquivalent: "")
+            axBtn.target = self
+            m.addItem(axBtn)
+        }
+
+        m.addItem(.separator())
+
+        // Submenú Monitores
+        let monSub = NSMenu()
+        let incApple = NSMenuItem(title: "Dibujar también donde está el Dock de Apple", action: #selector(toggleIncludeApple), keyEquivalent: "")
+        incApple.state = includeAppleDockScreen ? .on : .off
+        incApple.target = self
+        monSub.addItem(incApple)
+        monSub.addItem(.separator())
+        for (i, s) in NSScreen.screens.enumerated() {
+            let id = screenID(s)
+            let it = NSMenuItem(title: "Monitor \(i + 1): \(s.localizedName)", action: #selector(toggleScreenItem(_:)), keyEquivalent: "")
+            it.tag = Int(id)
+            it.state = disabledMonitors.contains(id) ? .off : .on
+            it.target = self
+            monSub.addItem(it)
+        }
+        let monRoot = NSMenuItem(title: "Monitores (\(NSScreen.screens.count) conectados)", action: nil, keyEquivalent: "")
+        monRoot.submenu = monSub
+        m.addItem(monRoot)
+
+        // Submenú Tecla Mostrar/Ocultar
+        let hkSub = NSMenu()
+        for p in HotKeyTogglePreset.allCases {
+            let it = NSMenuItem(title: p.title, action: #selector(selectHotKey(_:)), keyEquivalent: "")
+            it.tag = p.rawValue
+            it.state = (togglePreset == p) ? .on : .off
+            it.target = self
+            hkSub.addItem(it)
+        }
+        let hkRoot = NSMenuItem(title: "Tecla Mostrar / Ocultar", action: nil, keyEquivalent: "")
+        hkRoot.submenu = hkSub
+        m.addItem(hkRoot)
+
+        // Submenú Posición
+        let posSub = NSMenu()
+        for (lbl, pl) in [("Abajo (como el original)", DockPlacement.bottomOriginal), ("Abajo elevado (anti-cruce)", DockPlacement.bottomElevated), ("Arriba (bajo barra de menús)", DockPlacement.topUnderMenu)] {
+            let it = NSMenuItem(title: lbl, action: #selector(selectPlacement(_:)), keyEquivalent: "")
+            it.tag = pl.rawValue
+            it.state = (placement == pl) ? .on : .off
+            it.target = self
+            posSub.addItem(it)
+        }
+        let posRoot = NSMenuItem(title: "Posición del Dock", action: nil, keyEquivalent: "")
+        posRoot.submenu = posSub
+        m.addItem(posRoot)
+
+        let appleHide = NSMenuItem(title: "Ocultar/Mostrar Dock original de Apple", action: #selector(toggleNativeAppleDockAutoHide), keyEquivalent: "")
+        appleHide.target = self
+        m.addItem(appleHide)
+
+        if #available(macOS 13.0, *) {
+            let loginIt = NSMenuItem(title: "Abrir al iniciar sesión", action: #selector(toggleLogin), keyEquivalent: "")
+            loginIt.state = (SMAppService.mainApp.status == .enabled) ? .on : .off
+            loginIt.target = self
+            m.addItem(loginIt)
+        }
+
+        let refreshIt = NSMenuItem(title: "Refrescar Docks y Ventanas", action: #selector(rebuildAllMonitors), keyEquivalent: "r")
+        refreshIt.target = self
+        m.addItem(refreshIt)
+
+        let loadAvatars = NSMenuItem(title: "Cargar fotos de perfil Chrome…", action: #selector(loadChromeAvatars), keyEquivalent: "")
+        loadAvatars.target = self
+        m.addItem(loadAvatars)
+
+        m.addItem(.separator())
+        let quitIt = NSMenuItem(title: "Salir de StackDock", action: #selector(quitApp), keyEquivalent: "q")
+        quitIt.target = self
+        m.addItem(quitIt)
+        return m
+    }
+
+    @objc private func loadChromeAvatars() {
+        // Una sola vez: eliges la carpeta Chrome (sin Full Disk Access ni más diálogos).
+        BrowserProfileLaunchService.shared.pickChromeFolderInteractive()
+        rebuildAllMonitors()
+    }
+
+    @objc private func openLicenseDialog() {
+        LicenseManager.shared.presentActivationDialog { [weak self] in
+            self?.rebuildAllMonitors()
+            self?.refreshStatusBarIcon()
+        }
+    }
+
+    @objc private func moveActiveWinMenu() { winService.moveFrontmostWindowToNextMonitor() }
+    @objc private func toggleUncombine() { uncombineMultiWindows.toggle(); rebuildAllMonitors() }
+    @objc private func toggleIsolatePerMonitor() { isolateAppsPerMonitor.toggle(); rebuildAllMonitors() }
+    @objc private func toggleReplaceAppleDock() {
+        replaceAppleDock.toggle()
+        if replaceAppleDock { setAppleDockAutohide(true) }
+        rebuildAllMonitors()
+    }
+    @objc private func toggleSyncAppleDock() { syncAppleDockOnToggle.toggle() }
+    @objc private func requestAXPermission() { _ = winService.isAXTrusted(prompt: true) }
+    @objc private func toggleIncludeApple() { includeAppleDockScreen.toggle(); rebuildAllMonitors() }
+
+    @objc private func toggleScreenItem(_ s: NSMenuItem) {
+        let id = UInt32(s.tag)
+        var set = disabledMonitors
+        if set.contains(id) { set.remove(id) } else { set.insert(id) }
+        disabledMonitors = set
+        rebuildAllMonitors()
+    }
+
+    @objc private func selectHotKey(_ s: NSMenuItem) {
+        guard let p = HotKeyTogglePreset(rawValue: s.tag) else { return }
+        togglePreset = p
+        GlobalHotKeyCenter.shared.registerAll(togglePreset: p, enableNumberShortcuts: numberShortcutsEnabled)
+        refreshStatusBarIcon()
+    }
+
+    @objc private func selectPlacement(_ s: NSMenuItem) {
+        if let pl = DockPlacement(rawValue: s.tag) { placement = pl; rebuildAllMonitors() }
+    }
+
+    @objc private func toggleNativeAppleDockAutoHide() {
+        let script = NSAppleScript(source: "tell application \"System Events\" to tell dock preferences to set autohide to not autohide")
+        script?.executeAndReturnError(nil)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in self?.rebuildAllMonitors() }
+    }
+
+    @objc private func toggleLogin() {
+        if #available(macOS 13.0, *) {
+            try? (SMAppService.mainApp.status == .enabled ? SMAppService.mainApp.unregister() : SMAppService.mainApp.register())
+        }
+    }
+
+    private func registerSystemEvents() {
+        guard !didRegisterSystemEvents else { return }
+        didRegisterSystemEvents = true
+        let ws = NSWorkspace.shared.notificationCenter
+        ws.addObserver(self, selector: #selector(scheduleRebuildDebounced), name: NSWorkspace.didLaunchApplicationNotification, object: nil)
+        ws.addObserver(self, selector: #selector(scheduleRebuildDebounced), name: NSWorkspace.didTerminateApplicationNotification, object: nil)
+        ws.addObserver(self, selector: #selector(scheduleRebuildDebounced), name: NSWorkspace.didActivateApplicationNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(scheduleRebuildDebounced), name: NSApplication.didChangeScreenParametersNotification, object: nil)
+    }
+
+    @objc private func quitApp() { NSApp.terminate(nil) }
+}
