@@ -13,8 +13,11 @@ services:
       - /tmp:rw,noexec,nosuid,size=96m
     security_opt:
       - no-new-privileges:true
+    # nginx necesita crear temp paths; no dropear CAP_CHOWN/SETUID en alpine
     cap_drop:
-      - ALL
+      - NET_RAW
+      - SYS_ADMIN
+      - SYS_PTRACE
     environment:
       STRIPE_CHECKOUT_URL: ${STRIPE_CHECKOUT_URL:-}
     healthcheck:
