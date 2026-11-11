@@ -497,12 +497,21 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
             return
         }
         if let run = entry.runningApp, !entry.isFinder {
-            if run.isActive && clickActiveToHide {
+            // Ventanas AX “reales” (ignora fantasmas minúsculos). Apps como Findaro
+            // ocultan con orderOut: AX queda vacío aunque el proceso siga activo.
+            let visibleWindows = winService.fetchWindows(for: run).filter { !$0.isMinimized }
+            if run.isActive && clickActiveToHide && !visibleWindows.isEmpty {
                 run.hide()
                 return
             }
             if run.isHidden { run.unhide() }
-            run.activate(options: [.activateIgnoringOtherApps])
+            // openApplication dispara applicationShouldHandleReopen en el target
+            // (activate solo no restaura ventanas orderOut).
+            let cfg = NSWorkspace.OpenConfiguration()
+            cfg.activates = true
+            NSWorkspace.shared.openApplication(at: entry.appURL, configuration: cfg) { _, _ in
+                run.activate(options: [.activateIgnoringOtherApps])
+            }
             return
         }
         let cfg = NSWorkspace.OpenConfiguration()
