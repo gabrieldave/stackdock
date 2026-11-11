@@ -4,8 +4,8 @@ FROM nginx:1.27-alpine AS runtime
 RUN apk add --no-cache wget \
  && addgroup -g 1001 -S web \
  && adduser -u 1001 -S web -G web \
- && mkdir -p /opt/stackdock-web /tmp/www /var/cache/nginx \
- && chown -R web:web /opt/stackdock-web /tmp /var/cache/nginx
+ && mkdir -p /opt/stackdock-web /tmp/www \
+ && chown -R web:web /opt/stackdock-web /tmp
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY docker-entrypoint.sh /docker-entrypoint.sh
@@ -23,6 +23,11 @@ RUN chmod +x /docker-entrypoint.sh \
   '  default_type application/octet-stream;' \
   '  sendfile on;' \
   '  keepalive_timeout 65;' \
+  '  client_body_temp_path /tmp/client_temp;' \
+  '  proxy_temp_path /tmp/proxy_temp;' \
+  '  fastcgi_temp_path /tmp/fastcgi_temp;' \
+  '  uwsgi_temp_path /tmp/uwsgi_temp;' \
+  '  scgi_temp_path /tmp/scgi_temp;' \
   '  include /etc/nginx/conf.d/*.conf;' \
   '}' \
   > /etc/nginx/nginx.conf \
