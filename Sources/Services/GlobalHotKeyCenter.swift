@@ -7,7 +7,6 @@ final class GlobalHotKeyCenter {
     static let shared = GlobalHotKeyCenter()
     var onToggleDocks: (() -> Void)?
     var onMoveWindowNextMonitor: (() -> Void)?
-    var onQuickLaunchSlot: ((Int) -> Void)?
 
     private var refs: [EventHotKeyRef] = []
     private var handlerRef: EventHandlerRef?
@@ -25,7 +24,6 @@ final class GlobalHotKeyCenter {
                 DispatchQueue.main.async {
                     if hkID.id == 1 { center.onToggleDocks?() }
                     else if hkID.id == 2 { center.onMoveWindowNextMonitor?() }
-                    else if hkID.id >= 10 && hkID.id <= 18 { center.onQuickLaunchSlot?(Int(hkID.id - 10)) }
                 }
                 return noErr
             },
@@ -33,21 +31,15 @@ final class GlobalHotKeyCenter {
         )
     }
 
-    func registerAll(togglePreset: HotKeyTogglePreset, enableNumberShortcuts: Bool) {
+    func registerAll(togglePreset: HotKeyTogglePreset, movePreset: HotKeyMovePreset) {
         refs.forEach { UnregisterEventHotKey($0) }
         refs.removeAll()
 
-        let (code, mods) = togglePreset.carbon
-        register(id: 1, keyCode: code, modifiers: mods)
-        // Control + Option + W = Mover ventana al siguiente monitor (3 dedos, mano izq.)
-        register(id: 2, keyCode: UInt32(kVK_ANSI_W), modifiers: UInt32(controlKey | optionKey))
+        let (toggleCode, toggleMods) = togglePreset.carbon
+        register(id: 1, keyCode: toggleCode, modifiers: toggleMods)
 
-        if enableNumberShortcuts {
-            let numKeyCodes: [Int] = [kVK_ANSI_1, kVK_ANSI_2, kVK_ANSI_3, kVK_ANSI_4, kVK_ANSI_5, kVK_ANSI_6, kVK_ANSI_7, kVK_ANSI_8, kVK_ANSI_9]
-            for (i, kc) in numKeyCodes.enumerated() {
-                register(id: UInt32(10 + i), keyCode: UInt32(kc), modifiers: UInt32(optionKey))
-            }
-        }
+        let (moveCode, moveMods) = movePreset.carbon
+        register(id: 2, keyCode: moveCode, modifiers: moveMods)
     }
 
     private func register(id: UInt32, keyCode: UInt32, modifiers: UInt32) {

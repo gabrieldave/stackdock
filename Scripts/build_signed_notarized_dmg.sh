@@ -7,7 +7,7 @@ BUILD_DIR="${ROOT}/build"
 DIST_DIR="${ROOT}/dist"
 APP_NAME="StackDock"
 BUNDLE_ID="com.blackeye.stackdock"
-VERSION="4.0.1"
+VERSION="4.0.2"
 APP_PATH="${BUILD_DIR}/${APP_NAME}.app"
 DMG_NAME="${STACKDOCK_DMG_NAME:-StackDock-${VERSION}.dmg}"
 DMG_PATH="${DIST_DIR}/${DMG_NAME}"
@@ -135,13 +135,17 @@ if [[ "${NOTARIZED}" -eq 1 ]]; then
   xcrun stapler staple "${APP_PATH}" 2>/dev/null || true
 fi
 
-echo "==> Instalando app firmada en /Applications"
-pkill -x "${APP_NAME}" 2>/dev/null || true
-sleep 0.3
-rm -rf "/Applications/${APP_NAME}.app"
-cp -R "${APP_PATH}" "/Applications/${APP_NAME}.app"
-xattr -cr "/Applications/${APP_NAME}.app" 2>/dev/null || true
-open "/Applications/${APP_NAME}.app"
+if [[ "${STACKDOCK_NO_INSTALL:-0}" != "1" ]]; then
+  echo "==> Instalando app firmada en /Applications"
+  pkill -x "${APP_NAME}" 2>/dev/null || true
+  sleep 0.3
+  rm -rf "/Applications/${APP_NAME}.app"
+  cp -R "${APP_PATH}" "/Applications/${APP_NAME}.app"
+  xattr -cr "/Applications/${APP_NAME}.app" 2>/dev/null || true
+  open "/Applications/${APP_NAME}.app"
+else
+  echo "==> Skip install local (STACKDOCK_NO_INSTALL=1)"
+fi
 
 echo ""
 echo "✅ DMG: ${DMG_PATH}"

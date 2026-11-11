@@ -34,6 +34,32 @@ enum HotKeyTogglePreset: Int, CaseIterable {
     }
 }
 
+/// Atajo global para mover la ventana activa al otro monitor.
+enum HotKeyMovePreset: Int, CaseIterable {
+    case controlW       = 0
+    case controlOptionW = 1
+    case controlShiftW  = 2
+    case optionW        = 3
+
+    var title: String {
+        switch self {
+        case .controlW:       return "⌃ Ctrl + W"
+        case .controlOptionW: return "⌃⌥ Ctrl + Option + W"
+        case .controlShiftW:  return "⌃⇧ Ctrl + Shift + W"
+        case .optionW:        return "⌥ Option + W"
+        }
+    }
+
+    var carbon: (UInt32, UInt32) {
+        switch self {
+        case .controlW:       return (UInt32(kVK_ANSI_W), UInt32(controlKey))
+        case .controlOptionW: return (UInt32(kVK_ANSI_W), UInt32(controlKey | optionKey))
+        case .controlShiftW:  return (UInt32(kVK_ANSI_W), UInt32(controlKey | shiftKey))
+        case .optionW:        return (UInt32(kVK_ANSI_W), UInt32(optionKey))
+        }
+    }
+}
+
 struct AXWindowHandle {
     let axElement: AXUIElement
     let title: String

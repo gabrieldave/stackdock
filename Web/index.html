@@ -403,7 +403,7 @@
             <span class="mac-kbd">⌃ + ⌥ + D</span>
             <span class="mac-kbd">⌘ + ⇧ + D</span>
             <span class="mac-kbd">F12</span>
-            <span class="text-[#A1A1AA] ml-1" data-i18n="b1_foot">+ Quick Launch slots via ⌥ + 1..9</span>
+            <span class="text-[#A1A1AA] ml-1" data-i18n="b1_foot">+ Window teleport via ⌃ + W (customizable)</span>
           </div>
         </div>
 
@@ -716,7 +716,7 @@
                 <td class="py-4 px-6 text-[#FF6961]">✕ No</td>
               </tr>
               <tr>
-                <td class="py-4 px-6 font-semibold text-[#F5F5F7]" data-i18n="cmp_r5">Auto-scaled Window Teleporter (Shift+Click / ⌃⌥W)</td>
+                <td class="py-4 px-6 font-semibold text-[#F5F5F7]" data-i18n="cmp_r5">Auto-scaled Window Teleporter (Shift+Click / ⌃W)</td>
                 <td class="py-4 px-6 bg-[#0071E3]/10 border-x border-[#2997FF]/30 font-semibold text-[#30D158]" data-i18n="cmp_yes_scale">✓ Built-in</td>
                 <td class="py-4 px-6 text-[#FF6961]">✕ No</td>
                 <td class="py-4 px-6 text-[#FF6961]">✕ No</td>
@@ -882,7 +882,7 @@
         <p class="mt-1.5 text-[11px] text-[#71717A]" data-i18n="modal_email_hint">We’ll send a short onboarding sequence via Resend. Skip anytime.</p>
       </div>
       <div class="p-3.5 rounded-xl bg-black/70 border border-white/15 font-mono text-[11px] text-[#E4E4E7] mb-3 overflow-x-auto space-y-1" id="modal-code">
-        <div>StackDock-4.0.0.dmg · Universal arm64 + x86_64</div>
+        <div>StackDock-4.0.2.dmg · Universal arm64 + x86_64</div>
         <div id="modal-sha">SHA-256: __DMG_SHA256__</div>
         <div id="modal-team">Apple Notarization Team ID: YH6W55MP95</div>
       </div>
@@ -941,7 +941,7 @@
       stripeProUrl: '__STRIPE_CHECKOUT_URL_PRO__',
       stripeCheckoutUrl: '__STRIPE_CHECKOUT_URL__',
       trialWebhookUrl: '__TRIAL_WEBHOOK_URL__',
-      dmgDownloadUrl: 'https://stackdock.iareal.net/download/StackDock-4.0.0.dmg',
+      dmgDownloadUrl: 'https://stackdock.iareal.net/download/StackDock-4.0.2.dmg',
       dmgSha256: '__DMG_SHA256__',
       appleTeamId: 'YH6W55MP95',
       supportEmail: 'stackdock@iareal.net',
@@ -956,7 +956,7 @@
     STACKDOCK_CONFIG.stripeCheckoutUrl = resolveCheckoutPlaceholder(STACKDOCK_CONFIG.stripeCheckoutUrl, '#buy');
     STACKDOCK_CONFIG.trialWebhookUrl = resolveCheckoutPlaceholder(STACKDOCK_CONFIG.trialWebhookUrl, 'https://n8n.vibesystems.tech/webhook/stackdock-trial');
     if (!STACKDOCK_CONFIG.dmgSha256 || STACKDOCK_CONFIG.dmgSha256.includes('__DMG_SHA256__')) {
-      STACKDOCK_CONFIG.dmgSha256 = '3449e4976099f77f5b083fe9e4a5c6cfe01087821010dc13768eddac7f4a8920';
+      STACKDOCK_CONFIG.dmgSha256 = '4a7e35b87af3e2da1a44fabf96442f7d2a291e41a6fa44d83794da2cb4a5bb6b';
     }
 
     let currentLang = (document.documentElement.lang === 'es') ? 'es' : 'en';
@@ -999,7 +999,7 @@
       bento_lead: "Purpose-built for stacked vertical monitors, angled lower displays, ultrawides, and quad-display workstations.",
       b1_title: "Goodbye dead edges on stacked displays.",
       b1_desc: "When you place a secondary monitor underneath your main display, macOS traps the Dock on the bottom screen because moving your pointer down crosses displays. Press <span class=\"mac-kbd\">⌥ + D</span> (or <span class=\"mac-kbd\">F12</span>) to summon or hide synchronized Docks across every screen while keeping Apple’s native Dock cleanly tucked away.",
-      b1_foot: "+ Quick Launch slots via ⌥ + 1..9",
+      b1_foot: "+ Window teleport via ⌃ + W (customizable)",
       b2_title: "Every Chrome profile as its own icon.",
       b2_desc: "Running separate Work, Studio, and Personal browser windows? StackDock automatically uncombines them into distinct Dock icons with profile avatars and crisp pill labels. Click to focus that exact profile, or close it via <span class=\"mac-kbd\">⌥ + ⌘ + Click</span> without quitting Chrome.",
       pill_work: "● Work",
@@ -1054,7 +1054,7 @@
       cmp_r1: "Price",
       cmp_r2: "Simultaneous Docks on 2–4+ displays",
       cmp_r4: "Chrome profiles / windows as separate icons",
-      cmp_r5: "Auto-scaled Window Teleporter (Shift+Click / ⌃⌥W)",
+      cmp_r5: "Auto-scaled Window Teleporter (Shift+Click / ⌃W)",
       cmp_r6: "Privacy & account-free offline activation",
       cmp_r7: "Screen Recording Permission",
       yes_1: "✓ Yes (macOS 13+)",

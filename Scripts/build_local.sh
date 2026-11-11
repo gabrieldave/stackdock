@@ -98,7 +98,7 @@ open "${INSTALL_PATH}"
 
 echo ""
 echo "✅ StackDock v4.0 instalado en ${INSTALL_PATH}"
-echo "   Atajos: ⌥+D docks | ⌃⌥W monitor | ⌥+1..9 launch"
+echo "   Atajos: ⌥+D docks | ⌃W monitor (ajustable en menú)"
 if [[ -n "${SIGN_IDENTITY}" ]]; then
   echo "   Firma: Developer ID — concede Accesibilidad UNA vez y no se pierde entre rebuilds."
 fi

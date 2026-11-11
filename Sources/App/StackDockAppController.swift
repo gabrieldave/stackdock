@@ -6,7 +6,6 @@ import ServiceManagement
 final class StackDockAppController: NSObject, NSApplicationDelegate {
     private var panels: [CGDirectDisplayID: (panel: NSPanel, bar: DockGlassBarView)] = [:]
     private var statusItem: NSStatusItem!
-    private var cachedQuickLaunchEntries: [DockTileEntry] = []
     private let prefs = UserDefaults.standard
     private let winService = WindowTeleportAndProfileService.shared
     private var rebuildDebounceWorkItem: DispatchWorkItem?
@@ -70,10 +69,6 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
         get { prefs.object(forKey: "clickActiveToHide") == nil ? true : prefs.bool(forKey: "clickActiveToHide") }
         set { prefs.set(newValue, forKey: "clickActiveToHide") }
     }
-    private var numberShortcutsEnabled: Bool {
-        get { prefs.object(forKey: "numberShortcutsEnabled") == nil ? true : prefs.bool(forKey: "numberShortcutsEnabled") }
-        set { prefs.set(newValue, forKey: "numberShortcutsEnabled") }
-    }
     private var iconSize: CGFloat {
         get { let s = prefs.double(forKey: "iconSize"); return s > 0 ? CGFloat(s) : 46 }
         set { prefs.set(Double(newValue), forKey: "iconSize") }
@@ -86,6 +81,10 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
     private var togglePreset: HotKeyTogglePreset {
         get { HotKeyTogglePreset(rawValue: prefs.integer(forKey: "togglePreset")) ?? .optionD }
         set { prefs.set(newValue.rawValue, forKey: "togglePreset") }
+    }
+    private var movePreset: HotKeyMovePreset {
+        get { HotKeyMovePreset(rawValue: prefs.integer(forKey: "movePreset")) ?? .controlW }
+        set { prefs.set(newValue.rawValue, forKey: "movePreset") }
     }
     private var disabledMonitors: Set<UInt32> {
         get { Set(prefs.array(forKey: "disabledMonitors") as? [UInt32] ?? []) }
@@ -128,11 +127,11 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
             self?.winService.moveFrontmostWindowToNextMonitor()
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { self?.rebuildAllMonitors() }
         }
-        hk.onQuickLaunchSlot = { [weak self] slot in
-            guard let self = self, slot < self.cachedQuickLaunchEntries.count else { return }
-            self.activateEntry(self.cachedQuickLaunchEntries[slot])
-        }
-        hk.registerAll(togglePreset: togglePreset, enableNumberShortcuts: numberShortcutsEnabled)
+        reregisterHotKeys()
+    }
+
+    private func reregisterHotKeys() {
+        GlobalHotKeyCenter.shared.registerAll(togglePreset: togglePreset, movePreset: movePreset)
     }
 
     private func setupStatusBar() {
@@ -155,7 +154,7 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
             btn.title = isVisible ? "▣" : "▢"
         }
         btn.alphaValue = isVisible ? 1.0 : 0.5
-        btn.toolTip = "StackDock • \(togglePreset.title) mostrar/ocultar | ⌃⌥W mover ventana de monitor"
+        btn.toolTip = "StackDock • \(togglePreset.title) mostrar/ocultar | \(movePreset.title) mover ventana de monitor"
     }
 
     @objc private func statusBarClicked(_ sender: NSStatusBarButton) {
@@ -375,7 +374,7 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
             return
         }
 
-        for (idx, scr) in targets.enumerated() {
+        for scr in targets {
             let id = screenID(scr)
             let pair = panels[id] ?? {
                 let created = makePanel()
@@ -383,7 +382,6 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
                 return created
             }()
             let entries = buildTileEntries(for: scr)
-            if idx == 0 { cachedQuickLaunchEntries = entries }
             layoutDock(pair.bar, panel: pair.panel, on: scr, entries: entries)
             pair.panel.alphaValue = 1.0
             pair.panel.orderFrontRegardless()
@@ -868,7 +866,7 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
         tItem.target = self
         m.addItem(tItem)
 
-        let moveNow = NSMenuItem(title: "Mover ventana activa al otro monitor (⌃⌥W)", action: #selector(moveActiveWinMenu), keyEquivalent: "")
+        let moveNow = NSMenuItem(title: "Mover ventana activa al otro monitor (\(movePreset.title))", action: #selector(moveActiveWinMenu), keyEquivalent: "")
         moveNow.target = self
         m.addItem(moveNow)
 
@@ -953,6 +951,19 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
         hkRoot.submenu = hkSub
         m.addItem(hkRoot)
 
+        // Submenú Tecla Mover ventana
+        let moveSub = NSMenu()
+        for p in HotKeyMovePreset.allCases {
+            let it = NSMenuItem(title: p.title, action: #selector(selectMoveHotKey(_:)), keyEquivalent: "")
+            it.tag = p.rawValue
+            it.state = (movePreset == p) ? .on : .off
+            it.target = self
+            moveSub.addItem(it)
+        }
+        let moveRoot = NSMenuItem(title: "Tecla Mover ventana", action: nil, keyEquivalent: "")
+        moveRoot.submenu = moveSub
+        m.addItem(moveRoot)
+
         // Submenú Posición
         let posSub = NSMenu()
         for (lbl, pl) in [("Abajo (como el original)", DockPlacement.bottomOriginal), ("Abajo elevado (anti-cruce)", DockPlacement.bottomElevated), ("Arriba (bajo barra de menús)", DockPlacement.topUnderMenu)] {
@@ -1022,7 +1033,14 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
     @objc private func selectHotKey(_ s: NSMenuItem) {
         guard let p = HotKeyTogglePreset(rawValue: s.tag) else { return }
         togglePreset = p
-        GlobalHotKeyCenter.shared.registerAll(togglePreset: p, enableNumberShortcuts: numberShortcutsEnabled)
+        reregisterHotKeys()
+        refreshStatusBarIcon()
+    }
+
+    @objc private func selectMoveHotKey(_ s: NSMenuItem) {
+        guard let p = HotKeyMovePreset(rawValue: s.tag) else { return }
+        movePreset = p
+        reregisterHotKeys()
         refreshStatusBarIcon()
     }
 
