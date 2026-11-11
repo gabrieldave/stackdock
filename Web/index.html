@@ -1,16 +1,24 @@
 <!DOCTYPE html>
-<html lang="es" class="scroll-smooth dark">
+<html lang="en" class="scroll-smooth dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#000000" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="description" content="StackDock 4.0 por BLACK EYE — Proyecta tu Dock nativo de macOS en 2, 3 o 4+ monitores con 0.0% CPU en reposo, separa perfiles de Chrome y teletransporta ventanas con Shift+Clic." />
+  <meta name="description" content="StackDock 4.0 by BLACK EYE — Native macOS Dock on 2, 3, or 4+ displays with 0.0% idle CPU. Split Chrome profiles and teleport windows with Shift+Click. 7-day free trial, no credit card." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://stackdock.iareal.net/" />
-  <meta property="og:title" content="StackDock 4.0 — Tu Dock de Mac en Cada Pantalla. 0.0% CPU." />
-  <meta property="og:description" content="Invoca Docks de cristal con ⌥+D, separa perfiles de Chrome en iconos propios y teletransporta ventanas entre monitores. 100% Swift Nativo." />
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:locale:alternate" content="es_MX" />
+  <meta property="og:title" content="StackDock 4.0 — Your Mac Dock on Every Display. 0.0% Idle CPU." />
+  <meta property="og:description" content="Summon frosted Docks with ⌥+D, split Chrome profiles into labeled icons, and teleport windows across monitors. Native Swift. Apple notarized." />
+  <link rel="canonical" href="https://stackdock.iareal.net/" id="canonical-link" />
+  <link rel="alternate" hreflang="en" href="https://stackdock.iareal.net/" />
+  <link rel="alternate" hreflang="es" href="https://stackdock.iareal.net/es/" />
+  <link rel="alternate" hreflang="x-default" href="https://stackdock.iareal.net/" />
+  <meta name="twitter:title" content="StackDock 4.0 — Your Mac Dock on Every Display. 0.0% Idle CPU." />
+  <meta name="twitter:description" content="Native multi-monitor Dock for macOS. 7-day free trial, no credit card. Personal $9.99 · Pro $19." />
   <!-- Favicons & OpenGraph Social Card -->
   <link rel="icon" type="image/svg+xml" href="./public/favicon.svg" />
   <link rel="icon" type="image/png" sizes="32x32" href="./public/favicon-32x32.png" />
@@ -23,7 +31,7 @@
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:image" content="https://stackdock.iareal.net/public/og-image.jpg" />
-  <title>StackDock v4.0 — Tu Dock de Mac en Cada Monitor. 0.0% CPU en Reposo.</title>
+  <title>StackDock v4.0 — Your Mac Dock on Every Display. 0.0% Idle CPU.</title>
 
   <!-- Tailwind CSS v3.4.17 (estático minificado — sin CDN) -->
   <link rel="stylesheet" href="./public/styles.min.css" />
@@ -167,6 +175,13 @@
       cursor: grabbing;
     }
   </style>
+  <script>
+    (function () {
+      var p = (location.pathname || '/').replace(/\/+$/, '') || '/';
+      window.__SD_LANG__ = (p === '/es' || p.indexOf('/es/') === 0) ? 'es' : 'en';
+      document.documentElement.lang = window.__SD_LANG__;
+    })();
+  </script>
 </head>
 
 <body id="top" class="font-sans selection:bg-[#0071E3] selection:text-white">
@@ -211,7 +226,7 @@
         <a href="#pricing"
           class="inline-flex items-center px-3.5 py-1.5 rounded-full text-xs font-semibold btn-apple-blue"
           data-i18n="nav_cta">
-          Comprar $9.99
+          Buy from $9.99
         </a>
 
         <!-- Mobile Menu Toggle (Visible < lg) -->
@@ -268,18 +283,17 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v12m0 0l-4-4m4 4l4-4M4 18h16" />
             </svg>
-            <span data-i18n="cta_trial">Descargar Prueba Gratis 7 Días (.dmg)</span>
+            <span data-i18n="cta_trial">7-Day Free Trial (No Credit Card)</span>
           </button>
 
           <button type="button" onclick="openActionModal('buy')"
             class="w-full sm:w-auto px-7 py-3.5 rounded-full text-[15px] font-semibold btn-apple-blue flex items-center justify-center gap-2.5 cursor-pointer">
-            <span data-i18n="cta_buy">Licencia Vitalicia — $9.99 USD</span>
-            <span class="text-xs font-mono text-white/75 line-through">$14.99</span>
+            <span data-i18n="cta_buy">Buy Now — from $9.99</span>
           </button>
         </div>
 
         <p class="mt-4 text-[13px] text-[#A1A1AA] font-medium" data-i18n="cta_subnote">
-          Pago único sin suscripciones • Hasta 3 Macs personales • macOS 13 Ventura a Tahoe • Licencia offline Ed25519
+          No credit card for trial • Personal $9.99 (1 Mac) · Pro $19 (3 Macs) • Offline Ed25519 license • macOS 13+
         </p>
       </div>
 
@@ -747,22 +761,16 @@
               <tr class="border-b border-white/15 bg-[#16161D] text-xs font-mono uppercase tracking-wider text-[#E4E4E7]">
                 <th class="py-4 px-6" data-i18n="cmp_col_feat">Capacidad</th>
                 <th class="py-4 px-6 bg-[#0071E3]/20 text-white font-bold border-x border-[#2997FF]/35">StackDock 4.0</th>
-                <th class="py-4 px-6">
-                  <a href="https://appish.app/dockish" target="_blank" rel="noopener noreferrer" class="underline decoration-white/30 hover:text-white">Dockish ↗</a>
-                </th>
-                <th class="py-4 px-6">
-                  <a href="https://betterdockapp.com/pricing/" target="_blank" rel="noopener noreferrer" class="underline decoration-white/30 hover:text-white">Better Dock Pro ↗</a>
-                </th>
-                <th class="py-4 px-6">
-                  <a href="https://apps.apple.com/us/app/docklock-plus/id6743010619?mt=12" target="_blank" rel="noopener noreferrer" class="underline decoration-white/30 hover:text-white">DockLock Plus ↗</a>
-                </th>
+                <th class="py-4 px-6 font-semibold text-[#E4E4E7]">Dockish</th>
+                <th class="py-4 px-6 font-semibold text-[#E4E4E7]">Better Dock Pro</th>
+                <th class="py-4 px-6 font-semibold text-[#E4E4E7]">DockLock Plus</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-white/10 text-sm text-[#E4E4E7]">
               <tr>
                 <td class="py-4 px-6 font-semibold text-[#F5F5F7]" data-i18n="cmp_r1">Precio</td>
                 <td class="py-4 px-6 bg-[#0071E3]/10 border-x border-[#2997FF]/30 font-mono font-bold text-[#30D158]">
-                  $9.99 <span class="text-xs text-[#A1A1AA] line-through">$14.99</span>
+                  $9.99 / $19
                 </td>
                 <td class="py-4 px-6 font-mono text-[#D4D4D8]">$6.99 – $9.99</td>
                 <td class="py-4 px-6 font-mono text-[#FF6961]">$59/año o $159</td>
@@ -814,57 +822,70 @@
   <section id="pricing" class="py-20 lg:py-28 bg-[#0A0A0D] border-t border-white/[0.08]">
     <div id="buy" class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
 
-      <!-- Apple Clean Checkout Card -->
-      <div class="max-w-xl mx-auto apple-card rounded-[30px] p-8 sm:p-11 border border-white/20 mb-20">
-        <div class="flex items-center justify-between gap-2 mb-6">
-          <span class="px-3.5 py-1 rounded-full text-xs font-mono font-bold bg-[#0071E3]/25 text-[#64D2FF] border border-[#2997FF]/45" data-i18n="pr_badge">
-            PRECIO DE LANZAMIENTO • AHORRA 33%
-          </span>
-          <span class="text-xs font-mono text-[#A1A1AA]">CryptoKit Ed25519</span>
-        </div>
+      <div class="text-center max-w-2xl mx-auto mb-10">
+        <p class="text-xs font-mono uppercase tracking-widest text-[#A1A1AA] font-semibold mb-2.5" data-i18n="pr_eyebrow">LIFETIME LICENSING</p>
+        <h2 class="text-3xl sm:text-5xl font-extrabold text-[#F5F5F7] apple-h2" data-i18n="pr_section_title">Simple pricing. Own it forever.</h2>
+        <p class="mt-3 text-base text-[#D4D4D8]" data-i18n="pr_section_sub">7-day full free trial — no credit card. Then pick Personal or Pro.</p>
+      </div>
 
-        <h2 class="text-3xl sm:text-4xl font-extrabold text-[#F5F5F7] tracking-tight" data-i18n="pr_title">StackDock Pro</h2>
-        <p class="text-base text-[#D4D4D8] mt-1.5" data-i18n="pr_sub">Paga una sola vez. Úsalo para siempre sin cuentas ni suscripciones.</p>
-
-        <div class="my-8 flex items-baseline gap-3">
-          <span class="text-5xl sm:text-6xl font-extrabold tracking-tight text-[#F5F5F7]">$9.99</span>
-          <span class="text-xl font-mono text-[#A1A1AA] line-through">$14.99</span>
-          <span class="text-xs font-mono font-semibold text-[#30D158] uppercase" data-i18n="pr_usd">USD • PAGO ÚNICO</span>
-        </div>
-
-        <ul class="space-y-3.5 text-[15px] text-[#E4E4E7] mb-9">
-          <li class="flex items-start gap-3">
-            <span class="text-[#30D158] font-bold mt-0.5">✓</span>
-            <span data-i18n="pr_f1">Licencia válida hasta en <strong class="text-white">3 Macs personales</strong> (Apple Silicon M1–M4 e Intel)</span>
-          </li>
-          <li class="flex items-start gap-3">
-            <span class="text-[#30D158] font-bold mt-0.5">✓</span>
-            <span data-i18n="pr_f2">Monitores ilimitados simultáneos (2, 3, 4 o más pantallas)</span>
-          </li>
-          <li class="flex items-start gap-3">
-            <span class="text-[#30D158] font-bold mt-0.5">✓</span>
-            <span data-i18n="pr_f3">Separador de perfiles de Chrome y editores + Teletransporte <span class="mac-kbd">Shift + Clic</span></span>
-          </li>
-          <li class="flex items-start gap-3">
-            <span class="text-[#30D158] font-bold mt-0.5">✓</span>
-            <span data-i18n="pr_f4">Entrega inmediata de clave offline (<code class="font-mono text-white">SDOCK-...</code>) por correo vía Stripe</span>
-          </li>
-          <li class="flex items-start gap-3">
-            <span class="text-[#30D158] font-bold mt-0.5">✓</span>
-            <span data-i18n="pr_f5">Instalador Universal <code class="font-mono text-white">.dmg</code> firmado con Developer ID y notarizado por Apple</span>
-          </li>
-        </ul>
-
-        <div class="space-y-3">
-          <button type="button" onclick="openActionModal('buy')"
-            class="w-full py-4 rounded-full text-base font-bold btn-apple-blue cursor-pointer" data-i18n="pr_btn_buy">
-            Comprar Licencia Vitalicia — $9.99 USD
-          </button>
-          <button type="button" onclick="openActionModal('trial')"
-            class="w-full py-3.5 rounded-full text-sm font-semibold btn-apple-secondary cursor-pointer" data-i18n="pr_btn_trial">
-            Descargar Prueba Gratis de 7 Días (.dmg)
+      <div class="grid md:grid-cols-2 gap-5 lg:gap-6 mb-8 max-w-4xl mx-auto">
+        <!-- Personal -->
+        <div class="apple-card rounded-[28px] p-7 sm:p-8 border border-white/15 flex flex-col">
+          <div class="flex items-center justify-between gap-2 mb-4">
+            <span class="text-xs font-mono font-bold text-[#A1A1AA]" data-i18n="pr_personal_badge">PERSONAL</span>
+            <span class="text-xs font-mono text-[#A1A1AA]">1 Mac</span>
+          </div>
+          <h3 class="text-2xl font-extrabold text-[#F5F5F7]" data-i18n="pr_personal_title">StackDock Personal</h3>
+          <p class="text-sm text-[#D4D4D8] mt-1.5" data-i18n="pr_personal_sub">One Mac. Full features. Lifetime updates.</p>
+          <div class="my-6 flex items-baseline gap-2">
+            <span class="text-5xl font-extrabold tracking-tight text-[#F5F5F7]">$9.99</span>
+            <span class="text-xs font-mono font-semibold text-[#30D158] uppercase" data-i18n="pr_usd">USD · ONE-TIME</span>
+          </div>
+          <ul class="space-y-2.5 text-sm text-[#E4E4E7] mb-7 flex-1">
+            <li class="flex gap-2"><span class="text-[#30D158]">✓</span><span data-i18n="pr_personal_f1">License for <strong class="text-white">1 Mac</strong></span></li>
+            <li class="flex gap-2"><span class="text-[#30D158]">✓</span><span data-i18n="pr_f2">Unlimited monitors</span></li>
+            <li class="flex gap-2"><span class="text-[#30D158]">✓</span><span data-i18n="pr_f3">Chrome profile split + Shift+Click teleport</span></li>
+            <li class="flex gap-2"><span class="text-[#30D158]">✓</span><span data-i18n="pr_f4">Offline Ed25519 key via email</span></li>
+          </ul>
+          <button type="button" onclick="openActionModal('buy_personal')"
+            class="w-full py-3.5 rounded-full text-sm font-bold btn-apple-secondary cursor-pointer" data-i18n="pr_btn_personal">
+            Buy Personal — $9.99
           </button>
         </div>
+
+        <!-- Pro (Most Popular) -->
+        <div class="apple-card rounded-[28px] p-7 sm:p-8 border border-[#2997FF]/55 relative flex flex-col shadow-[0_0_0_1px_rgba(41,151,255,0.25)]">
+          <div class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[11px] font-mono font-bold bg-[#0071E3] text-white" data-i18n="pr_popular">MOST POPULAR</div>
+          <div class="flex items-center justify-between gap-2 mb-4">
+            <span class="text-xs font-mono font-bold text-[#64D2FF]" data-i18n="pr_pro_badge">PRO</span>
+            <span class="text-xs font-mono text-[#A1A1AA]">3 Macs</span>
+          </div>
+          <h3 class="text-2xl font-extrabold text-[#F5F5F7]" data-i18n="pr_pro_title">StackDock Pro</h3>
+          <p class="text-sm text-[#D4D4D8] mt-1.5" data-i18n="pr_pro_sub">Up to 3 Macs. Best value for multi-machine desks.</p>
+          <div class="my-6 flex items-baseline gap-2">
+            <span class="text-5xl font-extrabold tracking-tight text-[#F5F5F7]">$19.00</span>
+            <span class="text-xs font-mono font-semibold text-[#30D158] uppercase" data-i18n="pr_usd">USD · ONE-TIME</span>
+          </div>
+          <ul class="space-y-2.5 text-sm text-[#E4E4E7] mb-7 flex-1">
+            <li class="flex gap-2"><span class="text-[#30D158]">✓</span><span data-i18n="pr_pro_f1">License for <strong class="text-white">3 Macs</strong></span></li>
+            <li class="flex gap-2"><span class="text-[#30D158]">✓</span><span data-i18n="pr_f2">Unlimited monitors</span></li>
+            <li class="flex gap-2"><span class="text-[#30D158]">✓</span><span data-i18n="pr_f3">Chrome profile split + Shift+Click teleport</span></li>
+            <li class="flex gap-2"><span class="text-[#30D158]">✓</span><span data-i18n="pr_f4">Offline Ed25519 key via email</span></li>
+            <li class="flex gap-2"><span class="text-[#30D158]">✓</span><span data-i18n="pr_pro_f5">Priority support · Findaro bundle bump available at checkout</span></li>
+          </ul>
+          <button type="button" onclick="openActionModal('buy_pro')"
+            class="w-full py-3.5 rounded-full text-sm font-bold btn-apple-blue cursor-pointer" data-i18n="pr_btn_pro">
+            Buy Pro — $19.00
+          </button>
+        </div>
+      </div>
+
+      <div class="max-w-md mx-auto mb-20">
+        <button type="button" onclick="openActionModal('trial')"
+          class="w-full py-3.5 rounded-full text-sm font-semibold btn-apple-white cursor-pointer" data-i18n="pr_btn_trial">
+          7-Day Free Trial (No Credit Card)
+        </button>
+        <p class="mt-3 text-center text-xs text-[#A1A1AA]" data-i18n="pr_trial_note">Full features for 7 days. Email optional for onboarding tips.</p>
       </div>
 
       <!-- Technical FAQ -->
@@ -910,43 +931,70 @@
 
   <!-- ================= FOOTER ================= -->
   <footer class="border-t border-white/10 py-10 bg-black">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#A1A1AA]">
-      <div class="flex items-center gap-2.5">
-        <span class="w-2 h-2 rounded-full bg-[#30D158]"></span>
-        <span>StackDock v4.0 • Creado por <strong class="text-[#F5F5F7]">BLACK EYE</strong> • 2026</span>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-6 text-xs text-[#A1A1AA]">
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-2.5">
+          <span class="w-2 h-2 rounded-full bg-[#30D158]"></span>
+          <span>StackDock v4.0 • Built by <strong class="text-[#F5F5F7]">BLACK EYE</strong> • 2026</span>
+        </div>
+        <div class="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 font-medium">
+          <span>macOS 13+ Universal</span>
+          <span>Developer ID Notarized · Team ID YH6W55MP95</span>
+          <a href="#pricing" class="text-[#64D2FF] hover:underline" data-i18n="footer_pricing">Personal $9.99 · Pro $19</a>
+        </div>
       </div>
-      <div class="flex items-center gap-6 font-medium">
-        <span>macOS 13+ Universal</span>
-        <span>Developer ID Notarized</span>
-        <a href="#pricing" class="text-[#64D2FF] hover:underline">$9.99 Vitalicio</a>
+      <div class="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 font-medium border-t border-white/10 pt-5">
+        <button type="button" onclick="openLegalModal('terms')" class="hover:text-white transition cursor-pointer" data-i18n="legal_terms">Terms</button>
+        <button type="button" onclick="openLegalModal('privacy')" class="hover:text-white transition cursor-pointer" data-i18n="legal_privacy">Privacy</button>
+        <button type="button" onclick="openLegalModal('refund')" class="hover:text-white transition cursor-pointer" data-i18n="legal_refund">14-Day Refund Policy</button>
+        <a href="mailto:stackdock@iareal.net" class="hover:text-white transition">stackdock@iareal.net</a>
+        <a href="https://wa.me/525645674407" target="_blank" rel="noopener noreferrer" class="hover:text-white transition">WhatsApp +52 56 4567 4407</a>
       </div>
     </div>
   </footer>
 
   <!-- ================= CHECKOUT / DOWNLOAD MODAL ================= -->
   <div id="action-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/80 backdrop-blur-xl">
-    <div class="apple-card max-w-md w-full rounded-[28px] p-7 border border-white/20 relative">
-      <button type="button" onclick="closeActionModal()" aria-label="Cerrar"
+    <div class="apple-card max-w-md w-full rounded-[28px] p-7 border border-white/20 relative max-h-[92vh] overflow-y-auto">
+      <button type="button" onclick="closeActionModal()" aria-label="Close"
         class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-[#F5F5F7] font-mono cursor-pointer">✕</button>
       <div class="w-11 h-11 rounded-2xl bg-[#0071E3]/20 border border-[#2997FF]/45 flex items-center justify-center text-[#64D2FF] mb-4 font-mono font-bold">SD</div>
-      <h4 id="modal-title" class="text-xl font-bold text-[#F5F5F7] mb-2">Descargar StackDock v4.0</h4>
-      <p id="modal-desc" class="text-sm text-[#D4D4D8] leading-relaxed mb-5">
-        Instalador Universal firmado y notarizado por Apple para macOS 13 o superior. Incluye 7 días de prueba completa.
+      <h4 id="modal-title" class="text-xl font-bold text-[#F5F5F7] mb-2">Download StackDock v4.0</h4>
+      <p id="modal-desc" class="text-sm text-[#D4D4D8] leading-relaxed mb-4">
+        Apple Signed &amp; Notarized Universal installer for macOS 13+. Full 7-day trial — no credit card.
       </p>
-      <div class="p-3.5 rounded-xl bg-black/70 border border-white/15 font-mono text-xs text-[#E4E4E7] mb-4 overflow-x-auto" id="modal-code">
-        StackDock-4.0.0.dmg • Universal (Apple Silicon & Intel)
+      <div id="modal-email-wrap" class="mb-4 hidden">
+        <label for="modal-email" class="block text-xs font-semibold text-[#A1A1AA] mb-1.5" data-i18n="modal_email_label">Email for trial tips (optional)</label>
+        <input id="modal-email" type="email" autocomplete="email" placeholder="you@company.com"
+          class="w-full px-3.5 py-2.5 rounded-xl bg-black/70 border border-white/15 text-sm text-[#F5F5F7] placeholder:text-[#71717A] focus:outline-none focus:border-[#2997FF]/60" />
+        <p class="mt-1.5 text-[11px] text-[#71717A]" data-i18n="modal_email_hint">We’ll send a short onboarding sequence via Resend. Skip anytime.</p>
+      </div>
+      <div class="p-3.5 rounded-xl bg-black/70 border border-white/15 font-mono text-[11px] text-[#E4E4E7] mb-3 overflow-x-auto space-y-1" id="modal-code">
+        <div>StackDock-4.0.0.dmg · Universal arm64 + x86_64</div>
+        <div id="modal-sha">SHA-256: __DMG_SHA256__</div>
+        <div id="modal-team">Apple Notarization Team ID: YH6W55MP95</div>
       </div>
       <div id="modal-feedback" class="hidden mb-4 p-3 rounded-xl bg-[#30D158]/15 border border-[#30D158]/40 text-xs text-[#86EFAC] font-medium"></div>
       <div class="flex flex-col gap-2.5">
         <button type="button" onclick="executeModalPrimaryAction()"
           class="w-full py-3.5 rounded-full font-bold text-sm btn-apple-blue cursor-pointer" id="modal-btn">
-          Continuar
+          Continue
         </button>
         <button type="button" onclick="copyInstallVerifyCmd()"
           class="w-full py-2.5 rounded-full font-mono text-xs btn-apple-secondary cursor-pointer" id="modal-copy-btn">
-          Copiar comando spctl de verificación Apple
+          Copy Apple spctl verification command
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- ================= LEGAL MODAL ================= -->
+  <div id="legal-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/80 backdrop-blur-xl">
+    <div class="apple-card max-w-lg w-full rounded-[28px] p-7 border border-white/20 relative max-h-[85vh] overflow-y-auto">
+      <button type="button" onclick="closeLegalModal()" aria-label="Close"
+        class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-[#F5F5F7] font-mono cursor-pointer">✕</button>
+      <h4 id="legal-title" class="text-xl font-bold text-[#F5F5F7] mb-3 pr-8">Terms</h4>
+      <div id="legal-body" class="text-sm text-[#D4D4D8] leading-relaxed space-y-3"></div>
     </div>
   </div>
 
@@ -976,15 +1024,29 @@
     // Stripe: inyectable en Coolify via STRIPE_CHECKOUT_URL → sed de __STRIPE_CHECKOUT_URL__
     // Sin Payment Link aún: cae a #buy (sección id="buy" en esta landing).
     const STACKDOCK_CONFIG = {
+      stripePersonalUrl: '__STRIPE_CHECKOUT_URL_PERSONAL__',
+      stripeProUrl: '__STRIPE_CHECKOUT_URL_PRO__',
       stripeCheckoutUrl: '__STRIPE_CHECKOUT_URL__',
+      trialWebhookUrl: '__TRIAL_WEBHOOK_URL__',
       dmgDownloadUrl: 'https://stackdock.iareal.net/download/StackDock-4.0.0.dmg',
+      dmgSha256: '__DMG_SHA256__',
+      appleTeamId: 'YH6W55MP95',
+      supportEmail: 'stackdock@iareal.net',
       verifyCmd: 'spctl --assess --type execute -vv /Applications/StackDock.app'
     };
-    if (!STACKDOCK_CONFIG.stripeCheckoutUrl || STACKDOCK_CONFIG.stripeCheckoutUrl.includes('__STRIPE_CHECKOUT_URL__')) {
-      STACKDOCK_CONFIG.stripeCheckoutUrl = '#buy';
+    function resolveCheckoutPlaceholder(val, fallback) {
+      if (!val || String(val).includes('__STRIPE_CHECKOUT') || String(val).includes('__TRIAL_WEBHOOK')) return fallback;
+      return val;
+    }
+    STACKDOCK_CONFIG.stripePersonalUrl = resolveCheckoutPlaceholder(STACKDOCK_CONFIG.stripePersonalUrl, resolveCheckoutPlaceholder(STACKDOCK_CONFIG.stripeCheckoutUrl, '#buy'));
+    STACKDOCK_CONFIG.stripeProUrl = resolveCheckoutPlaceholder(STACKDOCK_CONFIG.stripeProUrl, STACKDOCK_CONFIG.stripePersonalUrl);
+    STACKDOCK_CONFIG.stripeCheckoutUrl = resolveCheckoutPlaceholder(STACKDOCK_CONFIG.stripeCheckoutUrl, '#buy');
+    STACKDOCK_CONFIG.trialWebhookUrl = resolveCheckoutPlaceholder(STACKDOCK_CONFIG.trialWebhookUrl, '');
+    if (!STACKDOCK_CONFIG.dmgSha256 || STACKDOCK_CONFIG.dmgSha256.includes('__DMG_SHA256__')) {
+      STACKDOCK_CONFIG.dmgSha256 = '3449e4976099f77f5b083fe9e4a5c6cfe01087821010dc13768eddac7f4a8920';
     }
 
-    let currentLang = 'es';
+    let currentLang = (typeof window.__SD_LANG__ === 'string') ? window.__SD_LANG__ : 'en';
     let currentModalMode = 'trial';
 
     // =========================================================================
@@ -998,13 +1060,13 @@
         nav_captures: 'Capturas M4',
         nav_compare: 'Comparativa',
         nav_pricing: 'Licencia',
-        nav_cta: 'Comprar $9.99',
+        nav_cta: 'Comprar desde $9.99',
         hero_badge: '100% Swift Nativo • Apple Silicon M1–M4 e Intel • Firmado y Notarizado por Apple',
         hero_h1: 'Tu Dock de Mac en cada pantalla.<br class="hidden sm:inline" /> Instantáneo. 0.0% CPU en reposo.',
         hero_sub: 'En monitores apilados o múltiples, macOS atrapa tu Dock en una sola pantalla. StackDock proyecta un Dock nativo de cristal en tus <strong class="text-white font-semibold">2, 3 o 4+ monitores</strong>: invócalo al instante con <span class="mac-kbd">⌥ + D</span>, separa perfiles de Chrome en iconos propios y mueve ventanas de pantalla con <span class="mac-kbd">Shift + Clic</span>.',
-        cta_trial: 'Descargar Prueba Gratis 7 Días (.dmg)',
-        cta_buy: 'Licencia Vitalicia — $9.99 USD',
-        cta_subnote: 'Pago único sin suscripciones • Hasta 3 Macs personales • macOS 13 Ventura a Tahoe • Licencia offline Ed25519',
+        cta_trial: 'Prueba gratis 7 días (sin tarjeta)',
+        cta_buy: 'Comprar — desde $9.99',
+        cta_subnote: 'Sin tarjeta en la prueba • Personal $9.99 (1 Mac) · Pro $19 (3 Macs) • Licencia offline Ed25519 • macOS 13+',
         stage_title: 'Estudio Interactivo 3D — Apple Studio Display 27" + Monitor Secundario 15.6" + Mac mini M4',
         cam_front: 'Frontal',
         cam_iso: 'Ángulo Estudio',
@@ -1098,17 +1160,39 @@
         cmp_opt_prev: 'Al activar vistas previas',
         cmp_req: 'Requerido para vistas en vivo',
         cmp_not_req: 'No requerido',
-        pr_badge: 'PRECIO DE LANZAMIENTO • AHORRA 33%',
+        pr_eyebrow: 'LICENCIAS VITALICIAS',
+        pr_section_title: 'Precio simple. Tuyo para siempre.',
+        pr_section_sub: 'Prueba completa 7 días — sin tarjeta. Luego elige Personal o Pro.',
+        pr_badge: 'PRECIO DE LANZAMIENTO',
         pr_title: 'StackDock Pro',
-        pr_sub: 'Paga una sola vez. Úsalo para siempre sin cuentas ni suscripciones.',
-        pr_usd: 'USD • PAGO ÚNICO',
-        pr_f1: 'Licencia válida hasta en <strong class="text-white">3 Macs personales</strong> (Apple Silicon M1–M4 e Intel)',
-        pr_f2: 'Monitores ilimitados simultáneos (2, 3, 4 o más pantallas)',
-        pr_f3: 'Separador de perfiles de Chrome y editores + Teletransporte <span class="mac-kbd">Shift + Clic</span>',
-        pr_f4: 'Entrega inmediata de clave offline (<code class="font-mono text-white">SDOCK-...</code>) por correo vía Stripe',
-        pr_f5: 'Instalador Universal <code class="font-mono text-white">.dmg</code> firmado con Developer ID y notarizado por Apple',
-        pr_btn_buy: 'Comprar Licencia Vitalicia — $9.99 USD',
-        pr_btn_trial: 'Descargar Prueba Gratis de 7 Días (.dmg)',
+        pr_sub: 'Paga una sola vez. Sin cuentas ni suscripciones.',
+        pr_usd: 'USD · PAGO ÚNICO',
+        pr_personal_badge: 'PERSONAL',
+        pr_personal_title: 'StackDock Personal',
+        pr_personal_sub: 'Una Mac. Todas las funciones. Actualizaciones de por vida.',
+        pr_personal_f1: 'Licencia para <strong class="text-white">1 Mac</strong>',
+        pr_pro_badge: 'PRO',
+        pr_pro_title: 'StackDock Pro',
+        pr_pro_sub: 'Hasta 3 Macs. Mejor valor para escritorios multi-máquina.',
+        pr_pro_f1: 'Licencia para <strong class="text-white">3 Macs</strong>',
+        pr_pro_f5: 'Soporte prioritario · Bundle Findaro disponible en checkout',
+        pr_popular: 'MÁS POPULAR',
+        pr_f1: 'Licencia válida hasta en <strong class="text-white">3 Macs</strong>',
+        pr_f2: 'Monitores ilimitados simultáneos',
+        pr_f3: 'Perfiles Chrome + Teletransporte <span class="mac-kbd">Shift + Clic</span>',
+        pr_f4: 'Clave offline Ed25519 por correo',
+        pr_f5: 'Instalador Universal .dmg notarizado por Apple',
+        pr_btn_buy: 'Comprar — desde $9.99',
+        pr_btn_personal: 'Comprar Personal — $9.99',
+        pr_btn_pro: 'Comprar Pro — $19.00',
+        pr_btn_trial: 'Prueba gratis 7 días (sin tarjeta)',
+        pr_trial_note: 'Funciones completas 7 días. Email opcional para tips de onboarding.',
+        footer_pricing: 'Personal $9.99 · Pro $19',
+        legal_terms: 'Términos',
+        legal_privacy: 'Privacidad',
+        legal_refund: 'Reembolso 14 días',
+        modal_email_label: 'Email para tips de prueba (opcional)',
+        modal_email_hint: 'Enviamos una secuencia corta vía Resend. Puedes omitirlo.',
         faq_title: 'Preguntas Frecuentes',
         faq_q1: '¿Por qué StackDock no pide permiso de Grabación de Pantalla?',
         faq_a1: 'Prescindimos deliberadamente de miniaturas de video continuo (ScreenCaptureKit) porque grabar tus ventanas todo el día consume más de 200 MB de RAM. StackDock consulta títulos y coordenadas mediante la API ligera de Accesibilidad de macOS solo cuando interactúas, logrando 0.0% de CPU en reposo.',
@@ -1124,13 +1208,13 @@
         nav_captures: 'M4 Captures',
         nav_compare: 'Compare',
         nav_pricing: 'Pricing',
-        nav_cta: 'Buy $9.99',
+        nav_cta: 'Buy from $9.99',
         hero_badge: '100% Native Swift • Apple Silicon M1–M4 & Intel • Apple Signed & Notarized',
         hero_h1: 'Your Mac Dock on every display.<br class="hidden sm:inline" /> Instantaneous. 0.0% Idle CPU.',
         hero_sub: 'On stacked or multi-monitor setups, macOS traps your Dock on a single screen. StackDock renders a crisp frosted-glass Dock across <strong class="text-white font-semibold">2, 3, or 4+ displays</strong>: summon instantly with <span class="mac-kbd">⌥ + D</span>, split Chrome profiles into labeled icons, and teleport windows with <span class="mac-kbd">Shift + Click</span>.',
-        cta_trial: 'Download 7-Day Free Trial (.dmg)',
-        cta_buy: 'Lifetime License — $9.99 USD',
-        cta_subnote: 'One-time payment • Up to 3 personal Macs • macOS 13 Ventura to Tahoe • Offline Ed25519 key',
+        cta_trial: '7-Day Free Trial (No Credit Card)',
+        cta_buy: 'Buy Now — from $9.99',
+        cta_subnote: 'No credit card for trial • Personal $9.99 (1 Mac) · Pro $19 (3 Macs) • Offline Ed25519 license • macOS 13+',
         stage_title: 'Interactive 3D Studio — 27" Apple Studio Display + 15.6" Secondary Monitor + Mac mini M4',
         cam_front: 'Front View',
         cam_iso: 'Studio Angle',
@@ -1224,17 +1308,39 @@
         cmp_opt_prev: 'When previews enabled',
         cmp_req: 'Required for live previews',
         cmp_not_req: 'Not required',
-        pr_badge: 'LAUNCH OFFER • SAVE 33%',
+        pr_eyebrow: 'LIFETIME LICENSING',
+        pr_section_title: 'Simple pricing. Own it forever.',
+        pr_section_sub: '7-day full free trial — no credit card. Then pick Personal or Pro.',
+        pr_badge: 'LAUNCH OFFER',
         pr_title: 'StackDock Pro',
         pr_sub: 'Pay once. Own forever with zero accounts and zero subscriptions.',
-        pr_usd: 'USD • ONE-TIME',
-        pr_f1: 'Valid on up to <strong class="text-white">3 personal Macs</strong> (Apple Silicon M1–M4 & Intel)',
-        pr_f2: 'Unlimited connected monitors (2, 3, 4+ displays)',
-        pr_f3: 'Chrome & editor profile splitter + <span class="mac-kbd">Shift + Click</span> Window Teleporter',
-        pr_f4: 'Instant offline Ed25519 key (<code class="font-mono text-white">SDOCK-...</code>) emailed via Stripe',
-        pr_f5: 'Apple Developer ID Signed & Notarized Universal <code class="font-mono text-white">.dmg</code>',
-        pr_btn_buy: 'Buy Lifetime License — $9.99 USD',
-        pr_btn_trial: 'Download Free 7-Day Trial (.dmg)',
+        pr_usd: 'USD · ONE-TIME',
+        pr_personal_badge: 'PERSONAL',
+        pr_personal_title: 'StackDock Personal',
+        pr_personal_sub: 'One Mac. Full features. Lifetime updates.',
+        pr_personal_f1: 'License for <strong class="text-white">1 Mac</strong>',
+        pr_pro_badge: 'PRO',
+        pr_pro_title: 'StackDock Pro',
+        pr_pro_sub: 'Up to 3 Macs. Best value for multi-machine desks.',
+        pr_pro_f1: 'License for <strong class="text-white">3 Macs</strong>',
+        pr_pro_f5: 'Priority support · Findaro bundle bump available at checkout',
+        pr_popular: 'MOST POPULAR',
+        pr_f1: 'Valid on up to <strong class="text-white">3 Macs</strong>',
+        pr_f2: 'Unlimited connected monitors',
+        pr_f3: 'Chrome profile splitter + <span class="mac-kbd">Shift + Click</span> teleport',
+        pr_f4: 'Offline Ed25519 key emailed via Stripe',
+        pr_f5: 'Apple Developer ID Signed & Notarized Universal .dmg',
+        pr_btn_buy: 'Buy Now — from $9.99',
+        pr_btn_personal: 'Buy Personal — $9.99',
+        pr_btn_pro: 'Buy Pro — $19.00',
+        pr_btn_trial: '7-Day Free Trial (No Credit Card)',
+        pr_trial_note: 'Full features for 7 days. Email optional for onboarding tips.',
+        footer_pricing: 'Personal $9.99 · Pro $19',
+        legal_terms: 'Terms',
+        legal_privacy: 'Privacy',
+        legal_refund: '14-Day Refund Policy',
+        modal_email_label: 'Email for trial tips (optional)',
+        modal_email_hint: 'We’ll send a short onboarding sequence via Resend. Skip anytime.',
         faq_title: 'Frequently Asked Questions',
         faq_q1: 'Why doesn’t StackDock ask for Screen Recording permission?',
         faq_a1: 'We deliberately skipped continuous video thumbnails (ScreenCaptureKit) because recording windows nonstop consumes 200+ MB of RAM. StackDock queries window titles and frames via lightweight macOS Accessibility APIs only on interaction—keeping idle CPU at 0.0%.',
@@ -1245,25 +1351,44 @@
       }
     };
 
-    function applyLanguage(lang) {
-      currentLang = lang;
-      document.documentElement.lang = lang;
+    function langPath(lang) {
+      return lang === 'es' ? '/es/' : '/';
+    }
+
+    function syncLangUrl(lang) {
+      const nextPath = langPath(lang);
+      const next = nextPath + (location.hash || '');
+      const cur = (location.pathname.replace(/\/+$/, '') || '/') + '/';
+      const want = nextPath;
+      if (cur !== want) history.replaceState(null, '', next);
+      const canon = document.getElementById('canonical-link');
+      if (canon) canon.setAttribute('href', 'https://stackdock.iareal.net' + nextPath);
+      document.title = lang === 'es'
+        ? 'StackDock v4.0 — Tu Dock de Mac en Cada Monitor. 0.0% CPU en Reposo.'
+        : 'StackDock v4.0 — Your Mac Dock on Every Display. 0.0% Idle CPU.';
+    }
+
+    function applyLanguage(lang, opts) {
+      currentLang = lang === 'es' ? 'es' : 'en';
+      window.__SD_LANG__ = currentLang;
+      document.documentElement.lang = currentLang;
       document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
-        if (dict[lang] && dict[lang][key]) {
-          el.innerHTML = dict[lang][key];
+        if (dict[currentLang] && dict[currentLang][key]) {
+          el.innerHTML = dict[currentLang][key];
         }
       });
 
       const esPill = document.getElementById('lang-es-pill');
       const enPill = document.getElementById('lang-en-pill');
-      if (lang === 'es') {
+      if (currentLang === 'es') {
         esPill.className = 'px-1.5 py-0.5 rounded-full bg-[#F5F5F7] text-black';
         enPill.className = 'px-1.5 py-0.5 rounded-full text-[#D4D4D8]';
       } else {
         enPill.className = 'px-1.5 py-0.5 rounded-full bg-[#F5F5F7] text-black';
         esPill.className = 'px-1.5 py-0.5 rounded-full text-[#D4D4D8]';
       }
+      if (!opts || opts.updateUrl !== false) syncLangUrl(currentLang);
       updateProfileBadgeTextures();
       refreshDynamicBadges();
     }
@@ -1334,26 +1459,42 @@
       const modal = document.getElementById('action-modal');
       const title = document.getElementById('modal-title');
       const desc = document.getElementById('modal-desc');
-      const code = document.getElementById('modal-code');
       const btn = document.getElementById('modal-btn');
       const copyBtn = document.getElementById('modal-copy-btn');
       const fb = document.getElementById('modal-feedback');
+      const emailWrap = document.getElementById('modal-email-wrap');
+      const emailInput = document.getElementById('modal-email');
+      const shaEl = document.getElementById('modal-sha');
+      const teamEl = document.getElementById('modal-team');
       fb.classList.add('hidden');
+      if (emailInput) emailInput.value = '';
 
-      if (mode === 'trial') {
+      if (shaEl) shaEl.textContent = 'SHA-256: ' + STACKDOCK_CONFIG.dmgSha256;
+      if (teamEl) teamEl.textContent = 'Apple Notarization Team ID: ' + STACKDOCK_CONFIG.appleTeamId;
+
+      const isTrial = mode === 'trial';
+      if (emailWrap) emailWrap.classList.toggle('hidden', !isTrial);
+
+      if (isTrial) {
         title.textContent = currentLang === 'es' ? 'Descargar StackDock 4.0 (Prueba 7 Días)' : 'Download StackDock 4.0 (7-Day Trial)';
         desc.textContent = currentLang === 'es'
-          ? 'Binario Universal firmado y notarizado por Apple (macOS 13 Ventura a Tahoe). Sin tarjeta ni registro.'
-          : 'Apple Signed & Notarized Universal Binary (macOS 13 Ventura to Tahoe). No card or account required.';
-        code.textContent = 'StackDock-4.0.0.dmg • Universal arm64 + x86_64 • 0.0% Idle CPU';
-        btn.textContent = currentLang === 'es' ? 'Descargar Instalador .dmg' : 'Download .dmg Installer';
-      } else {
-        title.textContent = currentLang === 'es' ? 'StackDock Pro — Licencia Vitalicia ($9.99)' : 'StackDock Pro — Lifetime License ($9.99)';
+          ? 'Binario Universal firmado y notarizado por Apple (macOS 13+). Sin tarjeta. Email opcional para tips.'
+          : 'Apple Signed & Notarized Universal Binary (macOS 13+). No credit card. Optional email for tips.';
+        btn.textContent = currentLang === 'es' ? 'Descargar .dmg (sin tarjeta)' : 'Download .dmg (No Credit Card)';
+      } else if (mode === 'buy_personal') {
+        title.textContent = currentLang === 'es' ? 'StackDock Personal — $9.99' : 'StackDock Personal — $9.99';
         desc.textContent = currentLang === 'es'
-          ? 'Pago único seguro con Stripe. Recibes al instante tu clave offline Ed25519 (SDOCK-...) válida hasta en 3 Macs.'
-          : 'Secure one-time Stripe checkout. Receive your offline Ed25519 key (SDOCK-...) via email instantly for up to 3 Macs.';
-        code.textContent = 'Stripe Checkout • $9.99 USD Once • Up to 3 Personal Macs';
-        btn.textContent = currentLang === 'es' ? 'Ir al Checkout Seguro ($9.99 USD)' : 'Proceed to Secure Checkout ($9.99 USD)';
+          ? 'Pago único Stripe. Clave offline Ed25519 para 1 Mac por correo.'
+          : 'One-time Stripe checkout. Offline Ed25519 key for 1 Mac emailed instantly.';
+        btn.textContent = currentLang === 'es' ? 'Ir al Checkout ($9.99)' : 'Proceed to Checkout ($9.99)';
+      } else {
+        // buy / buy_pro default to Pro
+        currentModalMode = 'buy_pro';
+        title.textContent = currentLang === 'es' ? 'StackDock Pro — $19.00' : 'StackDock Pro — $19.00';
+        desc.textContent = currentLang === 'es'
+          ? 'Pago único Stripe. Clave offline Ed25519 válida en hasta 3 Macs.'
+          : 'One-time Stripe checkout. Offline Ed25519 key valid on up to 3 Macs.';
+        btn.textContent = currentLang === 'es' ? 'Ir al Checkout ($19.00)' : 'Proceed to Checkout ($19.00)';
       }
 
       copyBtn.textContent = currentLang === 'es'
@@ -1370,11 +1511,102 @@
       modal.classList.remove('flex');
     }
 
-    function executeModalPrimaryAction() {
-      const targetUrl = currentModalMode === 'trial'
-        ? STACKDOCK_CONFIG.dmgDownloadUrl
-        : STACKDOCK_CONFIG.stripeCheckoutUrl;
+    function isValidEmail(v) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v || '').trim());
+    }
+
+    async function postTrialLead(email) {
+      const url = STACKDOCK_CONFIG.trialWebhookUrl;
+      if (!url || !email) return;
+      const payload = {
+        event: 'stackdock.trial.lead',
+        email: email,
+        locale: currentLang,
+        product: 'stackdock',
+        version: '4.0.0',
+        source: 'landing_download_modal',
+        dmg_url: STACKDOCK_CONFIG.dmgDownloadUrl,
+        dmg_sha256: STACKDOCK_CONFIG.dmgSha256,
+        team_id: STACKDOCK_CONFIG.appleTeamId,
+        ts: new Date().toISOString()
+      };
+      try {
+        await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          mode: 'cors',
+          keepalive: true
+        });
+      } catch (e) {
+        // Non-blocking: download must proceed even if webhook fails
+      }
+    }
+
+    async function executeModalPrimaryAction() {
+      if (currentModalMode === 'trial') {
+        const emailInput = document.getElementById('modal-email');
+        const email = (emailInput && emailInput.value || '').trim();
+        if (email && !isValidEmail(email)) {
+          const fb = document.getElementById('modal-feedback');
+          fb.textContent = currentLang === 'es' ? 'Revisa el email o déjalo vacío.' : 'Check the email or leave it blank.';
+          fb.classList.remove('hidden');
+          return;
+        }
+        if (email) await postTrialLead(email);
+        window.location.href = STACKDOCK_CONFIG.dmgDownloadUrl;
+        return;
+      }
+      const targetUrl = currentModalMode === 'buy_personal'
+        ? STACKDOCK_CONFIG.stripePersonalUrl
+        : STACKDOCK_CONFIG.stripeProUrl;
       window.location.href = targetUrl;
+    }
+
+    const LEGAL_COPY = {
+      en: {
+        terms: {
+          title: 'Terms of Service',
+          body: '<p>StackDock is a macOS utility sold by BLACK EYE. A Personal license covers 1 Mac; Pro covers up to 3 Macs. Licenses are delivered as offline Ed25519 keys (SDOCK-...) after Stripe payment.</p><p>You may not redistribute the binary or license keys. The software is provided as-is for personal or internal business use on authorized Macs.</p><p>Contact: <a class="text-[#64D2FF]" href="mailto:stackdock@iareal.net">stackdock@iareal.net</a></p>'
+        },
+        privacy: {
+          title: 'Privacy Policy',
+          body: '<p>We collect only what is needed to fulfill purchases and optional trial onboarding: Stripe checkout email, optional trial email, and license delivery metadata.</p><p>StackDock validates licenses offline on-device; we do not require a permanent account or continuous cloud check-in.</p><p>Emails are sent via Resend. Payment processing is handled by Stripe. Support: stackdock@iareal.net · WhatsApp +52 56 4567 4407.</p>'
+        },
+        refund: {
+          title: '14-Day Refund Policy',
+          body: '<p>If StackDock does not work as described on a supported Mac (macOS 13+), email <a class="text-[#64D2FF]" href="mailto:stackdock@iareal.net">stackdock@iareal.net</a> within 14 days of purchase for a full refund.</p><p>Include your Stripe receipt email and order ID. License keys associated with refunded orders are revoked.</p>'
+        }
+      },
+      es: {
+        terms: {
+          title: 'Términos de Servicio',
+          body: '<p>StackDock es una utilidad de macOS de BLACK EYE. La licencia Personal cubre 1 Mac; Pro hasta 3 Macs. Las claves offline Ed25519 (SDOCK-...) se entregan tras el pago en Stripe.</p><p>No está permitido redistribuir el binario ni las claves. El software se ofrece tal cual para uso personal o interno en Macs autorizadas.</p><p>Contacto: <a class="text-[#64D2FF]" href="mailto:stackdock@iareal.net">stackdock@iareal.net</a></p>'
+        },
+        privacy: {
+          title: 'Política de Privacidad',
+          body: '<p>Recolectamos solo lo necesario para compras y onboarding opcional de prueba: email de Stripe, email opcional de trial y metadatos de entrega de licencia.</p><p>StackDock valida licencias offline en el dispositivo; no exige cuenta permanente ni check-in continuo.</p><p>Correos vía Resend. Pagos vía Stripe. Soporte: stackdock@iareal.net · WhatsApp +52 56 4567 4407.</p>'
+        },
+        refund: {
+          title: 'Política de Reembolso 14 Días',
+          body: '<p>Si StackDock no funciona como se describe en un Mac soportado (macOS 13+), escribe a <a class="text-[#64D2FF]" href="mailto:stackdock@iareal.net">stackdock@iareal.net</a> dentro de 14 días para reembolso completo.</p><p>Incluye el email del recibo Stripe y el ID de pedido. Las claves de pedidos reembolsados se revocan.</p>'
+        }
+      }
+    };
+
+    function openLegalModal(kind) {
+      const pack = (LEGAL_COPY[currentLang] || LEGAL_COPY.en)[kind] || LEGAL_COPY.en.terms;
+      document.getElementById('legal-title').textContent = pack.title;
+      document.getElementById('legal-body').innerHTML = pack.body;
+      const m = document.getElementById('legal-modal');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+    }
+
+    function closeLegalModal() {
+      const m = document.getElementById('legal-modal');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
     }
 
     function copyInstallVerifyCmd() {
@@ -2363,9 +2595,13 @@
         trigger3DDockToggle();
       } else if (e.key === 'Escape') {
         closeActionModal();
+        closeLegalModal();
         closeLightbox();
       }
     });
+
+    // Apply EN (default /) or ES (/es) before first paint interactions
+    applyLanguage(currentLang, { updateUrl: true });
 
     window.onload = function () {
       initStudio3D();

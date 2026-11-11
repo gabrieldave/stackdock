@@ -1,0 +1,90 @@
+{
+  "name": "StackDock — Trial Lead → Resend Sequence",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "stackdock-trial-lead",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "wh-trial",
+      "name": "Webhook Trial Lead",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "stackdock-trial-lead"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, event: 'stackdock.trial.lead' } }}",
+        "options": {}
+      },
+      "id": "resp-ok",
+      "name": "Respond OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [220, 0]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.email || $json.email }}",
+              "operation": "regex",
+              "value2": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
+            }
+          ]
+        }
+      },
+      "id": "if-email",
+      "name": "Valid Email?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [440, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $json.body || $json;\nconst email = String(body.email || '').trim().toLowerCase();\nconst locale = body.locale === 'es' ? 'es' : 'en';\nconst dmg = body.dmg_url || 'https://stackdock.iareal.net/download/StackDock-4.0.0.dmg';\nconst sha = body.dmg_sha256 || '';\nconst team = body.team_id || 'YH6W55MP95';\nconst subjects = {\n  en: [\n    'Your StackDock 7-day trial starts now',\n    'Summon docks on every display',\n    'Split Chrome Work / Personal icons',\n    'Teleport windows with Shift+Click',\n    'Trial ends today — keep StackDock'\n  ],\n  es: [\n    'Tu prueba de StackDock (7 días) ya empezó',\n    'Invoca el Dock en cada pantalla',\n    'Separa iconos de Chrome Trabajo / Personal',\n    'Teletransporta ventanas con Shift+Clic',\n    'La prueba termina hoy — quédate con StackDock'\n  ]\n};\nconst ctaPersonal = $env.STRIPE_CHECKOUT_URL_PERSONAL || 'https://stackdock.iareal.net/#pricing';\nconst ctaPro = $env.STRIPE_CHECKOUT_URL_PRO || 'https://stackdock.iareal.net/#pricing';\nreturn [{\n  json: {\n    email,\n    locale,\n    dmg_url: dmg,\n    dmg_sha256: sha,\n    team_id: team,\n    subject1: subjects[locale][0],\n    subject2: subjects[locale][1],\n    subject3: subjects[locale][2],\n    subject4: subjects[locale][3],\n    subject5: subjects[locale][4],\n    cta_personal: ctaPersonal,\n    cta_pro: ctaPro,\n    html1: `<p>Download: <a href=\"${dmg}\">${dmg}</a></p><p>SHA-256: <code>${sha}</code><br/>Apple Team ID: <code>${team}</code></p><p>Tip: press ⌥+D to summon StackDock on every display.</p>`\n  }\n}];"
+      },
+      "id": "prep",
+      "name": "Prep Sequence Fields",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, -40]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.resend.com/emails",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"from\": \"StackDock <stackdock@iareal.net>\",\n  \"to\": [\"{{ $json.email }}\"],\n  \"subject\": \"{{ $json.subject1 }}\",\n  \"html\": {{ JSON.stringify($json.html1) }}\n}",
+        "options": {}
+      },
+      "id": "resend-1",
+      "name": "Resend Email #1 (immediate)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [880, -40],
+      "notes": "Wire Header Auth with RESEND_API_KEY. Schedule #2–#5 via Wait (1d/3d/5d/7d) + Resend using subjects 2–5 and Soft CTAs to Personal/Pro."
+    }
+  ],
+  "connections": {
+    "Webhook Trial Lead": {
+      "main": [[{ "node": "Respond OK", "type": "main", "index": 0 }], [{ "node": "Valid Email?", "type": "main", "index": 0 }]]
+    },
+    "Valid Email?": {
+      "main": [[{ "node": "Prep Sequence Fields", "type": "main", "index": 0 }], []]
+    },
+    "Prep Sequence Fields": {
+      "main": [[{ "node": "Resend Email #1 (immediate)", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "meta": { "templateCredsSetupCompleted": false }
+}

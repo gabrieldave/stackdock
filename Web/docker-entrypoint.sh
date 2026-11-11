@@ -1,22 +1,28 @@
 #!/bin/sh
 set -eu
+
 SRC="/opt/stackdock-web"
 DST="/tmp/www"
-mkdir -p "$DST" \
-  /tmp/client_temp /tmp/proxy_temp /tmp/fastcgi_temp /tmp/uwsgi_temp /tmp/scgi_temp
+mkdir -p "$DST"
 cp -a "${SRC}/." "${DST}/"
 
-# nginx intenta chown de temp paths al UID 101; con cap_drop:ALL falla si no existen ya.
-if id -u nginx >/dev/null 2>&1; then
-  chown -R nginx:nginx \
-    /tmp/client_temp /tmp/proxy_temp /tmp/fastcgi_temp /tmp/uwsgi_temp /tmp/scgi_temp \
-    "$DST" 2>/dev/null || true
-fi
-
 INDEX="${DST}/index.html"
-STRIPE_URL="${STRIPE_CHECKOUT_URL:-}"
-if [ -n "$STRIPE_URL" ] && [ -f "$INDEX" ]; then
-  sed -i "s|__STRIPE_CHECKOUT_URL__|${STRIPE_URL}|g" "$INDEX"
-fi
+
+inject() {
+  # $1 placeholder  $2 value
+  ph="$1"
+  val="$2"
+  if [ -n "$val" ] && [ -f "$INDEX" ]; then
+    # Escape sed specials in value
+    esc=$(printf '%s' "$val" | sed -e 's/[\\/&|]/\\&/g')
+    sed -i "s|${ph}|${esc}|g" "$INDEX"
+  fi
+}
+
+inject '__STRIPE_CHECKOUT_URL__' "${STRIPE_CHECKOUT_URL:-}"
+inject '__STRIPE_CHECKOUT_URL_PERSONAL__' "${STRIPE_CHECKOUT_URL_PERSONAL:-${STRIPE_CHECKOUT_URL:-}}"
+inject '__STRIPE_CHECKOUT_URL_PRO__' "${STRIPE_CHECKOUT_URL_PRO:-}"
+inject '__TRIAL_WEBHOOK_URL__' "${TRIAL_WEBHOOK_URL:-}"
+inject '__DMG_SHA256__' "${DMG_SHA256:-3449e4976099f77f5b083fe9e4a5c6cfe01087821010dc13768eddac7f4a8920}"
 
 exec nginx -g 'daemon off;'
