@@ -1,0 +1,2613 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="description" content="StackDock 4.0 by BLACK EYE — Native macOS Dock on 2, 3, or 4+ displays with 0.0% idle CPU. Split Chrome profiles and teleport windows with Shift+Click. 7-day free trial, no credit card." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://stackdock.iareal.net/" />
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:locale:alternate" content="es_MX" />
+  <meta property="og:title" content="StackDock 4.0 — Your Mac Dock on Every Display. 0.0% Idle CPU." />
+  <meta property="og:description" content="Summon frosted Docks with ⌥+D, split Chrome profiles into labeled icons, and teleport windows across monitors. Native Swift. Apple notarized." />
+  <link rel="canonical" href="https://stackdock.iareal.net/" id="canonical-link" />
+  <link rel="alternate" hreflang="en" href="https://stackdock.iareal.net/" />
+  <link rel="alternate" hreflang="es" href="https://stackdock.iareal.net/es/" />
+  <link rel="alternate" hreflang="x-default" href="https://stackdock.iareal.net/" />
+  <meta name="twitter:title" content="StackDock 4.0 — Your Mac Dock on Every Display. 0.0% Idle CPU." />
+  <meta name="twitter:description" content="Native multi-monitor Dock for macOS. 7-day free trial, no credit card. Personal $9.99 · Pro $19." />
+  <!-- Favicons & OpenGraph Social Card -->
+  <link rel="icon" type="image/svg+xml" href="./public/favicon.svg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="./public/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="./public/favicon-16x16.png" />
+  <link rel="shortcut icon" href="./public/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./public/apple-touch-icon.png" />
+  <link rel="manifest" href="./public/site.webmanifest" />
+  <meta property="og:image" content="https://stackdock.iareal.net/public/og-image.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://stackdock.iareal.net/public/og-image.jpg" />
+  <title>StackDock v4.0 — Your Mac Dock on Every Display. 0.0% Idle CPU.</title>
+
+  <!-- Tailwind CSS v3.4.17 (estático minificado — sin CDN) -->
+  <link rel="stylesheet" href="./public/styles.min.css" />
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Three.js r128 + GSAP 3.12.5 + ScrollTrigger -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+
+    body {
+      background-color: #000000;
+      color: #F5F5F7;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* High-contrast Apple Pro Headline Tracking */
+    .apple-h1 {
+      letter-spacing: -0.035em;
+      line-height: 1.06;
+    }
+
+    .apple-h2 {
+      letter-spacing: -0.028em;
+      line-height: 1.12;
+    }
+
+    /* Subtle Studio Spotlight (Cupertino Silver/White, Zero Neon Clutter) */
+    .studio-glow {
+      background:
+        radial-gradient(65% 42% at 50% 0%, rgba(255, 255, 255, 0.085) 0%, rgba(0, 113, 227, 0.06) 42%, rgba(0, 0, 0, 0) 78%);
+    }
+
+    /* Apple Anodized Elevated Card */
+    .apple-card {
+      background: linear-gradient(180deg, #15151B 0%, #0E0E12 100%);
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      box-shadow:
+        0 28px 60px -18px rgba(0, 0, 0, 0.85),
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
+    }
+
+    .apple-glass {
+      background: rgba(20, 20, 26, 0.82);
+      backdrop-filter: saturate(180%) blur(24px);
+      -webkit-backdrop-filter: saturate(180%) blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+    }
+
+    /* Tactile macOS Keyboard Keycap */
+    .mac-kbd {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.12rem 0.48rem;
+      border-radius: 0.42rem;
+      background: #1E1E26;
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      box-shadow: 0 2px 0 rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+      color: #F5F5F7;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82em;
+      font-weight: 600;
+      vertical-align: baseline;
+    }
+
+    /* Apple Primary White & Pro Blue Buttons */
+    .btn-apple-white {
+      background-color: #F5F5F7;
+      color: #000000;
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .btn-apple-white:hover {
+      background-color: #FFFFFF;
+      transform: translateY(-1px);
+      box-shadow: 0 10px 30px rgba(255, 255, 255, 0.18);
+    }
+
+    .btn-apple-blue {
+      background-color: #0071E3;
+      color: #FFFFFF;
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .btn-apple-blue:hover {
+      background-color: #0077ED;
+      transform: translateY(-1px);
+      box-shadow: 0 10px 30px rgba(0, 113, 227, 0.38);
+    }
+
+    .btn-apple-secondary {
+      background-color: #18181F;
+      color: #F5F5F7;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.2s ease;
+    }
+    .btn-apple-secondary:hover {
+      background-color: #23232D;
+      border-color: rgba(255, 255, 255, 0.36);
+    }
+
+    /* Active 3D Studio Control Card */
+    .studio-ctrl-active {
+      background: linear-gradient(180deg, rgba(0, 113, 227, 0.22) 0%, rgba(0, 113, 227, 0.08) 100%) !important;
+      border-color: #2997FF !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 0 0 1px rgba(41, 151, 255, 0.25);
+    }
+
+    .chapter-card-active {
+      border-color: rgba(255, 255, 255, 0.42) !important;
+      background: linear-gradient(180deg, #1B1B24 0%, #121218 100%) !important;
+    }
+
+    .cam-pill-active {
+      background-color: #F5F5F7 !important;
+      color: #000000 !important;
+      font-weight: 600;
+    }
+
+    .gal-tab-active {
+      background-color: #F5F5F7 !important;
+      color: #000000 !important;
+    }
+
+    #studio-canvas-container canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: grab;
+    }
+    #studio-canvas-container canvas:active {
+      cursor: grabbing;
+    }
+  </style>
+  <script>
+    (function () {
+      var p = (location.pathname || '/').replace(/\/+$/, '') || '/';
+      window.__SD_LANG__ = (p === '/es' || p.indexOf('/es/') === 0) ? 'es' : 'en';
+      document.documentElement.lang = window.__SD_LANG__;
+    })();
+  </script>
+</head>
+
+<body id="top" class="font-sans selection:bg-[#0071E3] selection:text-white">
+
+  <!-- ================= STICKY APPLE GLASS NAVBAR ================= -->
+  <header class="fixed top-0 inset-x-0 z-50 border-b border-white/[0.11] bg-black/80 backdrop-blur-2xl">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-4">
+      <!-- Brand -->
+      <a href="#top" class="flex items-center gap-3 group shrink-0">
+        <div class="w-8 h-8 rounded-[9px] bg-gradient-to-b from-[#2C2C35] to-[#141419] border border-white/25 flex items-center justify-center shadow-inner">
+          <svg class="w-4 h-4 text-[#F5F5F7]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1">
+            <rect x="3" y="3" width="18" height="10" rx="2.2" />
+            <rect x="5.5" y="16" width="13" height="5" rx="1.6" />
+            <line x1="8" y1="10" x2="16" y2="10" stroke-linecap="round" />
+          </svg>
+        </div>
+        <div class="flex items-baseline gap-2">
+          <span class="font-bold tracking-tight text-[#F5F5F7] text-[15px]">StackDock</span>
+          <span class="text-[11px] font-mono font-semibold px-1.5 py-0.5 rounded bg-white/12 text-[#E4E4E7]">4.0</span>
+          <span class="hidden sm:inline text-[11px] font-medium text-[#A1A1AA] tracking-wide">BLACK EYE</span>
+        </div>
+      </a>
+
+      <!-- Navigation -->
+      <nav class="hidden lg:flex items-center gap-7 text-[13px] font-medium text-[#D4D4D8]">
+        <a href="#showcase-3d" class="hover:text-white transition" data-i18n="nav_studio">Estudio 3D</a>
+        <a href="#story" class="hover:text-white transition" data-i18n="nav_features">Arquitectura</a>
+        <a href="#benchmark" class="hover:text-white transition" data-i18n="nav_benchmark">Rendimiento</a>
+        <a href="#captures" class="hover:text-white transition" data-i18n="nav_captures">Capturas M4</a>
+        <a href="#compare" class="hover:text-white transition" data-i18n="nav_compare">Comparativa</a>
+        <a href="#pricing" class="hover:text-white transition" data-i18n="nav_pricing">Licencia</a>
+      </nav>
+
+      <!-- Language Switch + Quick Buy -->
+      <div class="flex items-center gap-2.5 shrink-0">
+        <button id="lang-toggle" type="button" aria-label="Cambiar idioma ES / EN"
+          class="px-2.5 py-1 rounded-full bg-[#16161D] border border-white/20 text-[11px] font-mono font-semibold flex items-center gap-1 hover:border-white/40 transition cursor-pointer">
+          <span id="lang-es-pill" class="px-1.5 py-0.5 rounded-full bg-[#F5F5F7] text-black">ES</span>
+          <span id="lang-en-pill" class="px-1.5 py-0.5 rounded-full text-[#D4D4D8]">EN</span>
+        </button>
+
+        <a href="#pricing"
+          class="inline-flex items-center px-3.5 py-1.5 rounded-full text-xs font-semibold btn-apple-blue"
+          data-i18n="nav_cta">
+          Buy from $9.99
+        </a>
+
+        <!-- Mobile Menu Toggle (Visible < lg) -->
+        <button id="mobile-menu-btn" type="button" onclick="toggleMobileNav()" aria-label="Abrir menú de navegación"
+          class="lg:hidden w-8 h-8 rounded-full bg-[#16161D] border border-white/20 flex items-center justify-center text-[#F5F5F7] hover:border-white/40 transition cursor-pointer">
+          <svg id="mob-icon-open" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 8h16M4 16h16" />
+          </svg>
+          <svg id="mob-icon-close" class="w-4 h-4 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Collapsible Mobile Glass Drawer -->
+    <div id="mobile-nav-drawer" class="hidden lg:hidden border-t border-white/10 bg-[#08080C]/95 backdrop-blur-2xl px-4 py-4">
+      <div class="grid grid-cols-2 gap-2 text-sm font-medium text-[#E4E4E7]">
+        <a href="#showcase-3d" onclick="closeMobileNav()" class="px-3.5 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.09] transition" data-i18n="nav_studio">Estudio 3D</a>
+        <a href="#story" onclick="closeMobileNav()" class="px-3.5 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.09] transition" data-i18n="nav_features">Arquitectura</a>
+        <a href="#benchmark" onclick="closeMobileNav()" class="px-3.5 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.09] transition" data-i18n="nav_benchmark">Rendimiento</a>
+        <a href="#captures" onclick="closeMobileNav()" class="px-3.5 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.09] transition" data-i18n="nav_captures">Capturas M4</a>
+        <a href="#compare" onclick="closeMobileNav()" class="px-3.5 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.09] transition" data-i18n="nav_compare">Comparativa</a>
+        <a href="#pricing" onclick="closeMobileNav()" class="px-3.5 py-2.5 rounded-xl bg-[#0071E3]/25 text-[#64D2FF] font-semibold transition" data-i18n="nav_pricing">Licencia</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= 1. CUPERTINO HERO + 3D INTERACTIVE HARDWARE STAGE ================= -->
+  <section class="relative pt-24 pb-16 lg:pt-28 lg:pb-24 studio-glow">
+    <div class="max-w-7xl 2xl:max-w-[1480px] mx-auto px-4 sm:px-6 lg:px-8">
+
+      <!-- Clean High-Contrast Hero Copy -->
+      <div class="text-center max-w-4xl mx-auto mb-10 sm:mb-12">
+        <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-[#14141A] border border-white/15 mb-6">
+          <span class="w-2 h-2 rounded-full bg-[#30D158]"></span>
+          <span class="text-xs font-medium text-[#E4E4E7] tracking-tight" data-i18n="hero_badge">
+            100% Swift Nativo • Apple Silicon M1–M4 e Intel • Firmado y Notarizado por Apple
+          </span>
+        </div>
+
+        <h1 class="text-4xl sm:text-6xl lg:text-[64px] font-extrabold text-[#F5F5F7] apple-h1 mb-6" data-i18n="hero_h1">
+          Tu Dock de Mac en cada pantalla.<br class="hidden sm:inline" /> Instantáneo. 0.0% CPU en reposo.
+        </h1>
+
+        <p class="text-base sm:text-xl text-[#D4D4D8] max-w-3xl mx-auto leading-relaxed font-normal mb-8" data-i18n="hero_sub">
+          En monitores apilados o múltiples, macOS atrapa tu Dock en una sola pantalla. StackDock proyecta un Dock nativo de cristal en tus <strong class="text-white font-semibold">2, 3 o 4+ monitores</strong>: invócalo al instante con <span class="mac-kbd">⌥ + D</span>, separa perfiles de Chrome en iconos propios y mueve ventanas de pantalla con <span class="mac-kbd">Shift + Clic</span>.
+        </p>
+
+        <!-- High-Contrast Apple Pill Actions -->
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-3.5">
+          <button type="button" onclick="openActionModal('trial')"
+            class="w-full sm:w-auto px-7 py-3.5 rounded-full text-[15px] font-semibold btn-apple-white flex items-center justify-center gap-2.5 cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v12m0 0l-4-4m4 4l4-4M4 18h16" />
+            </svg>
+            <span data-i18n="cta_trial">7-Day Free Trial (No Credit Card)</span>
+          </button>
+
+          <button type="button" onclick="openActionModal('buy')"
+            class="w-full sm:w-auto px-7 py-3.5 rounded-full text-[15px] font-semibold btn-apple-blue flex items-center justify-center gap-2.5 cursor-pointer">
+            <span data-i18n="cta_buy">Buy Now — from $9.99</span>
+          </button>
+        </div>
+
+        <p class="mt-4 text-[13px] text-[#A1A1AA] font-medium" data-i18n="cta_subnote">
+          No credit card for trial • Personal $9.99 (1 Mac) · Pro $19 (3 Macs) • Offline Ed25519 license • macOS 13+
+        </p>
+      </div>
+
+      <!-- ================= 3D APPLE HARDWARE INTERACTIVE STUDIO ================= -->
+      <div id="showcase-3d" class="rounded-[28px] apple-card overflow-hidden">
+        <!-- Studio Top Control Strip -->
+        <div class="px-4 sm:px-6 py-3.5 border-b border-white/[0.1] bg-[#0B0B0F] flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2.5">
+            <span class="w-3 h-3 rounded-full bg-[#FF5F56]"></span>
+            <span class="w-3 h-3 rounded-full bg-[#FFBD2E]"></span>
+            <span class="w-3 h-3 rounded-full bg-[#28C840]"></span>
+            <span class="ml-2 text-xs sm:text-[13px] font-medium text-[#E4E4E7]" data-i18n="stage_title">
+              Estudio Interactivo 3D — Apple Studio Display 27" + Monitor Secundario 15.6" + Mac mini M4
+            </span>
+          </div>
+
+          <!-- Camera Angle Segmented Pills -->
+          <div class="flex items-center gap-1.5 bg-[#16161E] p-1 rounded-full border border-white/15">
+            <button id="cam-btn-front" type="button" onclick="setStudioCamera('front')"
+              class="cam-pill-active px-3 py-1 rounded-full text-xs text-[#D4D4D8] transition cursor-pointer" data-i18n="cam_front">
+              Frontal
+            </button>
+            <button id="cam-btn-iso" type="button" onclick="setStudioCamera('iso')"
+              class="px-3 py-1 rounded-full text-xs text-[#D4D4D8] hover:text-white transition cursor-pointer" data-i18n="cam_iso">
+              Ángulo Estudio
+            </button>
+            <button id="cam-btn-dock" type="button" onclick="setStudioCamera('dock')"
+              class="px-3 py-1 rounded-full text-xs text-[#D4D4D8] hover:text-white transition cursor-pointer" data-i18n="cam_dock">
+              Macro al Dock
+            </button>
+          </div>
+        </div>
+
+        <!-- WebGL Viewport -->
+        <div id="studio-canvas-container" class="relative w-full h-[380px] sm:h-[500px] lg:h-[580px] 2xl:h-[650px] bg-gradient-to-b from-[#0C0D12] via-[#07070A] to-[#040406]">
+          <!-- Crisp High-Contrast Telemetry Pill (Top Left) -->
+          <div class="pointer-events-none absolute top-4 left-4 z-10 hidden sm:flex flex-col gap-1.5 apple-glass px-4 py-3 rounded-2xl text-xs">
+            <div class="flex items-center justify-between gap-6">
+              <span class="text-[#A1A1AA] font-medium" data-i18n="hud_cpu">CPU en reposo</span>
+              <span class="font-mono font-bold text-[#30D158]">0.0%</span>
+            </div>
+            <div class="flex items-center justify-between gap-6">
+              <span class="text-[#A1A1AA] font-medium" data-i18n="hud_mem">Footprint real</span>
+              <span class="font-mono font-semibold text-[#F5F5F7]">32 MB</span>
+            </div>
+            <div class="flex items-center justify-between gap-6">
+              <span class="text-[#A1A1AA] font-medium" data-i18n="hud_docks">Docks activos</span>
+              <span id="hud-dock-state" class="font-mono font-semibold text-[#64D2FF]">2 / 2 ON</span>
+            </div>
+          </div>
+
+          <!-- Live Status Pill (Top Right) -->
+          <div class="pointer-events-none absolute top-4 right-4 z-10 flex items-center gap-2 apple-glass px-3.5 py-2 rounded-full text-xs text-[#F5F5F7]">
+            <span class="w-2 h-2 rounded-full bg-[#2997FF]"></span>
+            <span id="live-3d-status" data-i18n="status_ready">Pulsa ⌥ + D en tu teclado o prueba los controles debajo</span>
+          </div>
+
+          <!-- Subtle Orbit Hint (Bottom Center) -->
+          <div class="pointer-events-none absolute bottom-3 inset-x-0 flex justify-center z-10">
+            <span class="px-3 py-1 rounded-full bg-black/65 border border-white/15 text-[11px] text-[#D4D4D8]" data-i18n="drag_hint">
+              Arrastra con el mouse para girar el escritorio en 3D
+            </span>
+          </div>
+        </div>
+
+        <!-- Tactile 3-Button Action Bar -->
+        <div class="p-4 sm:p-5 bg-[#0B0B0F] border-t border-white/[0.1]">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+            <!-- Control 1: Summon / Hide Docks -->
+            <button id="btn-3d-docks" type="button" onclick="trigger3DDockToggle()"
+              class="studio-ctrl-active rounded-2xl p-4 bg-[#14141B] border border-white/15 text-left transition hover:border-white/35 flex items-center justify-between gap-3 cursor-pointer">
+              <div>
+                <div class="text-xs font-mono font-bold text-[#64D2FF] mb-1" data-i18n="ctrl_a_tag">⌥ + D • Mostrar / Ocultar Docks</div>
+                <div class="text-[13px] text-[#E4E4E7] font-medium" data-i18n="ctrl_a_desc">Invoca o esconde el cristal en ambos monitores</div>
+              </div>
+              <span id="badge-docks" class="shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold bg-[#30D158]/20 text-[#86EFAC] border border-[#30D158]/40">ACTIVO</span>
+            </button>
+
+            <!-- Control 2: Teleport Window -->
+            <button id="btn-3d-teleport" type="button" onclick="trigger3DTeleport()"
+              class="rounded-2xl p-4 bg-[#14141B] border border-white/15 text-left transition hover:border-white/35 flex items-center justify-between gap-3 cursor-pointer">
+              <div>
+                <div class="text-xs font-mono font-bold text-[#F5F5F7] mb-1" data-i18n="ctrl_b_tag">Shift + Clic • Teletransportar</div>
+                <div class="text-[13px] text-[#E4E4E7] font-medium" data-i18n="ctrl_b_desc">Mueve y auto-escala la ventana entre pantallas</div>
+              </div>
+              <span id="badge-teleport" class="shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold bg-white/10 text-[#F5F5F7] border border-white/20">15.6" ABAJO</span>
+            </button>
+
+            <!-- Control 3: Split Chrome Profiles -->
+            <button id="btn-3d-chrome" type="button" onclick="trigger3DChromeSplit()"
+              class="rounded-2xl p-4 bg-[#14141B] border border-white/15 text-left transition hover:border-white/35 flex items-center justify-between gap-3 cursor-pointer">
+              <div>
+                <div class="text-xs font-mono font-bold text-[#F5F5F7] mb-1" data-i18n="ctrl_c_tag">Perfiles de Chrome Separados</div>
+                <div class="text-[13px] text-[#E4E4E7] font-medium" data-i18n="ctrl_c_desc">Divide en iconos Trabajo, Estudio y Personal</div>
+              </div>
+              <span id="badge-chrome" class="shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold bg-white/10 text-[#E4E4E7] border border-white/20">AGRUPADO</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= 2. APPLE ARCHITECTURE & WORKFLOW PILLARS ================= -->
+  <section id="story" class="py-20 lg:py-28 bg-[#0A0A0D] border-y border-white/[0.08]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="max-w-3xl mb-14">
+        <p class="text-xs font-mono uppercase tracking-widest text-[#64D2FF] font-semibold mb-2.5" data-i18n="bento_eyebrow">
+          INGENIERÍA NATIVA EN UN SOLO BINARIO
+        </p>
+        <h2 class="text-3xl sm:text-5xl font-extrabold text-[#F5F5F7] apple-h2 mb-4" data-i18n="bento_title">
+          Tres utilidades esenciales de macOS integradas en tu Dock.
+        </h2>
+        <p class="text-base sm:text-lg text-[#D4D4D8] leading-relaxed" data-i18n="bento_lead">
+          Diseñado específicamente para escritorios con monitores verticales apilados, pantallas portátiles inferiores y estaciones de trabajo de hasta 4 monitores.
+        </p>
+      </div>
+
+      <!-- 4 High-Contrast Bento Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+        <!-- Card 1 -->
+        <div id="chapter-1" onclick="activateStoryChapter(1, true)"
+          class="chapter-card-active reveal-card md:col-span-7 apple-card rounded-[26px] p-7 sm:p-9 flex flex-col justify-between transition cursor-pointer">
+          <div>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-[#F5F5F7] text-xs font-mono font-semibold mb-5">
+              Carbon RegisterEventHotKey • 0.1s
+            </div>
+            <h3 class="text-2xl sm:text-[28px] font-bold text-[#F5F5F7] tracking-tight mb-3" data-i18n="b1_title">
+              Adiós al borde muerto en monitores apilados.
+            </h3>
+            <p class="text-[#D4D4D8] leading-relaxed text-[15px] sm:text-base" data-i18n="b1_desc">
+              Cuando colocas un monitor portátil debajo de tu pantalla principal, macOS encierra el Dock abajo porque al bajar el cursor cruzas de monitor. Con StackDock presionas <span class="mac-kbd">⌥ + D</span> (o <span class="mac-kbd">F12</span>) para mostrar u ocultar al instante Docks idénticos en todas tus pantallas, manteniendo el Dock original de Apple en autohide sin doble barra.
+            </p>
+          </div>
+          <div class="mt-7 pt-5 border-t border-white/12 flex flex-wrap items-center gap-2.5 text-xs font-mono text-[#E4E4E7]">
+            <span class="mac-kbd">⌥ + D</span>
+            <span class="mac-kbd">⌃ + ⌥ + D</span>
+            <span class="mac-kbd">⌘ + ⇧ + D</span>
+            <span class="mac-kbd">F12</span>
+            <span class="text-[#A1A1AA] ml-1" data-i18n="b1_foot">+ Lanzamiento rápido con ⌥ + 1..9</span>
+          </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div id="chapter-2" onclick="activateStoryChapter(2, true)"
+          class="reveal-card md:col-span-5 apple-card rounded-[26px] p-7 sm:p-9 flex flex-col justify-between transition hover:border-white/30 cursor-pointer">
+          <div>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-[#F5F5F7] text-xs font-mono font-semibold mb-5">
+              Chrome • Brave • Edge • Cursor • VS Code
+            </div>
+            <h3 class="text-2xl sm:text-[28px] font-bold text-[#F5F5F7] tracking-tight mb-3" data-i18n="b2_title">
+              Cada perfil de Chrome en su propio icono.
+            </h3>
+            <p class="text-[#D4D4D8] leading-relaxed text-[15px] sm:text-base" data-i18n="b2_desc">
+              ¿Tienes abiertas ventanas de Trabajo, Estudio y Personal? StackDock las desagrupa automáticamente en iconos individuales con su avatar y etiqueta clara. Haz clic para ir directo a ese perfil o ciérralo con <span class="mac-kbd">⌥ + ⌘ + Clic</span> sin cerrar todo el navegador.
+            </p>
+          </div>
+          <div class="mt-7 pt-5 border-t border-white/12 flex flex-wrap items-center gap-2 font-mono text-xs">
+            <span class="px-3 py-1 rounded-full bg-[#0071E3]/25 border border-[#2997FF]/50 text-white font-semibold" data-i18n="pill_work">● Trabajo</span>
+            <span class="px-3 py-1 rounded-full bg-white/12 border border-white/25 text-white font-semibold" data-i18n="pill_studio">● Estudio</span>
+            <span class="px-3 py-1 rounded-full bg-[#30D158]/20 border border-[#30D158]/45 text-white font-semibold" data-i18n="pill_personal">● Personal</span>
+          </div>
+        </div>
+
+        <!-- Card 3 -->
+        <div id="chapter-3" onclick="activateStoryChapter(3, true)"
+          class="reveal-card md:col-span-5 apple-card rounded-[26px] p-7 sm:p-9 flex flex-col justify-between transition hover:border-white/30 cursor-pointer">
+          <div>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-[#F5F5F7] text-xs font-mono font-semibold mb-5">
+              Shift + Clic • Doble Clic • ⌃ + ⌥ + W
+            </div>
+            <h3 class="text-2xl sm:text-[28px] font-bold text-[#F5F5F7] tracking-tight mb-3" data-i18n="b3_title">
+              Teletransporte proporcional de ventanas.
+            </h3>
+            <p class="text-[#D4D4D8] leading-relaxed text-[15px] sm:text-base" data-i18n="b3_desc">
+              Trae cualquier ventana desde tu monitor secundario hasta tu pantalla principal de 27" —reescalada proporcionalmente sin cortes de resolución— haciendo <span class="mac-kbd">Shift + Clic</span> sobre su icono en el Dock o pulsando <span class="mac-kbd">⌃ + ⌥ + W</span>.
+            </p>
+          </div>
+          <div class="mt-7 pt-5 border-t border-white/12 text-xs font-medium text-[#E4E4E7]" data-i18n="b3_foot">
+            ✓ Sustituye utilidades externas para mover ventanas entre monitores
+          </div>
+        </div>
+
+        <!-- Card 4 -->
+        <div class="reveal-card md:col-span-7 apple-card rounded-[26px] p-7 sm:p-9 flex flex-col justify-between">
+          <div>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-[#F5F5F7] text-xs font-mono font-semibold mb-5">
+              NSVisualEffectView • Control Maestro en Barra de Menús
+            </div>
+            <h3 class="text-2xl sm:text-[28px] font-bold text-[#F5F5F7] tracking-tight mb-3" data-i18n="b4_title">
+              Aislamiento por pantalla, Descargas y Papelera nativa.
+            </h3>
+            <p class="text-[#D4D4D8] leading-relaxed text-[15px] sm:text-base" data-i18n="b4_desc">
+              Elige si cada monitor muestra todo tu Dock sincronizado o únicamente las ventanas abiertas en esa pantalla. Incluye acceso directo a Descargas, estado real de la Papelera, ocultar app activa con un clic, tres posiciones por pantalla e inicio automático en macOS.
+            </p>
+          </div>
+          <div class="mt-7 pt-5 border-t border-white/12 grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs font-medium text-[#E4E4E7]">
+            <span data-i18n="b4_tag1">✓ Clic en app activa para ocultar</span>
+            <span data-i18n="b4_tag2">✓ Aislamiento opcional por monitor</span>
+            <span data-i18n="b4_tag3">✓ Posición abajo, elevada o superior</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 3. THE ACTIVITY MONITOR PROOF ================= -->
+  <section id="benchmark" class="py-20 lg:py-28 bg-black">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-3xl mx-auto mb-14">
+        <p class="text-xs font-mono uppercase tracking-widest text-[#30D158] font-semibold mb-2.5" data-i18n="am_eyebrow">
+          EFICIENCIA VERIFICADA EN APPLE SILICON
+        </p>
+        <h2 class="text-3xl sm:text-5xl font-extrabold text-[#F5F5F7] apple-h2 mb-4" data-i18n="am_title">
+          Cero grabación de pantalla.<br class="hidden sm:inline" /> Cero ciclos desperdiciados.
+        </h2>
+        <p class="text-base sm:text-lg text-[#D4D4D8] leading-relaxed" data-i18n="am_subtitle">
+          Otros reemplazos del Dock capturan video continuo con ScreenCaptureKit las 24 horas para dibujar miniaturas, disparando la memoria a más de 230 MB y exigiendo permisos invasivos. StackDock escucha únicamente notificaciones del sistema y eventos Carbon.
+        </p>
+      </div>
+
+      <!-- High-Contrast Side-by-Side Telemetry Comparison -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- StackDock Card -->
+        <div class="apple-card rounded-[26px] p-7 sm:p-8 border border-[#30D158]/40">
+          <div class="flex items-center justify-between gap-3 mb-7">
+            <div class="flex items-center gap-3.5">
+              <div class="w-11 h-11 rounded-2xl bg-[#30D158]/15 border border-[#30D158]/40 flex items-center justify-center text-[#30D158] font-mono font-bold text-sm">SD</div>
+              <div>
+                <h3 class="font-bold text-[#F5F5F7] text-lg">StackDock 4.0</h3>
+                <p class="text-xs font-mono text-[#A1A1AA]" data-i18n="am_sd_sub">Binario Universal Swift (arm64 + x86_64)</p>
+              </div>
+            </div>
+            <span class="px-3 py-1 rounded-full text-xs font-mono font-bold bg-[#30D158]/20 text-[#86EFAC] border border-[#30D158]/40" data-i18n="am_badge_win">
+              $9.99 ÚNICO
+            </span>
+          </div>
+
+          <div class="space-y-5 text-sm">
+            <div>
+              <div class="flex justify-between mb-1.5 font-medium">
+                <span class="text-[#E4E4E7]" data-i18n="am_lbl_cpu">Uso de CPU en reposo</span>
+                <span class="font-mono font-bold text-[#30D158]">0.0% CPU</span>
+              </div>
+              <div class="w-full h-2.5 bg-white/[0.07] rounded-full overflow-hidden">
+                <div class="h-full w-[2%] bg-[#30D158] rounded-full"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between mb-1.5 font-medium">
+                <span class="text-[#E4E4E7]" data-i18n="am_lbl_ram">Footprint real en Apple M4</span>
+                <span class="font-mono font-bold text-[#F5F5F7]">32 MB</span>
+              </div>
+              <div class="w-full h-2.5 bg-white/[0.07] rounded-full overflow-hidden">
+                <div class="h-full w-[13%] bg-[#2997FF] rounded-full"></div>
+              </div>
+            </div>
+
+            <div class="pt-4 border-t border-white/12 flex items-center justify-between">
+              <span class="text-[#E4E4E7] font-medium" data-i18n="am_lbl_perm">Permiso de Grabación de Pantalla</span>
+              <span class="font-mono font-bold text-[#30D158]" data-i18n="am_val_perm_good">Jamás requerido</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Heavy Replacements Card -->
+        <div class="apple-card rounded-[26px] p-7 sm:p-8">
+          <div class="flex items-center justify-between gap-3 mb-7">
+            <div class="flex items-center gap-3.5">
+              <div class="w-11 h-11 rounded-2xl bg-white/[0.06] border border-white/15 flex items-center justify-center text-[#A1A1AA] font-mono font-bold text-sm">SC</div>
+              <div>
+                <h3 class="font-bold text-[#E4E4E7] text-lg" data-i18n="am_comp_name">Docks con captura de video 24/7</h3>
+                <p class="text-xs font-mono text-[#A1A1AA]">ScreenCaptureKit + Cuenta en nube</p>
+              </div>
+            </div>
+            <span class="px-3 py-1 rounded-full text-xs font-mono font-bold bg-white/10 text-[#E4E4E7] border border-white/20" data-i18n="am_badge_lose">
+              $59/AÑO O $159
+            </span>
+          </div>
+
+          <div class="space-y-5 text-sm">
+            <div>
+              <div class="flex justify-between mb-1.5 font-medium">
+                <span class="text-[#D4D4D8]" data-i18n="am_lbl_cpu2">Uso de CPU constante</span>
+                <span class="font-mono font-bold text-[#FF6961]">1.5% – 2.8% CPU</span>
+              </div>
+              <div class="w-full h-2.5 bg-white/[0.07] rounded-full overflow-hidden">
+                <div class="h-full w-[68%] bg-[#FF453A] rounded-full"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between mb-1.5 font-medium">
+                <span class="text-[#D4D4D8]" data-i18n="am_lbl_ram2">Memoria ocupada por miniaturas</span>
+                <span class="font-mono font-bold text-[#FF6961]">~238 MB</span>
+              </div>
+              <div class="w-full h-2.5 bg-white/[0.07] rounded-full overflow-hidden">
+                <div class="h-full w-[90%] bg-[#FF9F0A] rounded-full"></div>
+              </div>
+            </div>
+
+            <div class="pt-4 border-t border-white/12 flex items-center justify-between">
+              <span class="text-[#D4D4D8] font-medium" data-i18n="am_lbl_perm2">Permiso de Grabación de Pantalla</span>
+              <span class="font-mono font-semibold text-[#FF6961]" data-i18n="am_val_perm_bad">Obligatorio + Login online</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 4. REAL MAC MINI M4 CAPTURES GALLERY ================= -->
+  <section id="captures" class="py-20 lg:py-28 bg-[#0A0A0D] border-y border-white/[0.08]">
+    <div class="max-w-7xl 2xl:max-w-[1480px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+        <div>
+          <p class="text-xs font-mono uppercase tracking-widest text-[#64D2FF] font-semibold mb-2" data-i18n="gal_eyebrow">
+            CAPTURAS REALES EN PRODUCCIÓN • MAC MINI M4
+          </p>
+          <h2 class="text-3xl sm:text-4xl font-extrabold text-[#F5F5F7] apple-h2" data-i18n="gal_title">
+            Así luce StackDock corriendo en macOS real.
+          </h2>
+        </div>
+
+        <!-- Interactive Filter Tabs -->
+        <div class="inline-flex flex-wrap items-center gap-1.5 bg-[#15151C] p-1.5 rounded-full border border-white/15 self-start md:self-auto">
+          <button id="gtab-all" type="button" onclick="filterGallery('all')"
+            class="gal-tab-active px-4 py-1.5 rounded-full text-xs font-semibold text-[#D4D4D8] transition cursor-pointer" data-i18n="gtab_all">
+            Todas (6)
+          </button>
+          <button id="gtab-displays" type="button" onclick="filterGallery('displays')"
+            class="px-4 py-1.5 rounded-full text-xs font-semibold text-[#D4D4D8] hover:text-white transition cursor-pointer" data-i18n="gtab_displays">
+            Doble Monitor
+          </button>
+          <button id="gtab-dock" type="button" onclick="filterGallery('dock')"
+            class="px-4 py-1.5 rounded-full text-xs font-semibold text-[#D4D4D8] hover:text-white transition cursor-pointer" data-i18n="gtab_dock">
+            Detalle del Dock
+          </button>
+          <button id="gtab-perf" type="button" onclick="filterGallery('perf')"
+            class="px-4 py-1.5 rounded-full text-xs font-semibold text-[#D4D4D8] hover:text-white transition cursor-pointer" data-i18n="gtab_perf">
+            Monitor de Actividad
+          </button>
+        </div>
+      </div>
+
+      <!-- Large Panoramic Gallery Grid (Optimized for 27"/4K Monitors + Mobile) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-7 lg:gap-8">
+        <!-- Item 1: Secondary Display Full (Natural 16:10 Panoramic Scale) -->
+        <button type="button" data-gal-cat="displays" onclick="openLightbox('img-src-bottom', 'gal_c1_title', 'gal_c1_desc')"
+          class="gal-card group apple-card rounded-[26px] overflow-hidden text-left transition hover:border-white/35 cursor-pointer flex flex-col">
+          <div class="relative w-full aspect-[16/10] bg-black overflow-hidden">
+            <img id="img-src-bottom" src="./public/media/media_screen_bottom.webp"
+              alt="StackDock en monitor secundario macOS"
+              class="w-full h-full object-cover object-bottom group-hover:scale-[1.02] transition-transform duration-300" />
+            <span class="absolute top-3.5 right-3.5 px-3 py-1 rounded-full bg-black/75 border border-white/20 text-[11px] font-mono text-white" data-i18n="zoom_hint">
+              Clic para ampliar
+            </span>
+          </div>
+          <div class="p-6 sm:p-7">
+            <h3 class="text-lg sm:text-xl font-bold text-[#F5F5F7]" data-i18n="gal_c1_title">Monitor Secundario con Dock de Cristal Fijo</h3>
+            <p class="text-sm sm:text-[15px] text-[#D4D4D8] mt-1.5" data-i18n="gal_c1_desc">Barra NSVisualEffectView centrada con puntos de ejecución, etiquetas de ventana, Descargas y Papelera.</p>
+          </div>
+        </button>
+
+        <!-- Item 2: Primary Display Full (Natural 16:10 Panoramic Scale) -->
+        <button type="button" data-gal-cat="displays" onclick="openLightbox('img-src-top', 'gal_c2_title', 'gal_c2_desc')"
+          class="gal-card group apple-card rounded-[26px] overflow-hidden text-left transition hover:border-white/35 cursor-pointer flex flex-col">
+          <div class="relative w-full aspect-[16/10] bg-black overflow-hidden">
+            <img id="img-src-top" src="./public/media/media_screen_top.webp"
+              alt="StackDock en monitor principal con Stage Manager"
+              class="w-full h-full object-cover object-bottom group-hover:scale-[1.02] transition-transform duration-300" />
+            <span class="absolute top-3.5 right-3.5 px-3 py-1 rounded-full bg-black/75 border border-white/20 text-[11px] font-mono text-white" data-i18n="zoom_hint2">
+              Clic para ampliar
+            </span>
+          </div>
+          <div class="p-6 sm:p-7">
+            <h3 class="text-lg sm:text-xl font-bold text-[#F5F5F7]" data-i18n="gal_c2_title">Monitor Principal Superior en Simultáneo</h3>
+            <p class="text-sm sm:text-[15px] text-[#D4D4D8] mt-1.5" data-i18n="gal_c2_desc">Convivencia limpia con Stage Manager y barra de menús de macOS sin saltos ni bloqueos de borde.</p>
+          </div>
+        </button>
+
+        <!-- Item 3: Full-Width Panoramic Close-up Dock Bar Night (col-span-2 so 1920x160 strip shines at real scale!) -->
+        <button type="button" data-gal-cat="dock" onclick="openLightbox('img-src-dock1', 'gal_c3_title', 'gal_c3_desc')"
+          class="gal-card md:col-span-2 group apple-card rounded-[26px] overflow-hidden text-left transition hover:border-white/35 cursor-pointer flex flex-col">
+          <div class="relative w-full bg-[#060609] flex items-center justify-center px-3 sm:px-8 py-6 sm:py-9 overflow-hidden">
+            <img id="img-src-dock1" src="./public/media/media_dock_bottom.webp"
+              alt="Detalle panorámico de barra StackDock y etiquetas de perfil"
+              class="w-full h-auto object-contain rounded-2xl shadow-2xl group-hover:scale-[1.015] transition-transform duration-300" />
+          </div>
+          <div class="p-6 sm:p-7 border-t border-white/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h3 class="text-lg sm:text-xl font-bold text-[#F5F5F7]" data-i18n="gal_c3_title">Acabado Esmerilado Nativo y Etiquetas Superiores</h3>
+              <p class="text-sm sm:text-[15px] text-[#D4D4D8] mt-1" data-i18n="gal_c3_desc">Píldoras de alto contraste sobre Chrome y editores para distinguir cada instancia de un vistazo.</p>
+            </div>
+            <span class="text-xs font-mono text-[#64D2FF] shrink-0">1920 × 160 Retina 1:1</span>
+          </div>
+        </button>
+
+        <!-- Item 4: Full-Width Panoramic Close-up Dock Bar Daylight (col-span-2) -->
+        <button type="button" data-gal-cat="dock" onclick="openLightbox('img-src-dock2', 'gal_c4_title', 'gal_c4_desc')"
+          class="gal-card md:col-span-2 group apple-card rounded-[26px] overflow-hidden text-left transition hover:border-white/35 cursor-pointer flex flex-col">
+          <div class="relative w-full bg-[#060609] flex items-center justify-center px-3 sm:px-8 py-6 sm:py-9 overflow-hidden">
+            <img id="img-src-dock2" src="./public/media/media_dock_ocean.webp"
+              alt="Translucidez adaptativa panorámica del Dock sobre fondos claros"
+              class="w-full h-auto object-contain rounded-2xl shadow-2xl group-hover:scale-[1.015] transition-transform duration-300" />
+          </div>
+          <div class="p-6 sm:p-7 border-t border-white/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h3 class="text-lg sm:text-xl font-bold text-[#F5F5F7]" data-i18n="gal_c4_title">Translucidez Adaptativa sobre Fondos Claros</h3>
+              <p class="text-sm sm:text-[15px] text-[#D4D4D8] mt-1" data-i18n="gal_c4_desc">El material HUD nativo de macOS mantiene contraste nítido tanto en fondos oscuros como diurnos.</p>
+            </div>
+            <span class="text-xs font-mono text-[#64D2FF] shrink-0">NSVisualEffectView HUD</span>
+          </div>
+        </button>
+
+        <!-- Item 5: Activity Monitor Proof (Large 16:10) -->
+        <button type="button" data-gal-cat="perf" onclick="openLightbox('img-src-am', 'gal_c5_title', 'gal_c5_desc')"
+          class="gal-card group apple-card rounded-[26px] overflow-hidden text-left transition hover:border-white/35 cursor-pointer flex flex-col">
+          <div class="relative w-full aspect-[16/10] bg-[#181716] overflow-hidden">
+            <img id="img-src-am" src="./public/media/media_activity_monitor.webp"
+              alt="Monitor de Actividad mostrando 0.0% CPU en StackDock"
+              class="w-full h-full object-cover object-top group-hover:scale-[1.02] transition-transform duration-300" />
+          </div>
+          <div class="p-6 sm:p-7 border-t border-white/[0.08]">
+            <h3 class="text-lg sm:text-xl font-bold text-[#F5F5F7]" data-i18n="gal_c5_title">Monitor de Actividad en Vivo: 0.0% CPU y 0.0% GPU</h3>
+            <p class="text-sm sm:text-[15px] text-[#D4D4D8] mt-1.5" data-i18n="gal_c5_desc">4 subprocesos y 0 activaciones en reposo corriendo de forma nativa sobre arquitectura Apple Silicon.</p>
+          </div>
+        </button>
+
+        <!-- Item 6: Telemetry Card (Large 16:10) -->
+        <button type="button" data-gal-cat="perf" onclick="openLightbox('img-src-tel', 'gal_c6_title', 'gal_c6_desc')"
+          class="gal-card group apple-card rounded-[26px] overflow-hidden text-left transition hover:border-white/35 cursor-pointer flex flex-col">
+          <div class="relative w-full aspect-[16/10] bg-[#040609] flex items-center justify-center p-5 sm:p-8 overflow-hidden">
+            <img id="img-src-tel" src="./public/media/media_telemetry_card.webp"
+              alt="Resumen de telemetría real 32 MB Footprint"
+              class="w-full h-full object-contain group-hover:scale-[1.02] transition-transform duration-300" />
+          </div>
+          <div class="p-6 sm:p-7 border-t border-white/[0.08]">
+            <h3 class="text-lg sm:text-xl font-bold text-[#F5F5F7]" data-i18n="gal_c6_title">Huella de Memoria Verificada (32 MB Footprint)</h3>
+            <p class="text-sm sm:text-[15px] text-[#D4D4D8] mt-1.5" data-i18n="gal_c6_desc">Medición directa del proceso de 64 bits (`com.blackeye.stackdock`) con páginas de 16 KB en Apple M4.</p>
+          </div>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 5. VERIFIED COMPETITOR COMPARISON TABLE ================= -->
+  <section id="compare" class="py-20 lg:py-28 bg-black">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-3xl mx-auto mb-14">
+        <p class="text-xs font-mono uppercase tracking-widest text-[#A1A1AA] font-semibold mb-2.5" data-i18n="cmp_eyebrow">
+          COMPARATIVA TRANSPARENTE DE MERCADO
+        </p>
+        <h2 class="text-3xl sm:text-5xl font-extrabold text-[#F5F5F7] apple-h2" data-i18n="cmp_title">
+          Más capacidades multi-monitor.<br class="hidden sm:inline" /> Una fracción del precio.
+        </h2>
+      </div>
+
+      <div class="apple-card rounded-[28px] overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse min-w-[680px]">
+            <thead>
+              <tr class="border-b border-white/15 bg-[#16161D] text-xs font-mono uppercase tracking-wider text-[#E4E4E7]">
+                <th class="py-4 px-6" data-i18n="cmp_col_feat">Capacidad</th>
+                <th class="py-4 px-6 bg-[#0071E3]/20 text-white font-bold border-x border-[#2997FF]/35">StackDock 4.0</th>
+                <th class="py-4 px-6 font-semibold text-[#E4E4E7]">Dockish</th>
+                <th class="py-4 px-6 font-semibold text-[#E4E4E7]">Better Dock Pro</th>
+                <th class="py-4 px-6 font-semibold text-[#E4E4E7]">DockLock Plus</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-white/10 text-sm text-[#E4E4E7]">
+              <tr>
+                <td class="py-4 px-6 font-semibold text-[#F5F5F7]" data-i18n="cmp_r1">Precio</td>
+                <td class="py-4 px-6 bg-[#0071E3]/10 border-x border-[#2997FF]/30 font-mono font-bold text-[#30D158]">
+                  $9.99 / $19
+                </td>
+                <td class="py-4 px-6 font-mono text-[#D4D4D8]">$6.99 – $9.99</td>
+                <td class="py-4 px-6 font-mono text-[#FF6961]">$59/año o $159</td>
+                <td class="py-4 px-6 font-mono text-[#D4D4D8]">$39.99 – $49.99</td>
+              </tr>
+              <tr>
+                <td class="py-4 px-6 font-semibold text-[#F5F5F7]" data-i18n="cmp_r2">Docks simultáneos en 2–4+ pantallas</td>
+                <td class="py-4 px-6 bg-[#0071E3]/10 border-x border-[#2997FF]/30 font-semibold text-[#30D158]" data-i18n="yes_1">✓ Sí (macOS 13+)</td>
+                <td class="py-4 px-6 text-[#D4D4D8]" data-i18n="yes_sonoma">✓ Sí (macOS 14+)</td>
+                <td class="py-4 px-6 text-[#D4D4D8]" data-i18n="yes_sonoma2">✓ Sí (macOS 14+)</td>
+                <td class="py-4 px-6 text-[#FF6961]" data-i18n="cmp_lock_only">✕ Solo fija 1 Dock</td>
+              </tr>
+              <tr>
+                <td class="py-4 px-6 font-semibold text-[#F5F5F7]" data-i18n="cmp_r4">Ventanas / perfiles Chrome como iconos propios</td>
+                <td class="py-4 px-6 bg-[#0071E3]/10 border-x border-[#2997FF]/30 font-semibold text-[#30D158]" data-i18n="cmp_sd_profiles">✓ Sí, con avatar y badge</td>
+                <td class="py-4 px-6 text-[#FF6961]" data-i18n="cmp_no_tiles">✕ No separa iconos</td>
+                <td class="py-4 px-6 text-[#D4D4D8]" data-i18n="yes_basic">✓ Sí</td>
+                <td class="py-4 px-6 text-[#FF6961]">✕ No</td>
+              </tr>
+              <tr>
+                <td class="py-4 px-6 font-semibold text-[#F5F5F7]" data-i18n="cmp_r5">Teletransporte auto-escalado (Shift+Clic / ⌃⌥W)</td>
+                <td class="py-4 px-6 bg-[#0071E3]/10 border-x border-[#2997FF]/30 font-semibold text-[#30D158]" data-i18n="cmp_yes_scale">✓ Integrado</td>
+                <td class="py-4 px-6 text-[#FF6961]">✕ No</td>
+                <td class="py-4 px-6 text-[#FF6961]">✕ No</td>
+                <td class="py-4 px-6 text-[#FF6961]">✕ No</td>
+              </tr>
+              <tr>
+                <td class="py-4 px-6 font-semibold text-[#F5F5F7]" data-i18n="cmp_r6">Privacidad y activación sin cuenta online</td>
+                <td class="py-4 px-6 bg-[#0071E3]/10 border-x border-[#2997FF]/30 font-semibold text-[#30D158]" data-i18n="cmp_offline">✓ 100% Offline (Ed25519)</td>
+                <td class="py-4 px-6 text-[#D4D4D8]" data-i18n="cmp_online_lic">Activación online</td>
+                <td class="py-4 px-6 text-[#FF6961]" data-i18n="cmp_acct_req">Exige crear cuenta</td>
+                <td class="py-4 px-6 text-[#D4D4D8]">Mac App Store</td>
+              </tr>
+              <tr>
+                <td class="py-4 px-6 font-semibold text-[#F5F5F7]" data-i18n="cmp_r7">Permiso de Grabación de Pantalla</td>
+                <td class="py-4 px-6 bg-[#0071E3]/10 border-x border-[#2997FF]/30 font-mono font-bold text-[#30D158]" data-i18n="cmp_never">0 REQUERIDOS</td>
+                <td class="py-4 px-6 text-[#D4D4D8]" data-i18n="cmp_opt_prev">Al activar vistas previas</td>
+                <td class="py-4 px-6 text-[#FF6961]" data-i18n="cmp_req">Requerido para vistas en vivo</td>
+                <td class="py-4 px-6 text-[#D4D4D8]" data-i18n="cmp_not_req">No requerido</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 6. LIFETIME PRICING (#pricing & #buy) + FAQ ================= -->
+  <section id="pricing" class="py-20 lg:py-28 bg-[#0A0A0D] border-t border-white/[0.08]">
+    <div id="buy" class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+
+      <div class="text-center max-w-2xl mx-auto mb-10">
+        <p class="text-xs font-mono uppercase tracking-widest text-[#A1A1AA] font-semibold mb-2.5" data-i18n="pr_eyebrow">LIFETIME LICENSING</p>
+        <h2 class="text-3xl sm:text-5xl font-extrabold text-[#F5F5F7] apple-h2" data-i18n="pr_section_title">Simple pricing. Own it forever.</h2>
+        <p class="mt-3 text-base text-[#D4D4D8]" data-i18n="pr_section_sub">7-day full free trial — no credit card. Then pick Personal or Pro.</p>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-5 lg:gap-6 mb-8 max-w-4xl mx-auto">
+        <!-- Personal -->
+        <div class="apple-card rounded-[28px] p-7 sm:p-8 border border-white/15 flex flex-col">
+          <div class="flex items-center justify-between gap-2 mb-4">
+            <span class="text-xs font-mono font-bold text-[#A1A1AA]" data-i18n="pr_personal_badge">PERSONAL</span>
+            <span class="text-xs font-mono text-[#A1A1AA]">1 Mac</span>
+          </div>
+          <h3 class="text-2xl font-extrabold text-[#F5F5F7]" data-i18n="pr_personal_title">StackDock Personal</h3>
+          <p class="text-sm text-[#D4D4D8] mt-1.5" data-i18n="pr_personal_sub">One Mac. Full features. Lifetime updates.</p>
+          <div class="my-6 flex items-baseline gap-2">
+            <span class="text-5xl font-extrabold tracking-tight text-[#F5F5F7]">$9.99</span>
+            <span class="text-xs font-mono font-semibold text-[#30D158] uppercase" data-i18n="pr_usd">USD · ONE-TIME</span>
+          </div>
+          <ul class="space-y-2.5 text-sm text-[#E4E4E7] mb-7 flex-1">
+            <li class="flex gap-2"><span class="text-[#30D158]">✓</span><span data-i18n="pr_personal_f1">License for <strong class="text-white">1 Mac</strong></span></li>
+            <li class="flex gap-2"><span class="text-[#30D158]">✓</span><span data-i18n="pr_f2">Unlimited monitors</span></li>
+            <li class="flex gap-2"><span class="text-[#30D158]">✓</span><span data-i18n="pr_f3">Chrome profile split + Shift+Click teleport</span></li>
+            <li class="flex gap-2"><span class="text-[#30D158]">✓</span><span data-i18n="pr_f4">Offline Ed25519 key via email</span></li>
+          </ul>
+          <button type="button" onclick="openActionModal('buy_personal')"
+            class="w-full py-3.5 rounded-full text-sm font-bold btn-apple-secondary cursor-pointer" data-i18n="pr_btn_personal">
+            Buy Personal — $9.99
+          </button>
+        </div>
+
+        <!-- Pro (Most Popular) -->
+        <div class="apple-card rounded-[28px] p-7 sm:p-8 border border-[#2997FF]/55 relative flex flex-col shadow-[0_0_0_1px_rgba(41,151,255,0.25)]">
+          <div class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[11px] font-mono font-bold bg-[#0071E3] text-white" data-i18n="pr_popular">MOST POPULAR</div>
+          <div class="flex items-center justify-between gap-2 mb-4">
+            <span class="text-xs font-mono font-bold text-[#64D2FF]" data-i18n="pr_pro_badge">PRO</span>
+            <span class="text-xs font-mono text-[#A1A1AA]">3 Macs</span>
+          </div>
+          <h3 class="text-2xl font-extrabold text-[#F5F5F7]" data-i18n="pr_pro_title">StackDock Pro</h3>
+          <p class="text-sm text-[#D4D4D8] mt-1.5" data-i18n="pr_pro_sub">Up to 3 Macs. Best value for multi-machine desks.</p>
+          <div class="my-6 flex items-baseline gap-2">
+            <span class="text-5xl font-extrabold tracking-tight text-[#F5F5F7]">$19.00</span>
+            <span class="text-xs font-mono font-semibold text-[#30D158] uppercase" data-i18n="pr_usd">USD · ONE-TIME</span>
+          </div>
+          <ul class="space-y-2.5 text-sm text-[#E4E4E7] mb-7 flex-1">
+            <li class="flex gap-2"><span class="text-[#30D158]">✓</span><span data-i18n="pr_pro_f1">License for <strong class="text-white">3 Macs</strong></span></li>
+            <li class="flex gap-2"><span class="text-[#30D158]">✓</span><span data-i18n="pr_f2">Unlimited monitors</span></li>
+            <li class="flex gap-2"><span class="text-[#30D158]">✓</span><span data-i18n="pr_f3">Chrome profile split + Shift+Click teleport</span></li>
+            <li class="flex gap-2"><span class="text-[#30D158]">✓</span><span data-i18n="pr_f4">Offline Ed25519 key via email</span></li>
+            <li class="flex gap-2"><span class="text-[#30D158]">✓</span><span data-i18n="pr_pro_f5">Priority support · Findaro bundle bump available at checkout</span></li>
+          </ul>
+          <button type="button" onclick="openActionModal('buy_pro')"
+            class="w-full py-3.5 rounded-full text-sm font-bold btn-apple-blue cursor-pointer" data-i18n="pr_btn_pro">
+            Buy Pro — $19.00
+          </button>
+        </div>
+      </div>
+
+      <div class="max-w-md mx-auto mb-20">
+        <button type="button" onclick="openActionModal('trial')"
+          class="w-full py-3.5 rounded-full text-sm font-semibold btn-apple-white cursor-pointer" data-i18n="pr_btn_trial">
+          7-Day Free Trial (No Credit Card)
+        </button>
+        <p class="mt-3 text-center text-xs text-[#A1A1AA]" data-i18n="pr_trial_note">Full features for 7 days. Email optional for onboarding tips.</p>
+      </div>
+
+      <!-- Technical FAQ -->
+      <div id="faq" class="max-w-3xl mx-auto">
+        <h3 class="text-2xl sm:text-3xl font-extrabold text-center text-[#F5F5F7] mb-8 apple-h2" data-i18n="faq_title">
+          Preguntas Frecuentes
+        </h3>
+        <div class="space-y-4">
+          <details class="group apple-card rounded-2xl p-6 cursor-pointer" open>
+            <summary class="font-semibold text-[#F5F5F7] text-base flex items-center justify-between list-none">
+              <span data-i18n="faq_q1">¿Por qué StackDock no pide permiso de Grabación de Pantalla?</span>
+              <span class="text-[#A1A1AA] font-mono text-lg group-open:rotate-45 transition-transform">+</span>
+            </summary>
+            <p class="mt-3 text-[15px] text-[#D4D4D8] leading-relaxed" data-i18n="faq_a1">
+              Prescindimos deliberadamente de miniaturas de video continuo (ScreenCaptureKit) porque grabar tus ventanas todo el día consume más de 200 MB de RAM. StackDock consulta títulos y coordenadas mediante la API ligera de Accesibilidad de macOS solo cuando interactúas, logrando 0.0% de CPU en reposo.
+            </p>
+          </details>
+
+          <details class="group apple-card rounded-2xl p-6 cursor-pointer">
+            <summary class="font-semibold text-[#F5F5F7] text-base flex items-center justify-between list-none">
+              <span data-i18n="faq_q2">¿Cómo evita que aparezcan dos Docks al mismo tiempo?</span>
+              <span class="text-[#A1A1AA] font-mono text-lg group-open:rotate-45 transition-transform">+</span>
+            </summary>
+            <p class="mt-3 text-[15px] text-[#D4D4D8] leading-relaxed" data-i18n="faq_a2">
+              StackDock incluye el modo inteligente "Reemplazar Dock de Apple", que mantiene el Dock nativo en ocultación automática con retardo anti-cruce mientras disfrutas de barras sincronizadas y estables en todos tus monitores, o bien oculta todo al instante con ⌥ + D para trabajar a pantalla limpia.
+            </p>
+          </details>
+
+          <details class="group apple-card rounded-2xl p-6 cursor-pointer">
+            <summary class="font-semibold text-[#F5F5F7] text-base flex items-center justify-between list-none">
+              <span data-i18n="faq_q3">¿Cómo funciona la licencia offline Ed25519?</span>
+              <span class="text-[#A1A1AA] font-mono text-lg group-open:rotate-45 transition-transform">+</span>
+            </summary>
+            <p class="mt-3 text-[15px] text-[#D4D4D8] leading-relaxed" data-i18n="faq_a3">
+              Al completar el pago en Stripe recibes en segundos tu clave criptográfica SDOCK-... en tu correo. StackDock verifica la firma matemática de forma local con Apple CryptoKit en menos de 1 milisegundo: cero cuentas obligatorias, cero servidores de rastreo y funcionamiento perpetuo sin internet.
+            </p>
+          </details>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="border-t border-white/10 py-10 bg-black">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-6 text-xs text-[#A1A1AA]">
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-2.5">
+          <span class="w-2 h-2 rounded-full bg-[#30D158]"></span>
+          <span>StackDock v4.0 • Built by <strong class="text-[#F5F5F7]">BLACK EYE</strong> • 2026</span>
+        </div>
+        <div class="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 font-medium">
+          <span>macOS 13+ Universal</span>
+          <span>Developer ID Notarized · Team ID YH6W55MP95</span>
+          <a href="#pricing" class="text-[#64D2FF] hover:underline" data-i18n="footer_pricing">Personal $9.99 · Pro $19</a>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 font-medium border-t border-white/10 pt-5">
+        <button type="button" onclick="openLegalModal('terms')" class="hover:text-white transition cursor-pointer" data-i18n="legal_terms">Terms</button>
+        <button type="button" onclick="openLegalModal('privacy')" class="hover:text-white transition cursor-pointer" data-i18n="legal_privacy">Privacy</button>
+        <button type="button" onclick="openLegalModal('refund')" class="hover:text-white transition cursor-pointer" data-i18n="legal_refund">14-Day Refund Policy</button>
+        <a href="mailto:stackdock@iareal.net" class="hover:text-white transition">stackdock@iareal.net</a>
+        <a href="https://wa.me/525645674407" target="_blank" rel="noopener noreferrer" class="hover:text-white transition">WhatsApp +52 56 4567 4407</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ================= CHECKOUT / DOWNLOAD MODAL ================= -->
+  <div id="action-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/80 backdrop-blur-xl">
+    <div class="apple-card max-w-md w-full rounded-[28px] p-7 border border-white/20 relative max-h-[92vh] overflow-y-auto">
+      <button type="button" onclick="closeActionModal()" aria-label="Close"
+        class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-[#F5F5F7] font-mono cursor-pointer">✕</button>
+      <div class="w-11 h-11 rounded-2xl bg-[#0071E3]/20 border border-[#2997FF]/45 flex items-center justify-center text-[#64D2FF] mb-4 font-mono font-bold">SD</div>
+      <h4 id="modal-title" class="text-xl font-bold text-[#F5F5F7] mb-2">Download StackDock v4.0</h4>
+      <p id="modal-desc" class="text-sm text-[#D4D4D8] leading-relaxed mb-4">
+        Apple Signed &amp; Notarized Universal installer for macOS 13+. Full 7-day trial — no credit card.
+      </p>
+      <div id="modal-email-wrap" class="mb-4 hidden">
+        <label for="modal-email" class="block text-xs font-semibold text-[#A1A1AA] mb-1.5" data-i18n="modal_email_label">Email for trial tips (optional)</label>
+        <input id="modal-email" type="email" autocomplete="email" placeholder="you@company.com"
+          class="w-full px-3.5 py-2.5 rounded-xl bg-black/70 border border-white/15 text-sm text-[#F5F5F7] placeholder:text-[#71717A] focus:outline-none focus:border-[#2997FF]/60" />
+        <p class="mt-1.5 text-[11px] text-[#71717A]" data-i18n="modal_email_hint">We’ll send a short onboarding sequence via Resend. Skip anytime.</p>
+      </div>
+      <div class="p-3.5 rounded-xl bg-black/70 border border-white/15 font-mono text-[11px] text-[#E4E4E7] mb-3 overflow-x-auto space-y-1" id="modal-code">
+        <div>StackDock-4.0.0.dmg · Universal arm64 + x86_64</div>
+        <div id="modal-sha">SHA-256: __DMG_SHA256__</div>
+        <div id="modal-team">Apple Notarization Team ID: YH6W55MP95</div>
+      </div>
+      <div id="modal-feedback" class="hidden mb-4 p-3 rounded-xl bg-[#30D158]/15 border border-[#30D158]/40 text-xs text-[#86EFAC] font-medium"></div>
+      <div class="flex flex-col gap-2.5">
+        <button type="button" onclick="executeModalPrimaryAction()"
+          class="w-full py-3.5 rounded-full font-bold text-sm btn-apple-blue cursor-pointer" id="modal-btn">
+          Continue
+        </button>
+        <button type="button" onclick="copyInstallVerifyCmd()"
+          class="w-full py-2.5 rounded-full font-mono text-xs btn-apple-secondary cursor-pointer" id="modal-copy-btn">
+          Copy Apple spctl verification command
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= LEGAL MODAL ================= -->
+  <div id="legal-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/80 backdrop-blur-xl">
+    <div class="apple-card max-w-lg w-full rounded-[28px] p-7 border border-white/20 relative max-h-[85vh] overflow-y-auto">
+      <button type="button" onclick="closeLegalModal()" aria-label="Close"
+        class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-[#F5F5F7] font-mono cursor-pointer">✕</button>
+      <h4 id="legal-title" class="text-xl font-bold text-[#F5F5F7] mb-3 pr-8">Terms</h4>
+      <div id="legal-body" class="text-sm text-[#D4D4D8] leading-relaxed space-y-3"></div>
+    </div>
+  </div>
+
+  <!-- ================= RETINA IMAGE LIGHTBOX MODAL ================= -->
+  <div id="lightbox-modal" onclick="closeLightbox()" class="fixed inset-0 z-50 hidden items-center justify-center p-4 sm:p-8 bg-black/90 backdrop-blur-xl cursor-zoom-out">
+    <div class="max-w-5xl w-full apple-card rounded-[26px] overflow-hidden border border-white/25" onclick="event.stopPropagation()">
+      <div class="px-5 py-3.5 bg-[#0C0C10] border-b border-white/12 flex items-center justify-between gap-4">
+        <div>
+          <h4 id="lb-title" class="text-sm sm:text-base font-bold text-[#F5F5F7]">Captura Real Mac mini M4</h4>
+          <p id="lb-desc" class="text-xs text-[#A1A1AA]"></p>
+        </div>
+        <button type="button" onclick="closeLightbox()" class="px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold text-white cursor-pointer">
+          ✕ Cerrar
+        </button>
+      </div>
+      <div class="bg-black p-3 sm:p-6 flex items-center justify-center max-h-[78vh]">
+        <img id="lb-img" src="./public/media/media_screen_bottom.webp" alt="Vista ampliada StackDock" class="max-w-full max-h-[70vh] object-contain rounded-xl" />
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= PRODUCTION CONFIG + I18N + APPLE 3D ENGINE ================= -->
+  <script>
+    // =========================================================================
+    // 0. CONFIGURACIÓN LISTA PARA CURSOR / PRODUCCIÓN (COOLIFY + STRIPE + R2)
+    // =========================================================================
+    // Stripe: inyectable en Coolify via STRIPE_CHECKOUT_URL → sed de __STRIPE_CHECKOUT_URL__
+    // Sin Payment Link aún: cae a #buy (sección id="buy" en esta landing).
+    const STACKDOCK_CONFIG = {
+      stripePersonalUrl: '__STRIPE_CHECKOUT_URL_PERSONAL__',
+      stripeProUrl: '__STRIPE_CHECKOUT_URL_PRO__',
+      stripeCheckoutUrl: '__STRIPE_CHECKOUT_URL__',
+      trialWebhookUrl: '__TRIAL_WEBHOOK_URL__',
+      dmgDownloadUrl: 'https://stackdock.iareal.net/download/StackDock-4.0.0.dmg',
+      dmgSha256: '__DMG_SHA256__',
+      appleTeamId: 'YH6W55MP95',
+      supportEmail: 'stackdock@iareal.net',
+      verifyCmd: 'spctl --assess --type execute -vv /Applications/StackDock.app'
+    };
+    function resolveCheckoutPlaceholder(val, fallback) {
+      if (!val || String(val).includes('__STRIPE_CHECKOUT') || String(val).includes('__TRIAL_WEBHOOK')) return fallback;
+      return val;
+    }
+    STACKDOCK_CONFIG.stripePersonalUrl = resolveCheckoutPlaceholder(STACKDOCK_CONFIG.stripePersonalUrl, resolveCheckoutPlaceholder(STACKDOCK_CONFIG.stripeCheckoutUrl, '#buy'));
+    STACKDOCK_CONFIG.stripeProUrl = resolveCheckoutPlaceholder(STACKDOCK_CONFIG.stripeProUrl, STACKDOCK_CONFIG.stripePersonalUrl);
+    STACKDOCK_CONFIG.stripeCheckoutUrl = resolveCheckoutPlaceholder(STACKDOCK_CONFIG.stripeCheckoutUrl, '#buy');
+    STACKDOCK_CONFIG.trialWebhookUrl = resolveCheckoutPlaceholder(STACKDOCK_CONFIG.trialWebhookUrl, '');
+    if (!STACKDOCK_CONFIG.dmgSha256 || STACKDOCK_CONFIG.dmgSha256.includes('__DMG_SHA256__')) {
+      STACKDOCK_CONFIG.dmgSha256 = '3449e4976099f77f5b083fe9e4a5c6cfe01087821010dc13768eddac7f4a8920';
+    }
+
+    let currentLang = (typeof window.__SD_LANG__ === 'string') ? window.__SD_LANG__ : 'en';
+    let currentModalMode = 'trial';
+
+    // =========================================================================
+    // 1. DICCIONARIO BILINGÜE COMPLETO DE ALTO CONTRASTE (ES | EN)
+    // =========================================================================
+    const dict = {
+      es: {
+        nav_studio: 'Estudio 3D',
+        nav_features: 'Arquitectura',
+        nav_benchmark: 'Rendimiento',
+        nav_captures: 'Capturas M4',
+        nav_compare: 'Comparativa',
+        nav_pricing: 'Licencia',
+        nav_cta: 'Comprar desde $9.99',
+        hero_badge: '100% Swift Nativo • Apple Silicon M1–M4 e Intel • Firmado y Notarizado por Apple',
+        hero_h1: 'Tu Dock de Mac en cada pantalla.<br class="hidden sm:inline" /> Instantáneo. 0.0% CPU en reposo.',
+        hero_sub: 'En monitores apilados o múltiples, macOS atrapa tu Dock en una sola pantalla. StackDock proyecta un Dock nativo de cristal en tus <strong class="text-white font-semibold">2, 3 o 4+ monitores</strong>: invócalo al instante con <span class="mac-kbd">⌥ + D</span>, separa perfiles de Chrome en iconos propios y mueve ventanas de pantalla con <span class="mac-kbd">Shift + Clic</span>.',
+        cta_trial: 'Prueba gratis 7 días (sin tarjeta)',
+        cta_buy: 'Comprar — desde $9.99',
+        cta_subnote: 'Sin tarjeta en la prueba • Personal $9.99 (1 Mac) · Pro $19 (3 Macs) • Licencia offline Ed25519 • macOS 13+',
+        stage_title: 'Estudio Interactivo 3D — Apple Studio Display 27" + Monitor Secundario 15.6" + Mac mini M4',
+        cam_front: 'Frontal',
+        cam_iso: 'Ángulo Estudio',
+        cam_dock: 'Macro al Dock',
+        hud_cpu: 'CPU en reposo',
+        hud_mem: 'Footprint real',
+        hud_docks: 'Docks activos',
+        status_ready: 'Pulsa ⌥ + D en tu teclado o prueba los controles debajo',
+        drag_hint: 'Arrastra con el mouse para girar el escritorio en 3D',
+        ctrl_a_tag: '⌥ + D • Mostrar / Ocultar Docks',
+        ctrl_a_desc: 'Invoca o esconde el cristal en ambos monitores',
+        ctrl_b_tag: 'Shift + Clic • Teletransportar',
+        ctrl_b_desc: 'Mueve y auto-escala la ventana entre pantallas',
+        ctrl_c_tag: 'Perfiles de Chrome Separados',
+        ctrl_c_desc: 'Divide en iconos Trabajo, Estudio y Personal',
+        bento_eyebrow: 'INGENIERÍA NATIVA EN UN SOLO BINARIO',
+        bento_title: 'Tres utilidades esenciales de macOS integradas en tu Dock.',
+        bento_lead: 'Diseñado específicamente para escritorios con monitores verticales apilados, pantallas portátiles inferiores y estaciones de trabajo de hasta 4 monitores.',
+        b1_title: 'Adiós al borde muerto en monitores apilados.',
+        b1_desc: 'Cuando colocas un monitor portátil debajo de tu pantalla principal, macOS encierra el Dock abajo porque al bajar el cursor cruzas de monitor. Con StackDock presionas <span class="mac-kbd">⌥ + D</span> (o <span class="mac-kbd">F12</span>) para mostrar u ocultar al instante Docks idénticos en todas tus pantallas, manteniendo el Dock original de Apple en autohide sin doble barra.',
+        b1_foot: '+ Lanzamiento rápido con ⌥ + 1..9',
+        b2_title: 'Cada perfil de Chrome en su propio icono.',
+        b2_desc: '¿Tienes abiertas ventanas de Trabajo, Estudio y Personal? StackDock las desagrupa automáticamente en iconos individuales con su avatar y etiqueta clara. Haz clic para ir directo a ese perfil o ciérralo con <span class="mac-kbd">⌥ + ⌘ + Clic</span> sin cerrar todo el navegador.',
+        pill_work: '● Trabajo',
+        pill_studio: '● Estudio',
+        pill_personal: '● Personal',
+        b3_title: 'Teletransporte proporcional de ventanas.',
+        b3_desc: 'Trae cualquier ventana desde tu monitor secundario hasta tu pantalla principal de 27" —reescalada proporcionalmente sin cortes de resolución— haciendo <span class="mac-kbd">Shift + Clic</span> sobre su icono en el Dock o pulsando <span class="mac-kbd">⌃ + ⌥ + W</span>.',
+        b3_foot: '✓ Sustituye utilidades externas para mover ventanas entre monitores',
+        b4_title: 'Aislamiento por pantalla, Descargas y Papelera nativa.',
+        b4_desc: 'Elige si cada monitor muestra todo tu Dock sincronizado o únicamente las ventanas abiertas en esa pantalla. Incluye acceso directo a Descargas, estado real de la Papelera, ocultar app activa con un clic, tres posiciones por pantalla e inicio automático en macOS.',
+        b4_tag1: '✓ Clic en app activa para ocultar',
+        b4_tag2: '✓ Aislamiento opcional por monitor',
+        b4_tag3: '✓ Posición abajo, elevada o superior',
+        am_eyebrow: 'EFICIENCIA VERIFICADA EN APPLE SILICON',
+        am_title: 'Cero grabación de pantalla.<br class="hidden sm:inline" /> Cero ciclos desperdiciados.',
+        am_subtitle: 'Otros reemplazos del Dock capturan video continuo con ScreenCaptureKit las 24 horas para dibujar miniaturas, disparando la memoria a más de 230 MB y exigiendo permisos invasivos. StackDock escucha únicamente notificaciones del sistema y eventos Carbon.',
+        am_sd_sub: 'Binario Universal Swift (arm64 + x86_64)',
+        am_badge_win: '$9.99 ÚNICO',
+        am_badge_lose: '$59/AÑO O $159',
+        am_comp_name: 'Docks con captura de video 24/7',
+        am_lbl_cpu: 'Uso de CPU en reposo',
+        am_lbl_ram: 'Footprint real en Apple M4',
+        am_lbl_perm: 'Permiso de Grabación de Pantalla',
+        am_val_perm_good: 'Jamás requerido',
+        am_lbl_cpu2: 'Uso de CPU constante',
+        am_lbl_ram2: 'Memoria ocupada por miniaturas',
+        am_lbl_perm2: 'Permiso de Grabación de Pantalla',
+        am_val_perm_bad: 'Obligatorio + Login online',
+        gal_eyebrow: 'CAPTURAS REALES EN PRODUCCIÓN • MAC MINI M4',
+        gal_title: 'Así luce StackDock corriendo en macOS real.',
+        gtab_all: 'Todas (6)',
+        gtab_displays: 'Doble Monitor',
+        gtab_dock: 'Detalle del Dock',
+        gtab_perf: 'Monitor de Actividad',
+        zoom_hint: 'Clic para ampliar',
+        zoom_hint2: 'Clic para ampliar',
+        gal_c1_title: 'Monitor Secundario con Dock de Cristal Fijo',
+        gal_c1_desc: 'Barra NSVisualEffectView centrada con puntos de ejecución, etiquetas de ventana, Descargas y Papelera.',
+        gal_c2_title: 'Monitor Principal Superior en Simultáneo',
+        gal_c2_desc: 'Convivencia limpia con Stage Manager y barra de menús de macOS sin saltos ni bloqueos de borde.',
+        gal_c3_title: 'Acabado Esmerilado Nativo y Etiquetas Superiores',
+        gal_c3_desc: 'Píldoras de alto contraste sobre Chrome y editores para distinguir cada instancia de un vistazo.',
+        gal_c4_title: 'Translucidez Adaptativa sobre Fondos Claros',
+        gal_c4_desc: 'El material HUD nativo de macOS mantiene contraste nítido tanto en fondos oscuros como diurnos.',
+        gal_c5_title: 'Monitor de Actividad en Vivo: 0.0% CPU y 0.0% GPU',
+        gal_c5_desc: '4 subprocesos y 0 activaciones en reposo corriendo de forma nativa sobre arquitectura Apple Silicon.',
+        gal_c6_title: 'Huella de Memoria Verificada (32 MB Footprint)',
+        gal_c6_desc: 'Medición directa del proceso de 64 bits (com.blackeye.stackdock) con páginas de 16 KB en Apple M4.',
+        cmp_eyebrow: 'COMPARATIVA TRANSPARENTE DE MERCADO',
+        cmp_title: 'Más capacidades multi-monitor.<br class="hidden sm:inline" /> Una fracción del precio.',
+        cmp_col_feat: 'Capacidad',
+        cmp_r1: 'Precio',
+        cmp_r2: 'Docks simultáneos en 2–4+ pantallas',
+        cmp_r4: 'Ventanas / perfiles Chrome como iconos propios',
+        cmp_r5: 'Teletransporte auto-escalado (Shift+Clic / ⌃⌥W)',
+        cmp_r6: 'Privacidad y activación sin cuenta online',
+        cmp_r7: 'Permiso de Grabación de Pantalla',
+        yes_1: '✓ Sí (macOS 13+)',
+        yes_sonoma: '✓ Sí (macOS 14+)',
+        yes_sonoma2: '✓ Sí (macOS 14+)',
+        cmp_lock_only: '✕ Solo fija 1 Dock',
+        cmp_sd_profiles: '✓ Sí, con avatar y badge',
+        cmp_no_tiles: '✕ No separa iconos',
+        yes_basic: '✓ Sí',
+        cmp_yes_scale: '✓ Integrado',
+        cmp_offline: '✓ 100% Offline (Ed25519)',
+        cmp_online_lic: 'Activación online',
+        cmp_acct_req: 'Exige crear cuenta',
+        cmp_never: '0 REQUERIDOS',
+        cmp_opt_prev: 'Al activar vistas previas',
+        cmp_req: 'Requerido para vistas en vivo',
+        cmp_not_req: 'No requerido',
+        pr_eyebrow: 'LICENCIAS VITALICIAS',
+        pr_section_title: 'Precio simple. Tuyo para siempre.',
+        pr_section_sub: 'Prueba completa 7 días — sin tarjeta. Luego elige Personal o Pro.',
+        pr_badge: 'PRECIO DE LANZAMIENTO',
+        pr_title: 'StackDock Pro',
+        pr_sub: 'Paga una sola vez. Sin cuentas ni suscripciones.',
+        pr_usd: 'USD · PAGO ÚNICO',
+        pr_personal_badge: 'PERSONAL',
+        pr_personal_title: 'StackDock Personal',
+        pr_personal_sub: 'Una Mac. Todas las funciones. Actualizaciones de por vida.',
+        pr_personal_f1: 'Licencia para <strong class="text-white">1 Mac</strong>',
+        pr_pro_badge: 'PRO',
+        pr_pro_title: 'StackDock Pro',
+        pr_pro_sub: 'Hasta 3 Macs. Mejor valor para escritorios multi-máquina.',
+        pr_pro_f1: 'Licencia para <strong class="text-white">3 Macs</strong>',
+        pr_pro_f5: 'Soporte prioritario · Bundle Findaro disponible en checkout',
+        pr_popular: 'MÁS POPULAR',
+        pr_f1: 'Licencia válida hasta en <strong class="text-white">3 Macs</strong>',
+        pr_f2: 'Monitores ilimitados simultáneos',
+        pr_f3: 'Perfiles Chrome + Teletransporte <span class="mac-kbd">Shift + Clic</span>',
+        pr_f4: 'Clave offline Ed25519 por correo',
+        pr_f5: 'Instalador Universal .dmg notarizado por Apple',
+        pr_btn_buy: 'Comprar — desde $9.99',
+        pr_btn_personal: 'Comprar Personal — $9.99',
+        pr_btn_pro: 'Comprar Pro — $19.00',
+        pr_btn_trial: 'Prueba gratis 7 días (sin tarjeta)',
+        pr_trial_note: 'Funciones completas 7 días. Email opcional para tips de onboarding.',
+        footer_pricing: 'Personal $9.99 · Pro $19',
+        legal_terms: 'Términos',
+        legal_privacy: 'Privacidad',
+        legal_refund: 'Reembolso 14 días',
+        modal_email_label: 'Email para tips de prueba (opcional)',
+        modal_email_hint: 'Enviamos una secuencia corta vía Resend. Puedes omitirlo.',
+        faq_title: 'Preguntas Frecuentes',
+        faq_q1: '¿Por qué StackDock no pide permiso de Grabación de Pantalla?',
+        faq_a1: 'Prescindimos deliberadamente de miniaturas de video continuo (ScreenCaptureKit) porque grabar tus ventanas todo el día consume más de 200 MB de RAM. StackDock consulta títulos y coordenadas mediante la API ligera de Accesibilidad de macOS solo cuando interactúas, logrando 0.0% de CPU en reposo.',
+        faq_q2: '¿Cómo evita que aparezcan dos Docks al mismo tiempo?',
+        faq_a2: 'StackDock incluye el modo inteligente "Reemplazar Dock de Apple", que mantiene el Dock nativo en ocultación automática con retardo anti-cruce mientras disfrutas de barras sincronizadas y estables en todos tus monitores, o bien oculta todo al instante con ⌥ + D para trabajar a pantalla limpia.',
+        faq_q3: '¿Cómo funciona la licencia offline Ed25519?',
+        faq_a3: 'Al completar el pago en Stripe recibes en segundos tu clave criptográfica SDOCK-... en tu correo. StackDock verifica la firma matemática de forma local con Apple CryptoKit en menos de 1 milisegundo: cero cuentas obligatorias, cero servidores de rastreo y funcionamiento perpetuo sin internet.'
+      },
+      en: {
+        nav_studio: '3D Studio',
+        nav_features: 'Architecture',
+        nav_benchmark: 'Performance',
+        nav_captures: 'M4 Captures',
+        nav_compare: 'Compare',
+        nav_pricing: 'Pricing',
+        nav_cta: 'Buy from $9.99',
+        hero_badge: '100% Native Swift • Apple Silicon M1–M4 & Intel • Apple Signed & Notarized',
+        hero_h1: 'Your Mac Dock on every display.<br class="hidden sm:inline" /> Instantaneous. 0.0% Idle CPU.',
+        hero_sub: 'On stacked or multi-monitor setups, macOS traps your Dock on a single screen. StackDock renders a crisp frosted-glass Dock across <strong class="text-white font-semibold">2, 3, or 4+ displays</strong>: summon instantly with <span class="mac-kbd">⌥ + D</span>, split Chrome profiles into labeled icons, and teleport windows with <span class="mac-kbd">Shift + Click</span>.',
+        cta_trial: '7-Day Free Trial (No Credit Card)',
+        cta_buy: 'Buy Now — from $9.99',
+        cta_subnote: 'No credit card for trial • Personal $9.99 (1 Mac) · Pro $19 (3 Macs) • Offline Ed25519 license • macOS 13+',
+        stage_title: 'Interactive 3D Studio — 27" Apple Studio Display + 15.6" Secondary Monitor + Mac mini M4',
+        cam_front: 'Front View',
+        cam_iso: 'Studio Angle',
+        cam_dock: 'Dock Macro',
+        hud_cpu: 'Idle CPU',
+        hud_mem: 'Real Footprint',
+        hud_docks: 'Active Docks',
+        status_ready: 'Press ⌥ + D on your keyboard or test the studio controls below',
+        drag_hint: 'Drag with mouse or touch to orbit the 3D desk setup',
+        ctrl_a_tag: '⌥ + D • Summon / Hide Docks',
+        ctrl_a_desc: 'Toggle frosted glass Docks across both displays',
+        ctrl_b_tag: 'Shift + Click • Teleport Window',
+        ctrl_b_desc: 'Fly and auto-scale any app between screens',
+        ctrl_c_tag: 'Split Chrome Profiles',
+        ctrl_c_desc: 'Uncombine into Work, Studio & Personal icons',
+        bento_eyebrow: 'NATIVE ENGINEERING IN ONE BINARY',
+        bento_title: 'Three essential macOS utilities built right into your Dock.',
+        bento_lead: 'Purpose-built for stacked vertical monitors, angled lower displays, ultrawides, and quad-display workstations.',
+        b1_title: 'Goodbye dead edges on stacked displays.',
+        b1_desc: 'When you place a secondary monitor underneath your main display, macOS traps the Dock on the bottom screen because moving your pointer down crosses displays. Press <span class="mac-kbd">⌥ + D</span> (or <span class="mac-kbd">F12</span>) to summon or hide synchronized Docks across every screen while keeping Apple’s native Dock cleanly tucked away.',
+        b1_foot: '+ Quick Launch slots via ⌥ + 1..9',
+        b2_title: 'Every Chrome profile as its own icon.',
+        b2_desc: 'Running separate Work, Studio, and Personal browser windows? StackDock automatically uncombines them into distinct Dock icons with profile avatars and crisp pill labels. Click to focus that exact profile, or close it via <span class="mac-kbd">⌥ + ⌘ + Click</span> without quitting Chrome.',
+        pill_work: '● Work',
+        pill_studio: '● Studio',
+        pill_personal: '● Personal',
+        b3_title: 'Proportional window teleportation.',
+        b3_desc: 'Pull any window from your compact lower display straight up to your 27" main monitor—proportionally resized with zero macOS clipping—by <span class="mac-kbd">Shift + Clicking</span> its Dock icon or pressing <span class="mac-kbd">⌃ + ⌥ + W</span>.',
+        b3_foot: '✓ Replaces standalone multi-monitor window movers',
+        b4_title: 'Per-display isolation, Downloads & native Trash.',
+        b4_desc: 'Choose between mirrored Docks everywhere or per-monitor window isolation. Includes one-click Downloads, live Trash state, click-active-to-hide, three dock placements, and native Login Item support.',
+        b4_tag1: '✓ Click active app to hide',
+        b4_tag2: '✓ Optional per-monitor isolation',
+        b4_tag3: '✓ Bottom, elevated, or top bar',
+        am_eyebrow: 'VERIFIED APPLE SILICON EFFICIENCY',
+        am_title: 'Zero screen recording.<br class="hidden sm:inline" /> Zero wasted cycles.',
+        am_subtitle: 'Competing Dock replacements record continuous ScreenCaptureKit video streams 24/7 just to draw thumbnails—consuming over 230 MB of RAM and triggering invasive privacy prompts. StackDock runs strictly on event-driven macOS notifications.',
+        am_sd_sub: 'Universal Swift Binary (arm64 + x86_64)',
+        am_badge_win: '$9.99 ONCE',
+        am_badge_lose: '$59/YR OR $159',
+        am_comp_name: '24/7 Video-Capture Docks',
+        am_lbl_cpu: 'Idle CPU Usage',
+        am_lbl_ram: 'Real Footprint on Apple M4',
+        am_lbl_perm: 'Screen Recording Permission',
+        am_val_perm_good: 'Never required',
+        am_lbl_cpu2: 'Constant background CPU',
+        am_lbl_ram2: 'Thumbnail buffer memory',
+        am_lbl_perm2: 'Screen Recording Permission',
+        am_val_perm_bad: 'Mandatory + Cloud login',
+        gal_eyebrow: 'PRODUCTION SHOWCASE • MAC MINI M4',
+        gal_title: 'StackDock running live on real macOS.',
+        gtab_all: 'All (6)',
+        gtab_displays: 'Dual Display',
+        gtab_dock: 'Dock Close-Up',
+        gtab_perf: 'Activity Monitor',
+        zoom_hint: 'Click to zoom',
+        zoom_hint2: 'Click to zoom',
+        gal_c1_title: 'Secondary Display with Anchored Frosted Dock',
+        gal_c1_desc: 'Centered NSVisualEffectView bar with running dots, window badges, Downloads, and Trash.',
+        gal_c2_title: 'Top Main Display Running Simultaneously',
+        gal_c2_desc: 'Seamless coexistence with Stage Manager and macOS menu bar with zero edge-trap friction.',
+        gal_c3_title: 'Native HUD Glass & High-Contrast Pill Badges',
+        gal_c3_desc: 'Crisp top labels over Chrome and code editors distinguish every open profile at a glance.',
+        gal_c4_title: 'Adaptive Translucency Over Bright Wallpapers',
+        gal_c4_desc: 'macOS HUD material maintains razor-sharp icon legibility across bright and dark desktops.',
+        gal_c5_title: 'Live Activity Monitor: 0.0% CPU & 0.0% GPU',
+        gal_c5_desc: '4 threads and 0 idle wakeups running natively on Apple Silicon.',
+        gal_c6_title: 'Verified 32 MB Memory Footprint',
+        gal_c6_desc: 'Direct measurement of the 64-bit com.blackeye.stackdock binary on Apple M4.',
+        cmp_eyebrow: 'TRANSPARENT MARKET COMPARISON',
+        cmp_title: 'More multi-display power.<br class="hidden sm:inline" /> A fraction of the price.',
+        cmp_col_feat: 'Capability',
+        cmp_r1: 'Price',
+        cmp_r2: 'Simultaneous Docks on 2–4+ displays',
+        cmp_r4: 'Chrome profiles / windows as separate icons',
+        cmp_r5: 'Auto-scaled Window Teleporter (Shift+Click / ⌃⌥W)',
+        cmp_r6: 'Privacy & account-free offline activation',
+        cmp_r7: 'Screen Recording Permission',
+        yes_1: '✓ Yes (macOS 13+)',
+        yes_sonoma: '✓ Yes (macOS 14+)',
+        yes_sonoma2: '✓ Yes (macOS 14+)',
+        cmp_lock_only: '✕ Locks 1 Dock only',
+        cmp_sd_profiles: '✓ Yes, with avatar & badge',
+        cmp_no_tiles: '✕ No separate window tiles',
+        yes_basic: '✓ Yes',
+        cmp_yes_scale: '✓ Built-in',
+        cmp_offline: '✓ 100% Offline (Ed25519)',
+        cmp_online_lic: 'Online check',
+        cmp_acct_req: 'Mandatory account',
+        cmp_never: '0 REQUIRED',
+        cmp_opt_prev: 'When previews enabled',
+        cmp_req: 'Required for live previews',
+        cmp_not_req: 'Not required',
+        pr_eyebrow: 'LIFETIME LICENSING',
+        pr_section_title: 'Simple pricing. Own it forever.',
+        pr_section_sub: '7-day full free trial — no credit card. Then pick Personal or Pro.',
+        pr_badge: 'LAUNCH OFFER',
+        pr_title: 'StackDock Pro',
+        pr_sub: 'Pay once. Own forever with zero accounts and zero subscriptions.',
+        pr_usd: 'USD · ONE-TIME',
+        pr_personal_badge: 'PERSONAL',
+        pr_personal_title: 'StackDock Personal',
+        pr_personal_sub: 'One Mac. Full features. Lifetime updates.',
+        pr_personal_f1: 'License for <strong class="text-white">1 Mac</strong>',
+        pr_pro_badge: 'PRO',
+        pr_pro_title: 'StackDock Pro',
+        pr_pro_sub: 'Up to 3 Macs. Best value for multi-machine desks.',
+        pr_pro_f1: 'License for <strong class="text-white">3 Macs</strong>',
+        pr_pro_f5: 'Priority support · Findaro bundle bump available at checkout',
+        pr_popular: 'MOST POPULAR',
+        pr_f1: 'Valid on up to <strong class="text-white">3 Macs</strong>',
+        pr_f2: 'Unlimited connected monitors',
+        pr_f3: 'Chrome profile splitter + <span class="mac-kbd">Shift + Click</span> teleport',
+        pr_f4: 'Offline Ed25519 key emailed via Stripe',
+        pr_f5: 'Apple Developer ID Signed & Notarized Universal .dmg',
+        pr_btn_buy: 'Buy Now — from $9.99',
+        pr_btn_personal: 'Buy Personal — $9.99',
+        pr_btn_pro: 'Buy Pro — $19.00',
+        pr_btn_trial: '7-Day Free Trial (No Credit Card)',
+        pr_trial_note: 'Full features for 7 days. Email optional for onboarding tips.',
+        footer_pricing: 'Personal $9.99 · Pro $19',
+        legal_terms: 'Terms',
+        legal_privacy: 'Privacy',
+        legal_refund: '14-Day Refund Policy',
+        modal_email_label: 'Email for trial tips (optional)',
+        modal_email_hint: 'We’ll send a short onboarding sequence via Resend. Skip anytime.',
+        faq_title: 'Frequently Asked Questions',
+        faq_q1: 'Why doesn’t StackDock ask for Screen Recording permission?',
+        faq_a1: 'We deliberately skipped continuous video thumbnails (ScreenCaptureKit) because recording windows nonstop consumes 200+ MB of RAM. StackDock queries window titles and frames via lightweight macOS Accessibility APIs only on interaction—keeping idle CPU at 0.0%.',
+        faq_q2: 'How does it prevent showing a double Dock?',
+        faq_a2: 'StackDock includes a smart "Replace Apple Dock" mode that keeps the native macOS Dock tucked in autohide with anti-pop delay while projecting synchronized Docks across your screens—or hides everything at once via ⌥ + D.',
+        faq_q3: 'How does the offline Ed25519 license work?',
+        faq_a3: 'Seconds after Stripe checkout, your cryptographic SDOCK-... key arrives by email. StackDock verifies the signature locally via Apple CryptoKit in under 1ms: zero logins, zero tracking servers, and permanent offline reliability.'
+      }
+    };
+
+    function langPath(lang) {
+      return lang === 'es' ? '/es/' : '/';
+    }
+
+    function syncLangUrl(lang) {
+      const nextPath = langPath(lang);
+      const next = nextPath + (location.hash || '');
+      const cur = (location.pathname.replace(/\/+$/, '') || '/') + '/';
+      const want = nextPath;
+      if (cur !== want) history.replaceState(null, '', next);
+      const canon = document.getElementById('canonical-link');
+      if (canon) canon.setAttribute('href', 'https://stackdock.iareal.net' + nextPath);
+      document.title = lang === 'es'
+        ? 'StackDock v4.0 — Tu Dock de Mac en Cada Monitor. 0.0% CPU en Reposo.'
+        : 'StackDock v4.0 — Your Mac Dock on Every Display. 0.0% Idle CPU.';
+    }
+
+    function applyLanguage(lang, opts) {
+      currentLang = lang === 'es' ? 'es' : 'en';
+      window.__SD_LANG__ = currentLang;
+      document.documentElement.lang = currentLang;
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (dict[currentLang] && dict[currentLang][key]) {
+          el.innerHTML = dict[currentLang][key];
+        }
+      });
+
+      const esPill = document.getElementById('lang-es-pill');
+      const enPill = document.getElementById('lang-en-pill');
+      if (currentLang === 'es') {
+        esPill.className = 'px-1.5 py-0.5 rounded-full bg-[#F5F5F7] text-black';
+        enPill.className = 'px-1.5 py-0.5 rounded-full text-[#D4D4D8]';
+      } else {
+        enPill.className = 'px-1.5 py-0.5 rounded-full bg-[#F5F5F7] text-black';
+        esPill.className = 'px-1.5 py-0.5 rounded-full text-[#D4D4D8]';
+      }
+      if (!opts || opts.updateUrl !== false) syncLangUrl(currentLang);
+      updateProfileBadgeTextures();
+      refreshDynamicBadges();
+    }
+
+    document.getElementById('lang-toggle').addEventListener('click', () => {
+      applyLanguage(currentLang === 'es' ? 'en' : 'es');
+    });
+
+    function toggleMobileNav() {
+      const drawer = document.getElementById('mobile-nav-drawer');
+      const openIc = document.getElementById('mob-icon-open');
+      const closeIc = document.getElementById('mob-icon-close');
+      if (!drawer) return;
+      const isHidden = drawer.classList.contains('hidden');
+      drawer.classList.toggle('hidden', !isHidden);
+      if (openIc) openIc.classList.toggle('hidden', isHidden);
+      if (closeIc) closeIc.classList.toggle('hidden', !isHidden);
+    }
+
+    function closeMobileNav() {
+      const drawer = document.getElementById('mobile-nav-drawer');
+      const openIc = document.getElementById('mob-icon-open');
+      const closeIc = document.getElementById('mob-icon-close');
+      if (drawer) drawer.classList.add('hidden');
+      if (openIc) openIc.classList.remove('hidden');
+      if (closeIc) closeIc.classList.add('hidden');
+    }
+
+    // =========================================================================
+    // 2. GALLERY FILTER + LIGHTBOX + ACTION MODAL
+    // =========================================================================
+    function filterGallery(cat) {
+      ['all', 'displays', 'dock', 'perf'].forEach(id => {
+        const tab = document.getElementById('gtab-' + id);
+        if (tab) tab.classList.toggle('gal-tab-active', id === cat);
+      });
+      document.querySelectorAll('.gal-card').forEach(card => {
+        const itemCat = card.getAttribute('data-gal-cat');
+        if (cat === 'all' || itemCat === cat) {
+          card.classList.remove('hidden');
+          card.classList.add('flex');
+        } else {
+          card.classList.add('hidden');
+          card.classList.remove('flex');
+        }
+      });
+    }
+
+    function openLightbox(imgId, titleKey, descKey) {
+      const srcEl = document.getElementById(imgId);
+      if (!srcEl) return;
+      document.getElementById('lb-img').src = srcEl.src;
+      document.getElementById('lb-title').textContent = dict[currentLang][titleKey] || '';
+      document.getElementById('lb-desc').textContent = dict[currentLang][descKey] || '';
+      const lb = document.getElementById('lightbox-modal');
+      lb.classList.remove('hidden');
+      lb.classList.add('flex');
+    }
+
+    function closeLightbox() {
+      const lb = document.getElementById('lightbox-modal');
+      lb.classList.add('hidden');
+      lb.classList.remove('flex');
+    }
+
+    function openActionModal(mode) {
+      currentModalMode = mode;
+      const modal = document.getElementById('action-modal');
+      const title = document.getElementById('modal-title');
+      const desc = document.getElementById('modal-desc');
+      const btn = document.getElementById('modal-btn');
+      const copyBtn = document.getElementById('modal-copy-btn');
+      const fb = document.getElementById('modal-feedback');
+      const emailWrap = document.getElementById('modal-email-wrap');
+      const emailInput = document.getElementById('modal-email');
+      const shaEl = document.getElementById('modal-sha');
+      const teamEl = document.getElementById('modal-team');
+      fb.classList.add('hidden');
+      if (emailInput) emailInput.value = '';
+
+      if (shaEl) shaEl.textContent = 'SHA-256: ' + STACKDOCK_CONFIG.dmgSha256;
+      if (teamEl) teamEl.textContent = 'Apple Notarization Team ID: ' + STACKDOCK_CONFIG.appleTeamId;
+
+      const isTrial = mode === 'trial';
+      if (emailWrap) emailWrap.classList.toggle('hidden', !isTrial);
+
+      if (isTrial) {
+        title.textContent = currentLang === 'es' ? 'Descargar StackDock 4.0 (Prueba 7 Días)' : 'Download StackDock 4.0 (7-Day Trial)';
+        desc.textContent = currentLang === 'es'
+          ? 'Binario Universal firmado y notarizado por Apple (macOS 13+). Sin tarjeta. Email opcional para tips.'
+          : 'Apple Signed & Notarized Universal Binary (macOS 13+). No credit card. Optional email for tips.';
+        btn.textContent = currentLang === 'es' ? 'Descargar .dmg (sin tarjeta)' : 'Download .dmg (No Credit Card)';
+      } else if (mode === 'buy_personal') {
+        title.textContent = currentLang === 'es' ? 'StackDock Personal — $9.99' : 'StackDock Personal — $9.99';
+        desc.textContent = currentLang === 'es'
+          ? 'Pago único Stripe. Clave offline Ed25519 para 1 Mac por correo.'
+          : 'One-time Stripe checkout. Offline Ed25519 key for 1 Mac emailed instantly.';
+        btn.textContent = currentLang === 'es' ? 'Ir al Checkout ($9.99)' : 'Proceed to Checkout ($9.99)';
+      } else {
+        // buy / buy_pro default to Pro
+        currentModalMode = 'buy_pro';
+        title.textContent = currentLang === 'es' ? 'StackDock Pro — $19.00' : 'StackDock Pro — $19.00';
+        desc.textContent = currentLang === 'es'
+          ? 'Pago único Stripe. Clave offline Ed25519 válida en hasta 3 Macs.'
+          : 'One-time Stripe checkout. Offline Ed25519 key valid on up to 3 Macs.';
+        btn.textContent = currentLang === 'es' ? 'Ir al Checkout ($19.00)' : 'Proceed to Checkout ($19.00)';
+      }
+
+      copyBtn.textContent = currentLang === 'es'
+        ? 'Copiar comando spctl de verificación Apple'
+        : 'Copy Apple spctl verification command';
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeActionModal() {
+      const modal = document.getElementById('action-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function isValidEmail(v) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v || '').trim());
+    }
+
+    async function postTrialLead(email) {
+      const url = STACKDOCK_CONFIG.trialWebhookUrl;
+      if (!url || !email) return;
+      const payload = {
+        event: 'stackdock.trial.lead',
+        email: email,
+        locale: currentLang,
+        product: 'stackdock',
+        version: '4.0.0',
+        source: 'landing_download_modal',
+        dmg_url: STACKDOCK_CONFIG.dmgDownloadUrl,
+        dmg_sha256: STACKDOCK_CONFIG.dmgSha256,
+        team_id: STACKDOCK_CONFIG.appleTeamId,
+        ts: new Date().toISOString()
+      };
+      try {
+        await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          mode: 'cors',
+          keepalive: true
+        });
+      } catch (e) {
+        // Non-blocking: download must proceed even if webhook fails
+      }
+    }
+
+    async function executeModalPrimaryAction() {
+      if (currentModalMode === 'trial') {
+        const emailInput = document.getElementById('modal-email');
+        const email = (emailInput && emailInput.value || '').trim();
+        if (email && !isValidEmail(email)) {
+          const fb = document.getElementById('modal-feedback');
+          fb.textContent = currentLang === 'es' ? 'Revisa el email o déjalo vacío.' : 'Check the email or leave it blank.';
+          fb.classList.remove('hidden');
+          return;
+        }
+        if (email) await postTrialLead(email);
+        window.location.href = STACKDOCK_CONFIG.dmgDownloadUrl;
+        return;
+      }
+      const targetUrl = currentModalMode === 'buy_personal'
+        ? STACKDOCK_CONFIG.stripePersonalUrl
+        : STACKDOCK_CONFIG.stripeProUrl;
+      window.location.href = targetUrl;
+    }
+
+    const LEGAL_COPY = {
+      en: {
+        terms: {
+          title: 'Terms of Service',
+          body: '<p>StackDock is a macOS utility sold by BLACK EYE. A Personal license covers 1 Mac; Pro covers up to 3 Macs. Licenses are delivered as offline Ed25519 keys (SDOCK-...) after Stripe payment.</p><p>You may not redistribute the binary or license keys. The software is provided as-is for personal or internal business use on authorized Macs.</p><p>Contact: <a class="text-[#64D2FF]" href="mailto:stackdock@iareal.net">stackdock@iareal.net</a></p>'
+        },
+        privacy: {
+          title: 'Privacy Policy',
+          body: '<p>We collect only what is needed to fulfill purchases and optional trial onboarding: Stripe checkout email, optional trial email, and license delivery metadata.</p><p>StackDock validates licenses offline on-device; we do not require a permanent account or continuous cloud check-in.</p><p>Emails are sent via Resend. Payment processing is handled by Stripe. Support: stackdock@iareal.net · WhatsApp +52 56 4567 4407.</p>'
+        },
+        refund: {
+          title: '14-Day Refund Policy',
+          body: '<p>If StackDock does not work as described on a supported Mac (macOS 13+), email <a class="text-[#64D2FF]" href="mailto:stackdock@iareal.net">stackdock@iareal.net</a> within 14 days of purchase for a full refund.</p><p>Include your Stripe receipt email and order ID. License keys associated with refunded orders are revoked.</p>'
+        }
+      },
+      es: {
+        terms: {
+          title: 'Términos de Servicio',
+          body: '<p>StackDock es una utilidad de macOS de BLACK EYE. La licencia Personal cubre 1 Mac; Pro hasta 3 Macs. Las claves offline Ed25519 (SDOCK-...) se entregan tras el pago en Stripe.</p><p>No está permitido redistribuir el binario ni las claves. El software se ofrece tal cual para uso personal o interno en Macs autorizadas.</p><p>Contacto: <a class="text-[#64D2FF]" href="mailto:stackdock@iareal.net">stackdock@iareal.net</a></p>'
+        },
+        privacy: {
+          title: 'Política de Privacidad',
+          body: '<p>Recolectamos solo lo necesario para compras y onboarding opcional de prueba: email de Stripe, email opcional de trial y metadatos de entrega de licencia.</p><p>StackDock valida licencias offline en el dispositivo; no exige cuenta permanente ni check-in continuo.</p><p>Correos vía Resend. Pagos vía Stripe. Soporte: stackdock@iareal.net · WhatsApp +52 56 4567 4407.</p>'
+        },
+        refund: {
+          title: 'Política de Reembolso 14 Días',
+          body: '<p>Si StackDock no funciona como se describe en un Mac soportado (macOS 13+), escribe a <a class="text-[#64D2FF]" href="mailto:stackdock@iareal.net">stackdock@iareal.net</a> dentro de 14 días para reembolso completo.</p><p>Incluye el email del recibo Stripe y el ID de pedido. Las claves de pedidos reembolsados se revocan.</p>'
+        }
+      }
+    };
+
+    function openLegalModal(kind) {
+      const pack = (LEGAL_COPY[currentLang] || LEGAL_COPY.en)[kind] || LEGAL_COPY.en.terms;
+      document.getElementById('legal-title').textContent = pack.title;
+      document.getElementById('legal-body').innerHTML = pack.body;
+      const m = document.getElementById('legal-modal');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+    }
+
+    function closeLegalModal() {
+      const m = document.getElementById('legal-modal');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+
+    function copyInstallVerifyCmd() {
+      const fb = document.getElementById('modal-feedback');
+      const text = STACKDOCK_CONFIG.verifyCmd;
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+        } else {
+          fallbackCopy(text);
+        }
+      } catch (e) {
+        fallbackCopy(text);
+      }
+      fb.textContent = currentLang === 'es'
+        ? '✓ Comando copiado: ' + text
+        : '✓ Command copied: ' + text;
+      fb.classList.remove('hidden');
+    }
+
+    function fallbackCopy(text) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta);
+    }
+
+    // =========================================================================
+    // 3. MOTOR 3D ESTILO APPLE (CNC BEVELED ALUMINUM + STUDIO HDRI + SQUIRCLES)
+    // =========================================================================
+    let docksVisible = true;
+    let windowOnTopMonitor = false;
+    let chromeSplitActive = false;
+    let teleportProgress = 0; // 0 = bottom 15.6", 1 = top 27"
+
+    let topDockGroup, bottomDockGroup;
+    let teleportAppMesh;
+    let chromeClusterTop = [], chromeClusterBottom = [];
+    let studioGroup, mainCamera;
+    let currentCamPreset = 'front';
+    let baseCamZ = 7.45;
+    let targetCamPos = { x: 0, y: 0.92, z: 7.45 };
+    let targetCamLook = { x: 0, y: 0.42, z: 0 };
+    let targetStageRot = { x: 0.02, y: 0 };
+
+    function getResponsiveCamZ(baseZ) {
+      const container = document.getElementById('studio-canvas-container');
+      if (!container) return baseZ;
+      const w = container.clientWidth || 800;
+      const h = container.clientHeight || 500;
+      const aspect = w / h;
+      // On narrow mobile portrait viewports, smoothly pull back camera Z so the 27" monitor + Mac mini never clip
+      if (aspect < 1.15) {
+        const factor = Math.min(1.68, 1.15 / Math.max(0.55, aspect));
+        return baseZ * factor;
+      }
+      return baseZ;
+    }
+
+    // CNC Rounded / Beveled Extruded Box with normalized planar UVs (0..1)
+    function createAppleRoundedBox(w, h, depth, radius, bevelSize) {
+      const shape = new THREE.Shape();
+      const hw = w / 2 - bevelSize;
+      const hh = h / 2 - bevelSize;
+      const r = Math.min(radius, hw, hh);
+
+      shape.moveTo(-hw + r, -hh);
+      shape.lineTo(hw - r, -hh);
+      shape.quadraticCurveTo(hw, -hh, hw, -hh + r);
+      shape.lineTo(hw, hh - r);
+      shape.quadraticCurveTo(hw, hh, hw - r, hh);
+      shape.lineTo(-hw + r, hh);
+      shape.quadraticCurveTo(-hw, hh, -hw, hh - r);
+      shape.lineTo(-hw, -hh + r);
+      shape.quadraticCurveTo(-hw, -hh, -hw + r, -hh);
+
+      const geo = new THREE.ExtrudeGeometry(shape, {
+        depth: Math.max(0.005, depth - bevelSize * 2),
+        bevelEnabled: true,
+        bevelSegments: 6,
+        steps: 1,
+        bevelSize: bevelSize,
+        bevelThickness: bevelSize,
+        curveSegments: 16
+      });
+      geo.center();
+
+      // Normalize UVs cleanly across [-w/2..w/2, -h/2..h/2] for crisp icon mapping
+      const pos = geo.attributes.position;
+      const uv = geo.attributes.uv;
+      for (let i = 0; i < pos.count; i++) {
+        const u = (pos.getX(i) + w / 2) / w;
+        const v = (pos.getY(i) + h / 2) / h;
+        uv.setXY(i, Math.max(0, Math.min(1, u)), Math.max(0, Math.min(1, v)));
+      }
+      uv.needsUpdate = true;
+      return geo;
+    }
+
+    // Procedural Apple Photography Studio Softbox HDRI (Zero network overhead)
+    function buildStudioEnvironment(renderer) {
+      const pmrem = new THREE.PMREMGenerator(renderer);
+      pmrem.compileEquirectangularShader();
+
+      const envScene = new THREE.Scene();
+      envScene.background = new THREE.Color(0x090a0f);
+
+      // Overhead Apple Softbox Strip
+      const topSoftbox = new THREE.Mesh(
+        new THREE.PlaneGeometry(18, 8),
+        new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide })
+      );
+      topSoftbox.position.set(0, 8, 2);
+      topSoftbox.rotation.x = Math.PI / 2;
+      envScene.add(topSoftbox);
+
+      // Left Cool Silver Rim Diffuser
+      const leftPanel = new THREE.Mesh(
+        new THREE.PlaneGeometry(10, 10),
+        new THREE.MeshBasicMaterial({ color: 0xdbeafe, side: THREE.DoubleSide })
+      );
+      leftPanel.position.set(-9, 2, 3);
+      leftPanel.rotation.y = Math.PI / 2.4;
+      envScene.add(leftPanel);
+
+      // Right Warm Titanium Key Diffuser
+      const rightPanel = new THREE.Mesh(
+        new THREE.PlaneGeometry(10, 10),
+        new THREE.MeshBasicMaterial({ color: 0xf1f5f9, side: THREE.DoubleSide })
+      );
+      rightPanel.position.set(9, 2, 3);
+      rightPanel.rotation.y = -Math.PI / 2.4;
+      envScene.add(rightPanel);
+
+      // Front Specular Horizon Bar (reflects cleanly on glass Dock & bezels)
+      const frontStrip = new THREE.Mesh(
+        new THREE.PlaneGeometry(16, 2.2),
+        new THREE.MeshBasicMaterial({ color: 0xe2e8f0, side: THREE.DoubleSide })
+      );
+      frontStrip.position.set(0, 2.5, 10);
+      envScene.add(frontStrip);
+
+      const envTex = pmrem.fromScene(envScene, 0.04).texture;
+      pmrem.dispose();
+      return envTex;
+    }
+
+    // Soft radial contact shadow under desk hardware
+    function makeContactShadowTexture() {
+      const c = document.createElement('canvas');
+      c.width = 256;
+      c.height = 256;
+      const ctx = c.getContext('2d');
+      const g = ctx.createRadialGradient(128, 128, 12, 128, 128, 120);
+      g.addColorStop(0, 'rgba(0,0,0,0.85)');
+      g.addColorStop(0.55, 'rgba(0,0,0,0.38)');
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, 256, 256);
+      return new THREE.CanvasTexture(c);
+    }
+
+    // High-DPI Retina macOS App Icon CanvasTextures
+    function makeAppIconTexture(kind, accentHex) {
+      const c = document.createElement('canvas');
+      c.width = 256;
+      c.height = 256;
+      const ctx = c.getContext('2d');
+
+      if (kind === 'finder') {
+        const g = ctx.createLinearGradient(0, 0, 256, 256);
+        g.addColorStop(0, '#38BDF8');
+        g.addColorStop(1, '#0284C7');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, 256, 256);
+        ctx.fillStyle = '#E0F2FE';
+        ctx.fillRect(126, 0, 130, 256);
+        // Classic Finder smile & eyes
+        ctx.strokeStyle = '#0F172A';
+        ctx.lineWidth = 12;
+        ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(82, 86); ctx.lineTo(82, 114); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(174, 86); ctx.lineTo(174, 114); ctx.stroke();
+        ctx.beginPath(); ctx.arc(128, 138, 56, 0.2 * Math.PI, 0.8 * Math.PI); ctx.stroke();
+      } else if (kind === 'safari') {
+        const g = ctx.createLinearGradient(0, 0, 0, 256);
+        g.addColorStop(0, '#38BDF8');
+        g.addColorStop(1, '#0071E3');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, 256, 256);
+        ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+        ctx.lineWidth = 8;
+        ctx.beginPath(); ctx.arc(128, 128, 86, 0, Math.PI * 2); ctx.stroke();
+        // Compass needle
+        ctx.fillStyle = '#FF453A';
+        ctx.beginPath(); ctx.moveTo(128, 128); ctx.lineTo(178, 72); ctx.lineTo(114, 114); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#FFFFFF';
+        ctx.beginPath(); ctx.moveTo(128, 128); ctx.lineTo(78, 184); ctx.lineTo(142, 142); ctx.closePath(); ctx.fill();
+      } else if (kind === 'chrome') {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, 256, 256);
+        const cols = ['#EA4335', '#FBBC05', '#34A853'];
+        for (let i = 0; i < 3; i++) {
+          ctx.beginPath();
+          ctx.moveTo(128, 128);
+          ctx.arc(128, 128, 88, (i * 2 * Math.PI) / 3 - Math.PI / 2, ((i + 1) * 2 * Math.PI) / 3 - Math.PI / 2);
+          ctx.closePath();
+          ctx.fillStyle = cols[i];
+          ctx.fill();
+        }
+        ctx.beginPath(); ctx.arc(128, 128, 44, 0, Math.PI * 2); ctx.fillStyle = '#FFFFFF'; ctx.fill();
+        ctx.beginPath(); ctx.arc(128, 128, 35, 0, Math.PI * 2); ctx.fillStyle = accentHex || '#1A73E8'; ctx.fill();
+      } else if (kind === 'cursor') {
+        const g = ctx.createLinearGradient(0, 0, 256, 256);
+        g.addColorStop(0, '#27272A');
+        g.addColorStop(1, '#09090B');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, 256, 256);
+        ctx.fillStyle = '#F5F5F7';
+        ctx.beginPath();
+        ctx.moveTo(72, 62); ctx.lineTo(192, 128); ctx.lineTo(128, 148); ctx.lineTo(104, 202);
+        ctx.closePath();
+        ctx.fill();
+      } else if (kind === 'notes') {
+        ctx.fillStyle = '#F5F5F7';
+        ctx.fillRect(0, 0, 256, 256);
+        ctx.fillStyle = '#FACC15';
+        ctx.fillRect(0, 0, 256, 68);
+        ctx.strokeStyle = '#D4D4D8';
+        ctx.lineWidth = 6;
+        [112, 154, 196].forEach(y => {
+          ctx.beginPath(); ctx.moveTo(36, y); ctx.lineTo(220, y); ctx.stroke();
+        });
+      } else if (kind === 'downloads') {
+        const g = ctx.createLinearGradient(0, 0, 0, 256);
+        g.addColorStop(0, '#64D2FF');
+        g.addColorStop(1, '#0071E3');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, 256, 256);
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 18;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        ctx.moveTo(128, 68); ctx.lineTo(128, 172);
+        ctx.moveTo(86, 134); ctx.lineTo(128, 178); ctx.lineTo(170, 134);
+        ctx.stroke();
+      } else {
+        const g = ctx.createLinearGradient(0, 0, 0, 256);
+        g.addColorStop(0, '#71717A');
+        g.addColorStop(1, '#3F3F46');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, 256, 256);
+        ctx.strokeStyle = '#E4E4E7';
+        ctx.lineWidth = 10;
+        ctx.strokeRect(74, 68, 108, 132);
+      }
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.needsUpdate = true;
+      return tex;
+    }
+
+    // Apple Sonoma / Tahoe Dark Studio Wallpaper + Crisp macOS Menu Bar
+    function makeMacDisplayTexture(w, h, isStudio27) {
+      const c = document.createElement('canvas');
+      c.width = w;
+      c.height = h;
+      const ctx = c.getContext('2d');
+
+      // Deep Studio Dusk Wallpaper
+      const bg = ctx.createLinearGradient(0, 0, w, h);
+      bg.addColorStop(0, '#0B1325');
+      bg.addColorStop(0.48, '#111A2E');
+      bg.addColorStop(1, '#090B12');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, w, h);
+
+      // Soft Sculpted Horizon Wave (Apple Pro Wallpaper style)
+      const glow = ctx.createRadialGradient(w * 0.5, h * 0.42, 30, w * 0.5, h * 0.42, w * 0.58);
+      glow.addColorStop(0, 'rgba(41, 151, 255, 0.30)');
+      glow.addColorStop(0.5, 'rgba(100, 210, 255, 0.10)');
+      glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, w, h);
+
+      // macOS Translucent Top Menu Bar
+      const barH = isStudio27 ? 28 : 24;
+      ctx.fillStyle = 'rgba(10, 12, 18, 0.86)';
+      ctx.fillRect(0, 0, w, barH);
+
+      ctx.fillStyle = '#F5F5F7';
+      ctx.font = '600 13px Inter, -apple-system, sans-serif';
+      ctx.fillText('   Finder   Archivo   Edición   Visualización   Ventana', 18, 18);
+
+      ctx.fillStyle = '#E4E4E7';
+      ctx.textAlign = 'right';
+      ctx.fillText('▣ StackDock   0.0% CPU', w - 18, 18);
+
+      // Subtle Display Spec Watermark
+      ctx.textAlign = 'center';
+      ctx.fillStyle = 'rgba(245, 245, 247, 0.16)';
+      ctx.font = '600 18px Inter, sans-serif';
+      ctx.fillText(isStudio27 ? 'Studio Display 27"' : 'Monitor Secundario 15.6"', w / 2, h * 0.46);
+
+      return new THREE.CanvasTexture(c);
+    }
+
+    // Clean macOS Multi-Monitor Workspace Window (100% Dock & Productivity)
+    function makeWorkspaceWindowTexture() {
+      const c = document.createElement('canvas');
+      c.width = 640;
+      c.height = 400;
+      const ctx = c.getContext('2d');
+
+      // Rounded macOS Window Shell
+      ctx.fillStyle = '#14151C';
+      ctx.beginPath();
+      ctx.roundRect(4, 4, 632, 392, 20);
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.24)';
+      ctx.stroke();
+
+      // Titlebar
+      ctx.fillStyle = '#1D1E28';
+      ctx.beginPath();
+      ctx.roundRect(6, 6, 628, 42, [18, 18, 0, 0]);
+      ctx.fill();
+
+      // Traffic lights
+      ['#FF5F56', '#FFBD2E', '#28C840'].forEach((col, i) => {
+        ctx.beginPath();
+        ctx.arc(28 + i * 20, 27, 6.2, 0, Math.PI * 2);
+        ctx.fillStyle = col;
+        ctx.fill();
+      });
+
+      ctx.fillStyle = '#F5F5F7';
+      ctx.font = '600 14px Inter, sans-serif';
+      ctx.fillText('Proyecto Studio — Espacio de Trabajo macOS', 102, 32);
+
+      // Left Sidebar
+      ctx.fillStyle = '#181922';
+      ctx.fillRect(6, 48, 168, 346);
+      ctx.fillStyle = '#A1A1AA';
+      ctx.font = '600 12px Inter, sans-serif';
+      ['Pantallas Activas', 'Diseño UI', 'Documentación', 'Compilación Swift'].forEach((item, idx) => {
+        if (idx === 0) {
+          ctx.fillStyle = 'rgba(0, 113, 227, 0.28)';
+          ctx.beginPath(); ctx.roundRect(16, 66 + idx * 38, 148, 28, 8); ctx.fill();
+          ctx.fillStyle = '#FFFFFF';
+        } else {
+          ctx.fillStyle = '#A1A1AA';
+        }
+        ctx.fillText(item, 28, 85 + idx * 38);
+      });
+
+      // Right Clean Bento Layout Preview Cards
+      const cards = [
+        { x: 196, y: 68, w: 200, h: 120, title: 'Pantalla 27" Retina', sub: 'Escala automática 100%', accent: '#2997FF' },
+        { x: 412, y: 68, w: 200, h: 120, title: 'Docks Sincronizados', sub: '⌥ + D instantáneo', accent: '#30D158' },
+        { x: 196, y: 204, w: 416, h: 112, title: '⇄ Shift + Clic: Ventana auto-escalada al monitor destino', sub: 'Sin cortes de resolución entre pantallas grandes y portátiles', accent: '#F5F5F7' }
+      ];
+
+      cards.forEach(cd => {
+        ctx.fillStyle = '#1E202B';
+        ctx.beginPath(); ctx.roundRect(cd.x, cd.y, cd.w, cd.h, 14); ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        ctx.fillStyle = cd.accent;
+        ctx.font = '700 14px Inter, sans-serif';
+        ctx.fillText(cd.title, cd.x + 18, cd.y + 42);
+
+        ctx.fillStyle = '#D4D4D8';
+        ctx.font = '500 12px Inter, sans-serif';
+        ctx.fillText(cd.sub, cd.x + 18, cd.y + 70);
+      });
+
+      return new THREE.CanvasTexture(c);
+    }
+
+    function drawPillCanvas(c, label, accentColor) {
+      const ctx = c.getContext('2d');
+      ctx.clearRect(0, 0, c.width, c.height);
+
+      ctx.fillStyle = 'rgba(12, 12, 16, 0.95)';
+      ctx.beginPath();
+      ctx.roundRect(8, 8, c.width - 16, c.height - 16, 24);
+      ctx.fill();
+
+      ctx.lineWidth = 3.5;
+      ctx.strokeStyle = accentColor;
+      ctx.stroke();
+
+      ctx.fillStyle = '#F5F5F7';
+      ctx.font = '700 24px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, c.width / 2, c.height / 2 + 1);
+    }
+
+    function makePillBadgeSprite(labelEs, labelEn, accentColor) {
+      const c = document.createElement('canvas');
+      c.width = 260;
+      c.height = 68;
+      drawPillCanvas(c, currentLang === 'es' ? labelEs : labelEn, accentColor);
+
+      const tex = new THREE.CanvasTexture(c);
+      const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+      const sprite = new THREE.Sprite(mat);
+      sprite.scale.set(0.74, 0.19, 1);
+      sprite.userData = { canvas: c, tex, labelEs, labelEn, accentColor };
+      return sprite;
+    }
+
+    function updateProfileBadgeTextures() {
+      [chromeClusterTop, chromeClusterBottom].forEach(cluster => {
+        cluster.forEach(item => {
+          const ud = item.badge.userData;
+          if (ud && ud.canvas) {
+            drawPillCanvas(ud.canvas, currentLang === 'es' ? ud.labelEs : ud.labelEn, ud.accentColor);
+            ud.tex.needsUpdate = true;
+          }
+        });
+      });
+    }
+
+    // Build Frosted Glass NSVisualEffectView Dock Assembly with Squircle Icons
+    function createAppleDockAssembly(scaleFactor, chromeClusterOut) {
+      const dockGroup = new THREE.Group();
+
+      // Rounded Frosted Glass Capsule
+      const barGeo = createAppleRoundedBox(3.96 * scaleFactor, 0.40 * scaleFactor, 0.055, 0.11 * scaleFactor, 0.015);
+      const barMat = new THREE.MeshPhysicalMaterial({
+        color: 0x1e2029,
+        transparent: true,
+        opacity: 0.84,
+        roughness: 0.14,
+        metalness: 0.12,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.1
+      });
+      const barMesh = new THREE.Mesh(barGeo, barMat);
+      dockGroup.add(barMesh);
+
+      const iconGeo = createAppleRoundedBox(0.24 * scaleFactor, 0.24 * scaleFactor, 0.045, 0.055 * scaleFactor, 0.01);
+
+      const staticApps = [
+        { x: -1.62, kind: 'finder', running: true },
+        { x: -1.24, kind: 'safari', running: true },
+        { x:  0.66, kind: 'cursor', running: true },
+        { x:  1.00, kind: 'notes',  running: false },
+        { x:  1.38, kind: 'downloads', running: false },
+        { x:  1.70, kind: 'trash', running: false }
+      ];
+
+      staticApps.forEach(ic => {
+        const mat = new THREE.MeshStandardMaterial({
+          map: makeAppIconTexture(ic.kind),
+          roughness: 0.22,
+          metalness: 0.08
+        });
+        const m = new THREE.Mesh(iconGeo, mat);
+        m.position.set(ic.x * scaleFactor, 0.015 * scaleFactor, 0.032);
+        dockGroup.add(m);
+
+        if (ic.running) {
+          const dot = new THREE.Mesh(
+            new THREE.SphereGeometry(0.02 * scaleFactor, 10, 10),
+            new THREE.MeshBasicMaterial({ color: 0xf5f5f7 })
+          );
+          dot.position.set(ic.x * scaleFactor, -0.145 * scaleFactor, 0.04);
+          dockGroup.add(dot);
+        }
+      });
+
+      // Subtle Glass Divider before Downloads
+      const div = new THREE.Mesh(
+        new THREE.BoxGeometry(0.012 * scaleFactor, 0.22 * scaleFactor, 0.02),
+        new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.28 })
+      );
+      div.position.set(1.19 * scaleFactor, 0.01 * scaleFactor, 0.035);
+      dockGroup.add(div);
+
+      // 3 Split-Capable Chrome Profile Squircle Icons (Trabajo / Estudio / Personal)
+      const profiles = [
+        { es: 'Trabajo',  en: 'Work',     offset: -0.52 * scaleFactor, centerHex: '#0071E3', borderHex: '#64D2FF' },
+        { es: 'Estudio',  en: 'Studio',   offset: -0.12 * scaleFactor, centerHex: '#8E8E93', borderHex: '#F5F5F7' },
+        { es: 'Personal', en: 'Personal', offset:  0.28 * scaleFactor, centerHex: '#30D158', borderHex: '#30D158' }
+      ];
+
+      profiles.forEach((p, idx) => {
+        const holder = new THREE.Group();
+        holder.position.set(-0.32 * scaleFactor, 0.015 * scaleFactor, 0.035);
+
+        const cMat = new THREE.MeshStandardMaterial({
+          map: makeAppIconTexture('chrome', p.centerHex),
+          roughness: 0.2,
+          metalness: 0.08
+        });
+        const iconMesh = new THREE.Mesh(iconGeo, cMat);
+        holder.add(iconMesh);
+
+        const dot = new THREE.Mesh(
+          new THREE.SphereGeometry(0.02 * scaleFactor, 10, 10),
+          new THREE.MeshBasicMaterial({ color: 0xf5f5f7 })
+        );
+        dot.position.set(0, -0.16 * scaleFactor, 0.01);
+        holder.add(dot);
+
+        const badge = makePillBadgeSprite(p.es, p.en, p.borderHex);
+        badge.position.set(0, 0.27 * scaleFactor, 0.06);
+        badge.material.opacity = 0;
+        holder.add(badge);
+
+        if (idx > 0) holder.scale.set(0.001, 0.001, 0.001);
+
+        dockGroup.add(holder);
+        chromeClusterOut.push({
+          holder,
+          badge,
+          mergedX: -0.32 * scaleFactor,
+          splitX: p.offset,
+          isSecondary: idx > 0
+        });
+      });
+
+      return dockGroup;
+    }
+
+    function initStudio3D() {
+      const container = document.getElementById('studio-canvas-container');
+      if (!container) return;
+      const w = container.clientWidth || 800;
+      const h = container.clientHeight || 500;
+
+      const scene = new THREE.Scene();
+      targetCamPos.z = getResponsiveCamZ(baseCamZ);
+      mainCamera = new THREE.PerspectiveCamera(36, w / h, 0.1, 100);
+      mainCamera.position.set(targetCamPos.x, targetCamPos.y, targetCamPos.z);
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+      renderer.setSize(w, h);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.12;
+      container.appendChild(renderer.domElement);
+
+      // Apply Procedural Apple Studio Softbox HDRI Reflections
+      scene.environment = buildStudioEnvironment(renderer);
+
+      // Clean Studio White/Silver Key & Rim Lights
+      scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+
+      const keyLight = new THREE.DirectionalLight(0xffffff, 1.15);
+      keyLight.position.set(3.5, 6.5, 6.0);
+      scene.add(keyLight);
+
+      const silverRim = new THREE.PointLight(0xdbeafe, 1.35, 18);
+      silverRim.position.set(-5.0, 3.8, -2.0);
+      scene.add(silverRim);
+
+      studioGroup = new THREE.Group();
+      scene.add(studioGroup);
+
+      // Shared Anodized Aluminum Materials
+      const silverAluminum = new THREE.MeshStandardMaterial({
+        color: 0xd4d4d8,
+        metalness: 0.88,
+        roughness: 0.20
+      });
+      const spaceGrayAluminum = new THREE.MeshStandardMaterial({
+        color: 0x3f3f46,
+        metalness: 0.84,
+        roughness: 0.24
+      });
+      const obsidianGlassBezel = new THREE.MeshStandardMaterial({
+        color: 0x07070a,
+        metalness: 0.2,
+        roughness: 0.08
+      });
+
+      // 1. Matte Architectural Studio Desk
+      const deskGeo = createAppleRoundedBox(9.8, 0.18, 4.6, 0.12, 0.03);
+      const deskMat = new THREE.MeshStandardMaterial({ color: 0x0d0d11, roughness: 0.55, metalness: 0.25 });
+      const desk = new THREE.Mesh(deskGeo, deskMat);
+      desk.position.set(0, -1.48, 0.15);
+      studioGroup.add(desk);
+
+      const shadowTex = makeContactShadowTexture();
+
+      // 2. Mac mini M4 (CNC Silver Rounded Block + Power LED + Contact Shadow)
+      const miniShadow = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.55, 1.55),
+        new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, opacity: 0.78, depthWrite: false })
+      );
+      miniShadow.rotation.x = -Math.PI / 2;
+      miniShadow.position.set(2.95, -1.385, 0.55);
+      studioGroup.add(miniShadow);
+
+      const miniChassis = new THREE.Mesh(
+        createAppleRoundedBox(1.06, 1.06, 0.28, 0.20, 0.035),
+        silverAluminum
+      );
+      miniChassis.position.set(2.95, -1.23, 0.55);
+      miniChassis.rotation.x = Math.PI / 2;
+      studioGroup.add(miniChassis);
+
+      const miniLed = new THREE.Mesh(
+        new THREE.SphereGeometry(0.022, 12, 12),
+        new THREE.MeshBasicMaterial({ color: 0xffffff })
+      );
+      miniLed.position.set(3.26, -1.30, 1.08);
+      studioGroup.add(miniLed);
+
+      // Minimalist Magic Keyboard Silhouette in front
+      const kbBody = new THREE.Mesh(
+        createAppleRoundedBox(2.25, 0.82, 0.05, 0.07, 0.012),
+        silverAluminum
+      );
+      kbBody.rotation.x = -Math.PI / 2 + 0.05;
+      kbBody.position.set(-0.15, -1.36, 1.68);
+      studioGroup.add(kbBody);
+
+      // 3. Machined Aluminum Studio Stand & VESA Column
+      const standBase = new THREE.Mesh(
+        createAppleRoundedBox(1.5, 1.1, 0.06, 0.12, 0.015),
+        silverAluminum
+      );
+      standBase.rotation.x = Math.PI / 2;
+      standBase.position.set(0, -1.36, -0.78);
+      studioGroup.add(standBase);
+
+      const standPillar = new THREE.Mesh(
+        createAppleRoundedBox(0.42, 3.35, 0.10, 0.06, 0.02),
+        silverAluminum
+      );
+      standPillar.position.set(0, 0.30, -0.82);
+      studioGroup.add(standPillar);
+
+      // 4. TOP 27" APPLE STUDIO DISPLAY
+      const topMonitorGroup = new THREE.Group();
+      topMonitorGroup.position.set(0, 1.48, -0.22);
+      studioGroup.add(topMonitorGroup);
+
+      const topAluminumEnclosure = new THREE.Mesh(
+        createAppleRoundedBox(5.38, 3.12, 0.13, 0.12, 0.022),
+        silverAluminum
+      );
+      topMonitorGroup.add(topAluminumEnclosure);
+
+      const topGlassFront = new THREE.Mesh(
+        createAppleRoundedBox(5.30, 3.04, 0.02, 0.09, 0.005),
+        obsidianGlassBezel
+      );
+      topGlassFront.position.z = 0.062;
+      topMonitorGroup.add(topGlassFront);
+
+      const topScreen = new THREE.Mesh(
+        new THREE.PlaneGeometry(5.08, 2.82),
+        new THREE.MeshBasicMaterial({ map: makeMacDisplayTexture(1024, 576, true) })
+      );
+      topScreen.position.z = 0.076;
+      topMonitorGroup.add(topScreen);
+
+      topDockGroup = createAppleDockAssembly(1.0, chromeClusterTop);
+      topDockGroup.position.set(0, -1.16, 0.115);
+      topMonitorGroup.add(topDockGroup);
+
+      // 5. BOTTOM 15.6" ANGLED SECONDARY DISPLAY
+      const bottomShadow = new THREE.Mesh(
+        new THREE.PlaneGeometry(3.8, 1.4),
+        new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, opacity: 0.82, depthWrite: false })
+      );
+      bottomShadow.rotation.x = -Math.PI / 2;
+      bottomShadow.position.set(0, -1.385, 0.58);
+      studioGroup.add(bottomShadow);
+
+      const bottomMonitorGroup = new THREE.Group();
+      bottomMonitorGroup.position.set(0, -0.62, 0.54);
+      bottomMonitorGroup.rotation.x = -0.35;
+      studioGroup.add(bottomMonitorGroup);
+
+      const botEnclosure = new THREE.Mesh(
+        createAppleRoundedBox(3.34, 1.94, 0.09, 0.09, 0.018),
+        spaceGrayAluminum
+      );
+      bottomMonitorGroup.add(botEnclosure);
+
+      const botGlassFront = new THREE.Mesh(
+        createAppleRoundedBox(3.26, 1.86, 0.02, 0.07, 0.004),
+        obsidianGlassBezel
+      );
+      botGlassFront.position.z = 0.042;
+      bottomMonitorGroup.add(botGlassFront);
+
+      const botScreen = new THREE.Mesh(
+        new THREE.PlaneGeometry(3.08, 1.70),
+        new THREE.MeshBasicMaterial({ map: makeMacDisplayTexture(768, 432, false) })
+      );
+      botScreen.position.z = 0.056;
+      bottomMonitorGroup.add(botScreen);
+
+      bottomDockGroup = createAppleDockAssembly(0.68, chromeClusterBottom);
+      bottomDockGroup.position.set(0, -0.66, 0.09);
+      bottomMonitorGroup.add(bottomDockGroup);
+
+      // 6. 3D TELEPORTING WORKSPACE WINDOW (Parabolic Z-Arc Flight)
+      teleportAppMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(2.15, 1.34),
+        new THREE.MeshBasicMaterial({ map: makeWorkspaceWindowTexture(), transparent: true })
+      );
+      studioGroup.add(teleportAppMesh);
+
+      // Drag Orbit + Subtle Pointer Parallax
+      let isDragging = false;
+      let prevX = 0, prevY = 0;
+      let pointerX = 0, pointerY = 0;
+
+      const onDown = (x, y) => { isDragging = true; prevX = x; prevY = y; };
+      const onMove = (x, y) => {
+        const rect = container.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          pointerX = ((x - rect.left) / rect.width - 0.5) * 0.12;
+          pointerY = ((y - rect.top) / rect.height - 0.5) * 0.07;
+        }
+        if (!isDragging) return;
+        const dx = x - prevX;
+        const dy = y - prevY;
+        targetStageRot.y = Math.max(-0.62, Math.min(0.62, targetStageRot.y + dx * 0.006));
+        targetStageRot.x = Math.max(-0.20, Math.min(0.30, targetStageRot.x + dy * 0.004));
+        prevX = x;
+        prevY = y;
+      };
+      const onUp = () => { isDragging = false; };
+
+      container.addEventListener('mousedown', e => onDown(e.clientX, e.clientY));
+      window.addEventListener('mousemove', e => onMove(e.clientX, e.clientY));
+      window.addEventListener('mouseup', onUp);
+
+      container.addEventListener('touchstart', e => {
+        if (e.touches.length === 1) onDown(e.touches[0].clientX, e.touches[0].clientY);
+      }, { passive: true });
+      container.addEventListener('touchmove', e => {
+        if (e.touches.length === 1) onMove(e.touches[0].clientX, e.touches[0].clientY);
+      }, { passive: true });
+      window.addEventListener('touchend', onUp);
+
+      window.addEventListener('resize', () => {
+        const nw = container.clientWidth;
+        const nh = container.clientHeight;
+        if (!nw || !nh) return;
+        mainCamera.aspect = nw / nh;
+        mainCamera.updateProjectionMatrix();
+        renderer.setSize(nw, nh);
+        targetCamPos.z = getResponsiveCamZ(baseCamZ);
+      });
+
+      const lookTargetVec = new THREE.Vector3(0, 0.42, 0);
+
+      function animateStudio() {
+        requestAnimationFrame(animateStudio);
+
+        // Smooth camera interpolation
+        mainCamera.position.x += (targetCamPos.x - mainCamera.position.x) * 0.08;
+        mainCamera.position.y += (targetCamPos.y - mainCamera.position.y) * 0.08;
+        mainCamera.position.z += (targetCamPos.z - mainCamera.position.z) * 0.08;
+
+        lookTargetVec.x += (targetCamLook.x - lookTargetVec.x) * 0.08;
+        lookTargetVec.y += (targetCamLook.y - lookTargetVec.y) * 0.08;
+        lookTargetVec.z += (targetCamLook.z - lookTargetVec.z) * 0.08;
+        mainCamera.lookAt(lookTargetVec);
+
+        // Stage orbit damping
+        studioGroup.rotation.y += ((targetStageRot.y + pointerX) - studioGroup.rotation.y) * 0.07;
+        studioGroup.rotation.x += ((targetStageRot.x + pointerY) - studioGroup.rotation.x) * 0.07;
+
+        // A) Frosted Docks Summon / Hide
+        const dScale = docksVisible ? 1.0 : 0.001;
+        const topY = docksVisible ? -1.16 : -1.36;
+        const botY = docksVisible ? -0.66 : -0.82;
+
+        topDockGroup.scale.lerp(new THREE.Vector3(dScale, dScale, dScale), 0.16);
+        topDockGroup.position.y += (topY - topDockGroup.position.y) * 0.16;
+
+        bottomDockGroup.scale.lerp(new THREE.Vector3(dScale, dScale, dScale), 0.16);
+        bottomDockGroup.position.y += (botY - bottomDockGroup.position.y) * 0.16;
+
+        // B) Parabolic 3D Window Teleportation (Bottom 15.6" <-> Top 27")
+        const targetT = windowOnTopMonitor ? 1 : 0;
+        teleportProgress += (targetT - teleportProgress) * 0.09;
+
+        const arcLiftZ = Math.sin(teleportProgress * Math.PI) * 0.72;
+        const curY = -0.55 + (1.58 - (-0.55)) * teleportProgress;
+        const curZ = 0.65 + (-0.08 - 0.65) * teleportProgress + arcLiftZ;
+        const curRotX = -0.35 * (1 - teleportProgress);
+        const curScale = 0.84 + (1.52 - 0.84) * teleportProgress;
+
+        teleportAppMesh.position.set(0, curY, curZ);
+        teleportAppMesh.rotation.x = curRotX;
+        teleportAppMesh.scale.set(curScale, curScale, 1);
+
+        // C) Chrome Profile Split Animation + Floating Pills
+        [chromeClusterTop, chromeClusterBottom].forEach(cluster => {
+          cluster.forEach(item => {
+            const tx = chromeSplitActive ? item.splitX : item.mergedX;
+            item.holder.position.x += (tx - item.holder.position.x) * 0.15;
+
+            const tSc = (!item.isSecondary || chromeSplitActive) ? 1.0 : 0.001;
+            item.holder.scale.lerp(new THREE.Vector3(tSc, tSc, tSc), 0.15);
+
+            const tOp = chromeSplitActive ? 1.0 : 0.0;
+            item.badge.material.opacity += (tOp - item.badge.material.opacity) * 0.14;
+          });
+        });
+
+        renderer.render(scene, mainCamera);
+      }
+
+      animateStudio();
+    }
+
+    // =========================================================================
+    // 4. CAMERA PRESETS, INTERACTIVE TRIGGERS & SCROLL CHOREOGRAPHY
+    // =========================================================================
+    function setStudioCamera(preset) {
+      currentCamPreset = preset;
+      ['front', 'iso', 'dock'].forEach(p => {
+        const b = document.getElementById('cam-btn-' + p);
+        if (b) b.classList.toggle('cam-pill-active', p === preset);
+      });
+
+      if (preset === 'front') {
+        baseCamZ = 7.45;
+        targetCamPos = { x: 0, y: 0.92, z: getResponsiveCamZ(baseCamZ) };
+        targetCamLook = { x: 0, y: 0.42, z: 0 };
+        targetStageRot = { x: 0.02, y: 0 };
+      } else if (preset === 'iso') {
+        baseCamZ = 7.0;
+        targetCamPos = { x: 2.35, y: 1.25, z: getResponsiveCamZ(baseCamZ) };
+        targetCamLook = { x: 0.15, y: 0.35, z: 0 };
+        targetStageRot = { x: 0.04, y: -0.26 };
+      } else if (preset === 'dock') {
+        baseCamZ = 4.15;
+        targetCamPos = { x: 0, y: 0.38, z: getResponsiveCamZ(baseCamZ) };
+        targetCamLook = { x: 0, y: 0.28, z: 0 };
+        targetStageRot = { x: 0.0, y: 0 };
+      }
+    }
+
+    function refreshDynamicBadges() {
+      const bDocks = document.getElementById('badge-docks');
+      const bTele = document.getElementById('badge-teleport');
+      const bChrome = document.getElementById('badge-chrome');
+      const hudState = document.getElementById('hud-dock-state');
+
+      if (bDocks) {
+        bDocks.textContent = docksVisible
+          ? (currentLang === 'es' ? 'ACTIVO' : 'ON')
+          : (currentLang === 'es' ? 'OCULTO' : 'HIDDEN');
+        bDocks.className = docksVisible
+          ? 'shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold bg-[#30D158]/20 text-[#86EFAC] border border-[#30D158]/40'
+          : 'shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold bg-white/10 text-[#E4E4E7] border border-white/20';
+      }
+
+      if (hudState) {
+        hudState.textContent = docksVisible ? '2 / 2 ON' : '0 / 2 OFF';
+      }
+
+      if (bTele) {
+        bTele.textContent = windowOnTopMonitor
+          ? (currentLang === 'es' ? '27" ARRIBA' : 'TOP 27"')
+          : (currentLang === 'es' ? '15.6" ABAJO' : 'BOTTOM 15.6"');
+        bTele.className = windowOnTopMonitor
+          ? 'shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold bg-[#0071E3]/25 text-[#64D2FF] border border-[#2997FF]/50'
+          : 'shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold bg-white/10 text-[#F5F5F7] border border-white/20';
+      }
+
+      if (bChrome) {
+        bChrome.textContent = chromeSplitActive
+          ? (currentLang === 'es' ? '3 PERFILES' : '3 PROFILES')
+          : (currentLang === 'es' ? 'AGRUPADO' : 'MERGED');
+        bChrome.className = chromeSplitActive
+          ? 'shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold bg-[#0071E3]/25 text-[#64D2FF] border border-[#2997FF]/50'
+          : 'shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold bg-white/10 text-[#E4E4E7] border border-white/20';
+      }
+    }
+
+    function trigger3DDockToggle() {
+      docksVisible = !docksVisible;
+      document.getElementById('btn-3d-docks').classList.toggle('studio-ctrl-active', docksVisible);
+      const st = document.getElementById('live-3d-status');
+      if (st) {
+        st.textContent = docksVisible
+          ? (currentLang === 'es' ? '⌥ + D: Docks de cristal visibles en ambos monitores' : '⌥ + D: Frosted Docks summoned on both displays')
+          : (currentLang === 'es' ? '⌥ + D: Ambos Docks ocultos a pantalla limpia' : '⌥ + D: All Docks hidden instantly');
+      }
+      refreshDynamicBadges();
+    }
+
+    function trigger3DTeleport() {
+      windowOnTopMonitor = !windowOnTopMonitor;
+      document.getElementById('btn-3d-teleport').classList.toggle('studio-ctrl-active', windowOnTopMonitor);
+      const st = document.getElementById('live-3d-status');
+      if (st) {
+        st.textContent = windowOnTopMonitor
+          ? (currentLang === 'es' ? 'Shift + Clic: Ventana enviada y escalada al Studio Display 27"' : 'Shift + Click: Window teleported & scaled to 27" Display')
+          : (currentLang === 'es' ? 'Shift + Clic: Ventana devuelta al monitor inferior de 15.6"' : 'Shift + Click: Window moved to 15.6" Bottom Display');
+      }
+      refreshDynamicBadges();
+    }
+
+    function trigger3DChromeSplit() {
+      chromeSplitActive = !chromeSplitActive;
+      if (chromeSplitActive && !docksVisible) {
+        docksVisible = true;
+        document.getElementById('btn-3d-docks').classList.add('studio-ctrl-active');
+      }
+      document.getElementById('btn-3d-chrome').classList.toggle('studio-ctrl-active', chromeSplitActive);
+      const st = document.getElementById('live-3d-status');
+      if (st) {
+        st.textContent = chromeSplitActive
+          ? (currentLang === 'es' ? 'Perfiles desagrupados: Trabajo • Estudio • Personal' : 'Chrome split into Work • Studio • Personal')
+          : (currentLang === 'es' ? 'Perfiles de Chrome agrupados en un solo icono' : 'Chrome profiles grouped into single icon');
+      }
+      refreshDynamicBadges();
+    }
+
+    function activateStoryChapter(num, shouldScroll) {
+      if (shouldScroll) {
+        const stg = document.getElementById('showcase-3d');
+        if (stg) stg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      [1, 2, 3].forEach(n => {
+        const el = document.getElementById('chapter-' + n);
+        if (el) el.classList.toggle('chapter-card-active', n === num);
+      });
+      if (num === 1) {
+        docksVisible = true;
+        setStudioCamera('front');
+      } else if (num === 2) {
+        docksVisible = true;
+        chromeSplitActive = true;
+        document.getElementById('btn-3d-chrome').classList.add('studio-ctrl-active');
+        setStudioCamera('dock');
+      } else if (num === 3) {
+        docksVisible = true;
+        windowOnTopMonitor = true;
+        document.getElementById('btn-3d-teleport').classList.add('studio-ctrl-active');
+        setStudioCamera('iso');
+      }
+      document.getElementById('btn-3d-docks').classList.toggle('studio-ctrl-active', docksVisible);
+      refreshDynamicBadges();
+    }
+
+    function initScrollAnimations() {
+      if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
+      gsap.registerPlugin(ScrollTrigger);
+
+      gsap.utils.toArray('.reveal-card').forEach(card => {
+        gsap.from(card, {
+          y: 22,
+          opacity: 0,
+          duration: 0.65,
+          ease: 'power2.out',
+          scrollTrigger: {
+            trigger: card,
+            start: 'top 90%',
+            once: true
+          }
+        });
+      });
+    }
+
+    // Global Keyboard Listeners (⌥ + D and Escape)
+    window.addEventListener('keydown', e => {
+      if (e.altKey && e.code === 'KeyD') {
+        e.preventDefault();
+        trigger3DDockToggle();
+      } else if (e.key === 'Escape') {
+        closeActionModal();
+        closeLegalModal();
+        closeLightbox();
+      }
+    });
+
+    // Apply EN (default /) or ES (/es) before first paint interactions
+    applyLanguage(currentLang, { updateUrl: true });
+
+    window.onload = function () {
+      initStudio3D();
+      refreshDynamicBadges();
+      initScrollAnimations();
+    };
+  </script>
+</body>
+</html>

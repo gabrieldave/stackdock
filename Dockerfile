@@ -7,6 +7,7 @@ RUN apk add --no-cache wget \
 COPY Web/nginx.conf /etc/nginx/conf.d/default.conf
 COPY Web/docker-entrypoint.sh /docker-entrypoint.sh
 COPY Web/index.html /opt/stackdock-web/index.html
+COPY Web/es/ /opt/stackdock-web/es/
 COPY Web/public/ /opt/stackdock-web/public/
 
 RUN chmod +x /docker-entrypoint.sh \
