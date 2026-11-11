@@ -1,11 +1,12 @@
 # StackDock — Trial Lead Webhook + Resend 5-email sequence
 
-## Endpoint
+## Live endpoints
 
-- **Method:** `POST`
-- **URL (Coolify env `TRIAL_WEBHOOK_URL`):** `https://n8n.iareal.net/webhook/stackdock-trial-lead`
-- **Content-Type:** `application/json`
-- **CORS:** allow `https://stackdock.iareal.net` (and preview hosts if needed)
+| Role | URL |
+|---|---|
+| Trial lead | `https://n8n.vibesystems.tech/webhook/stackdock-trial` |
+| Paid stop | `https://n8n.vibesystems.tech/webhook/stackdock-paid` |
+| Workflow | `BLACK EYE — StackDock 7-Day Trial Sequence (EN/ES + Resend)` (`hylP1FTMflH1rDuc`) |
 
 ## Payload (landing modal)
 
@@ -13,6 +14,7 @@
 {
   "event": "stackdock.trial.lead",
   "email": "user@example.com",
+  "lang": "en",
   "locale": "en",
   "product": "stackdock",
   "version": "4.0.0",
@@ -24,36 +26,13 @@
 }
 ```
 
-| Field | Notes |
-|---|---|
-| `email` | Required when webhook is called (landing skips POST if empty) |
-| `locale` | `en` (default `/`) or `es` (`/es/`) |
-| `dmg_sha256` / `team_id` | Integrity + notarization proof mirrored in the modal |
+`lang` / `locale`: `en` on `/`, `es` on `/es/`.
 
-## n8n flow (recommended)
+## Secrets
 
-1. **Webhook** path `stackdock-trial-lead` → respond `200 {"ok":true}` immediately
-2. **IF** email looks valid
-3. **Data store / table** upsert by email (`product=stackdock`, `trial_started_at`)
-4. **Resend** send Email #1 immediately
-5. **Wait** nodes schedule Emails #2–#5 (or use Resend audiences + delayed sends)
+- Resend: n8n env `RESEND_API_KEY` (never in git / frontend)
+- From/Reply: `STACKDOCK_FROM_EMAIL` / `STACKDOCK_REPLY_TO` (fallback `stackdock@iareal.net`)
 
-## 5-email conversion sequence (Resend)
+## Clone
 
-From: `stackdock@iareal.net` · Reply-To: `stackdock@iareal.net`
-
-| # | Delay | EN subject | Goal |
-|---|---|---|---|
-| 1 | 0 min | Your StackDock 7-day trial starts now | DMG link + SHA-256 + Team ID + ⌥+D tip |
-| 2 | Day 1 | Summon docks on every display | Dual-monitor stacked edge tip |
-| 3 | Day 3 | Split Chrome Work / Personal icons | Profile badge demo CTA |
-| 4 | Day 5 | Teleport windows with Shift+Click | Feature close + soft Personal/Pro CTA |
-| 5 | Day 7 | Trial ends today — keep StackDock | Personal **$9.99** / Pro **$19** + 14-day refund |
-
-Spanish (`locale=es`): same cadence; subjects localized. Include checkout links from Coolify `STRIPE_CHECKOUT_URL_PERSONAL` / `_PRO`.
-
-## Security
-
-- Do not log full payloads with PII longer than needed
-- Rate-limit webhook (n8n / reverse proxy)
-- Never embed Resend or Stripe secrets in the static landing — only the webhook URL
+See `FUNNEL_CLONE_GUIDE.md` + `blackeye-7day-funnel-template.json`.

@@ -873,7 +873,7 @@
       <div class="w-11 h-11 rounded-2xl bg-[#0071E3]/20 border border-[#2997FF]/45 flex items-center justify-center text-[#64D2FF] mb-4 font-mono font-bold">SD</div>
       <h4 id="modal-title" class="text-xl font-bold text-[#F5F5F7] mb-2">Descargar StackDock v4.0</h4>
       <p id="modal-desc" class="text-sm text-[#D4D4D8] leading-relaxed mb-4">
-        Apple Signed &amp; Notarized Universal installer for macOS 13+. Full 7-day trial — no credit card.
+        Instalador Universal firmado y notarizado por Apple para macOS 13+. Prueba completa de 7 días — sin tarjeta.
       </p>
       <div id="modal-email-wrap" class="mb-4 hidden">
         <label for="modal-email" class="block text-xs font-semibold text-[#A1A1AA] mb-1.5" data-i18n="modal_email_label">Email para tips de prueba (opcional)</label>
@@ -954,7 +954,7 @@
     STACKDOCK_CONFIG.stripePersonalUrl = resolveCheckoutPlaceholder(STACKDOCK_CONFIG.stripePersonalUrl, resolveCheckoutPlaceholder(STACKDOCK_CONFIG.stripeCheckoutUrl, '#buy'));
     STACKDOCK_CONFIG.stripeProUrl = resolveCheckoutPlaceholder(STACKDOCK_CONFIG.stripeProUrl, STACKDOCK_CONFIG.stripePersonalUrl);
     STACKDOCK_CONFIG.stripeCheckoutUrl = resolveCheckoutPlaceholder(STACKDOCK_CONFIG.stripeCheckoutUrl, '#buy');
-    STACKDOCK_CONFIG.trialWebhookUrl = resolveCheckoutPlaceholder(STACKDOCK_CONFIG.trialWebhookUrl, '');
+    STACKDOCK_CONFIG.trialWebhookUrl = resolveCheckoutPlaceholder(STACKDOCK_CONFIG.trialWebhookUrl, 'https://n8n.vibesystems.tech/webhook/stackdock-trial');
     if (!STACKDOCK_CONFIG.dmgSha256 || STACKDOCK_CONFIG.dmgSha256.includes('__DMG_SHA256__')) {
       STACKDOCK_CONFIG.dmgSha256 = '3449e4976099f77f5b083fe9e4a5c6cfe01087821010dc13768eddac7f4a8920';
     }
@@ -1283,7 +1283,8 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
           mode: 'cors',
-          keepalive: true
+          keepalive: true,
+          signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(2500) : undefined
         });
       } catch (e) {
         // Non-blocking: download must proceed even if webhook fails

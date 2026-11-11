@@ -1,0 +1,103 @@
+{
+  "name": "BLACK EYE — {{APP_NAME}} 7-Day Trial Sequence (EN/ES + Resend)",
+  "meta": {
+    "template": "blackeye-7day-funnel",
+    "version": "1.0.0",
+    "placeholders": [
+      "{{APP_NAME}}",
+      "{{SENDER_EMAIL}}",
+      "{{SENDER_FROM_NAME}}",
+      "{{TRIAL_SLUG}}",
+      "{{PAID_SLUG}}",
+      "{{DOMAIN}}",
+      "{{DMG_URL}}",
+      "{{DMG_SHA256}}",
+      "{{TEAM_ID}}",
+      "{{PRICING_URL_EN}}",
+      "{{PRICING_URL_ES}}"
+    ],
+    "secrets_from_env": ["RESEND_API_KEY"],
+    "notes": "Never commit real API keys. Resend auth is injected at runtime from $env.RESEND_API_KEY via the Adjuntar RESEND_API_KEY code node."
+  },
+  "nodes_outline": [
+    {
+      "name": "Webhook Descarga DMG",
+      "type": "n8n-nodes-base.webhook",
+      "path": "{{TRIAL_SLUG}}",
+      "method": "POST"
+    },
+    {
+      "name": "Registrar Trial y Correo 1",
+      "type": "n8n-nodes-base.code",
+      "role": "persist lead in $getWorkflowStaticData('global') + build email #1 EN/ES"
+    },
+    {
+      "name": "Revision Diaria 9AM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "cron": "0 9 * * *"
+    },
+    {
+      "name": "Evaluar Dias 2-4-6-7 (EN y ES)",
+      "type": "n8n-nodes-base.code",
+      "role": "emit steps 2/3/4/5 by elapsed days if !purchased"
+    },
+    {
+      "name": "Adjuntar RESEND_API_KEY",
+      "type": "n8n-nodes-base.code",
+      "role": "read $env.RESEND_API_KEY and build Resend JSON payload"
+    },
+    {
+      "name": "Enviar Correo via Resend",
+      "type": "n8n-nodes-base.httpRequest",
+      "url": "https://api.resend.com/emails",
+      "auth": "Bearer {{ $json.resendKey }} (from env, not hardcoded)"
+    },
+    {
+      "name": "Webhook Compra Stripe",
+      "type": "n8n-nodes-base.webhook",
+      "path": "{{PAID_SLUG}}",
+      "method": "POST"
+    },
+    {
+      "name": "Detener Secuencia al Comprar",
+      "type": "n8n-nodes-base.code",
+      "role": "mark lead.purchased=true"
+    }
+  ],
+  "defaults_stackdock": {
+    "APP_NAME": "StackDock",
+    "SENDER_EMAIL": "stackdock@iareal.net",
+    "SENDER_FROM_NAME": "David · BLACK EYE",
+    "TRIAL_SLUG": "stackdock-trial",
+    "PAID_SLUG": "stackdock-paid",
+    "DOMAIN": "https://stackdock.iareal.net",
+    "DMG_URL": "https://stackdock.iareal.net/download/StackDock-4.0.0.dmg",
+    "DMG_SHA256": "3449e4976099f77f5b083fe9e4a5c6cfe01087821010dc13768eddac7f4a8920",
+    "TEAM_ID": "YH6W55MP95"
+  },
+  "defaults_findaro": {
+    "APP_NAME": "Findaro",
+    "SENDER_EMAIL": "findaro@iareal.net",
+    "SENDER_FROM_NAME": "David · BLACK EYE",
+    "TRIAL_SLUG": "findaro-trial",
+    "PAID_SLUG": "findaro-paid",
+    "DOMAIN": "https://findaro.iareal.net"
+  },
+  "frontend_contract": {
+    "method": "POST",
+    "content_type": "application/json",
+    "payload": {
+      "email": "user@example.com",
+      "lang": "en|es",
+      "locale": "en|es",
+      "product": "{{APP_NAME_LOWER}}",
+      "source": "landing_download_modal"
+    },
+    "ux": "non-blocking; download continues if webhook fails/timeouts/empty email"
+  },
+  "stripe_stop_contract": {
+    "url": "https://n8n.vibesystems.tech/webhook/{{PAID_SLUG}}",
+    "payload": { "email": "buyer@example.com" },
+    "expected": { "ok": true, "stopped": true }
+  }
+}

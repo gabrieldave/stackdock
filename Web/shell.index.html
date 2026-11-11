@@ -1041,7 +1041,7 @@
     STACKDOCK_CONFIG.stripePersonalUrl = resolveCheckoutPlaceholder(STACKDOCK_CONFIG.stripePersonalUrl, resolveCheckoutPlaceholder(STACKDOCK_CONFIG.stripeCheckoutUrl, '#buy'));
     STACKDOCK_CONFIG.stripeProUrl = resolveCheckoutPlaceholder(STACKDOCK_CONFIG.stripeProUrl, STACKDOCK_CONFIG.stripePersonalUrl);
     STACKDOCK_CONFIG.stripeCheckoutUrl = resolveCheckoutPlaceholder(STACKDOCK_CONFIG.stripeCheckoutUrl, '#buy');
-    STACKDOCK_CONFIG.trialWebhookUrl = resolveCheckoutPlaceholder(STACKDOCK_CONFIG.trialWebhookUrl, '');
+    STACKDOCK_CONFIG.trialWebhookUrl = resolveCheckoutPlaceholder(STACKDOCK_CONFIG.trialWebhookUrl, 'https://n8n.vibesystems.tech/webhook/stackdock-trial');
     if (!STACKDOCK_CONFIG.dmgSha256 || STACKDOCK_CONFIG.dmgSha256.includes('__DMG_SHA256__')) {
       STACKDOCK_CONFIG.dmgSha256 = '3449e4976099f77f5b083fe9e4a5c6cfe01087821010dc13768eddac7f4a8920';
     }
@@ -1536,7 +1536,8 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
           mode: 'cors',
-          keepalive: true
+          keepalive: true,
+          signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(2500) : undefined
         });
       } catch (e) {
         // Non-blocking: download must proceed even if webhook fails
