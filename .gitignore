@@ -15,8 +15,11 @@ build/
 .build/
 DerivedData/
 *.dmg
+!Web/public/download/*.dmg
 *.app/
 !Resources/
+!Resources/AppIcon.icns
+!Resources/icon-1024.png
 
 # Xcode / Swift
 *.xcuserstate

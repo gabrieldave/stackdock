@@ -1,0 +1,11 @@
+.git
+.gitignore
+build
+dist
+Sources
+Scripts
+Automation
+*.md
+.DS_Store
+**/.DS_Store
+agent-transcripts

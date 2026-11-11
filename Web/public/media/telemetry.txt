@@ -1,4 +1,0 @@
-StackDock Telemetry — BLACK EYE
-  PID  %CPU    RSS
-4597   0.0  94800
-StackDock [4597]: 64-bit    Footprint: 32 MB (16384 bytes per page)

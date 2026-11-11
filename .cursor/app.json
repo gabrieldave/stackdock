@@ -1,0 +1,10 @@
+{
+  "app_id": "stackdock",
+  "name": "StackDock",
+  "brand": "BLACK EYE",
+  "domain": "https://stackdock.iareal.net",
+  "port": 3048,
+  "stack": "static-nginx",
+  "purpose": "Landing comercial + descarga DMG + checkout Stripe para StackDock macOS",
+  "audience": "Usuarios Mac multi-monitor"
+}

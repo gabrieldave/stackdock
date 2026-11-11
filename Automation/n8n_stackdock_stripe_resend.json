@@ -6,21 +6,23 @@
         "httpMethod": "POST",
         "path": "stackdock-stripe",
         "responseMode": "onReceived",
-        "options": {}
+        "options": {
+          "rawBody": true
+        }
       },
       "id": "wh-stripe-stackdock",
       "name": "Stripe Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [240, 300],
+      "position": [200, 300],
       "webhookId": "stackdock-stripe"
     },
     {
       "parameters": {
-        "jsCode": "const body = $json.body ?? $json;\nconst obj = body?.data?.object ?? $json?.data?.object ?? {};\nconst eventType = body?.type ?? $json?.type ?? '';\nif (eventType && eventType !== 'checkout.session.completed') {\n  return [];\n}\nconst emailRaw =\n  obj?.customer_details?.email ||\n  obj?.customer_email ||\n  $json?.body?.data?.object?.customer_details?.email ||\n  '';\nconst email = String(emailRaw).trim().toLowerCase();\nif (!email || !email.includes('@')) {\n  throw new Error('No customer email in Stripe payload');\n}\nconst crypto = require('crypto');\nconst pem = ($env.STACKDOCK_PRIVATE_KEY_PEM || '').replace(/\\\\n/g, '\\n');\nif (!pem.includes('PRIVATE KEY')) {\n  throw new Error('STACKDOCK_PRIVATE_KEY_PEM missing or invalid');\n}\nconst payload = Buffer.from(`${email}|stackdock-pro|3macs`, 'utf8');\nconst signature = crypto.sign(null, payload, pem);\nconst b64url = signature\n  .toString('base64')\n  .replace(/\\+/g, '-')\n  .replace(/\\//g, '_')\n  .replace(/=+$/g, '');\nconst licenseKey = `SDOCK-${b64url}`;\nreturn [{\n  json: {\n    email,\n    licenseKey,\n    dmgUrl: $env.STACKDOCK_DMG_URL || 'https://stackdock.iareal.net/download',\n    product: 'StackDock Pro',\n    macs: 3\n  }\n}];"
+        "jsCode": "// Valida Stripe-Signature (HMAC SHA-256) con STRIPE_WEBHOOK_SECRET (whsec_...)\n// Docs: https://docs.stripe.com/webhooks\nconst crypto = require('crypto');\n\nconst headers = $json.headers || {};\nconst sigHeader = headers['stripe-signature'] || headers['Stripe-Signature'] || '';\nconst secret = String($env.STRIPE_WEBHOOK_SECRET || '').trim();\nif (!secret.startsWith('whsec_')) {\n  throw new Error('STRIPE_WEBHOOK_SECRET missing or invalid (expected whsec_...)');\n}\nif (!sigHeader) {\n  throw new Error('Missing Stripe-Signature header');\n}\n\nconst rawBody = typeof $json.rawBody === 'string'\n  ? $json.rawBody\n  : Buffer.isBuffer($json.rawBody)\n    ? $json.rawBody.toString('utf8')\n    : JSON.stringify($json.body ?? $json);\n\nconst parts = Object.fromEntries(\n  String(sigHeader).split(',').map((p) => {\n    const i = p.indexOf('=');\n    return [p.slice(0, i), p.slice(i + 1)];\n  })\n);\nconst timestamp = parts.t;\nconst v1 = parts.v1;\nif (!timestamp || !v1) {\n  throw new Error('Malformed Stripe-Signature header');\n}\n\nconst ageSec = Math.abs(Date.now() / 1000 - Number(timestamp));\nif (!Number.isFinite(ageSec) || ageSec > 300) {\n  throw new Error('Stripe webhook timestamp outside tolerance');\n}\n\nconst signedPayload = `${timestamp}.${rawBody}`;\nconst expected = crypto\n  .createHmac('sha256', secret)\n  .update(signedPayload, 'utf8')\n  .digest('hex');\n\nconst a = Buffer.from(expected, 'utf8');\nconst b = Buffer.from(String(v1), 'utf8');\nif (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {\n  throw new Error('Invalid Stripe signature');\n}\n\nlet event;\ntry {\n  event = typeof rawBody === 'string' ? JSON.parse(rawBody) : rawBody;\n} catch (e) {\n  throw new Error('Stripe body is not valid JSON');\n}\n\nif (event?.type && event.type !== 'checkout.session.completed') {\n  return [];\n}\n\nconst obj = event?.data?.object || {};\nconst emailRaw = obj?.customer_details?.email || obj?.customer_email || '';\nconst email = String(emailRaw).trim().toLowerCase();\nif (!email || !email.includes('@')) {\n  throw new Error('No customer email in Stripe payload');\n}\n\nconst pem = String($env.STACKDOCK_PRIVATE_KEY_PEM || '').replace(/\\\\n/g, '\\n');\nif (!pem.includes('PRIVATE KEY')) {\n  throw new Error('STACKDOCK_PRIVATE_KEY_PEM missing or invalid');\n}\n\nconst payload = Buffer.from(`${email}|stackdock-pro|3macs`, 'utf8');\nconst signature = crypto.sign(null, payload, pem);\nconst b64url = signature\n  .toString('base64')\n  .replace(/\\+/g, '-')\n  .replace(/\\//g, '_')\n  .replace(/=+$/g, '');\nconst licenseKey = `SDOCK-${b64url}`;\n\nconst dmgUrl = $env.STACKDOCK_DMG_URL || 'https://stackdock.iareal.net/download/StackDock-4.0.0.dmg';\nconst fromEmail = $env.STACKDOCK_FROM_EMAIL || 'licenses@iareal.net';\n\nconst html = `<!DOCTYPE html><html><body style=\"margin:0;background:#0b0d10;color:#e8eaed;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif\"><div style=\"max-width:560px;margin:0 auto;padding:40px 24px\"><div style=\"font-size:12px;letter-spacing:0.18em;color:#8b939e;margin-bottom:12px\">BLACK EYE</div><h1 style=\"font-size:28px;font-weight:600;margin:0 0 8px;color:#fff\">StackDock Pro</h1><p style=\"color:#a7b0ba;line-height:1.55;margin:0 0 28px\">Pago único activado. Licencia válida hasta en 3 Macs.</p><a href=\"${dmgUrl}\" style=\"display:inline-block;background:#f2f4f7;color:#0b0d10;text-decoration:none;font-weight:600;padding:14px 22px;border-radius:10px;margin-bottom:28px\">Descargar StackDock (.dmg)</a><div style=\"margin-top:28px;padding:18px;border:1px solid #2a3038;border-radius:12px;background:#12161c\"><div style=\"font-size:12px;color:#8b939e;margin-bottom:8px\">Correo</div><div style=\"margin-bottom:16px\">${email}</div><div style=\"font-size:12px;color:#8b939e;margin-bottom:8px\">License Key</div><code style=\"display:block;word-break:break-all;color:#7dd3fc;font-size:13px\">${licenseKey}</code></div><p style=\"color:#6b7380;font-size:12px;margin-top:28px;line-height:1.5\">En StackDock: menú → Activar licencia → pega email + clave.</p></div></body></html>`;\n\nconst resendBody = JSON.stringify({\n  from: `BLACK EYE <${fromEmail}>`,\n  to: [email],\n  subject: 'Tu licencia StackDock Pro — BLACK EYE',\n  html\n});\n\nreturn [{\n  json: {\n    email,\n    licenseKey,\n    dmgUrl,\n    product: 'StackDock Pro',\n    macs: 3,\n    stripeEventId: event.id || null,\n    resendBody\n  }\n}];"
       },
-      "id": "code-generate-sdock",
-      "name": "Generate SDOCK License",
+      "id": "code-verify-generate-sdock",
+      "name": "Verify Stripe + Generate SDOCK",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [520, 300]
@@ -45,15 +47,17 @@
           ]
         },
         "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"from\": \"BLACK EYE <{{$env.STACKDOCK_FROM_EMAIL || 'licenses@iareal.net'}}>\",\n  \"to\": [\"{{$json.email}}\"],\n  \"subject\": \"Tu licencia StackDock Pro — BLACK EYE\",\n  \"html\": `<!DOCTYPE html><html><body style=\\\"margin:0;background:#0b0d10;color:#e8eaed;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif\\\"><div style=\\\"max-width:560px;margin:0 auto;padding:40px 24px\\\"><div style=\\\"font-size:12px;letter-spacing:0.18em;color:#8b939e;margin-bottom:12px\\\">BLACK EYE</div><h1 style=\\\"font-size:28px;font-weight:600;margin:0 0 8px;color:#fff\\\">StackDock Pro</h1><p style=\\\"color:#a7b0ba;line-height:1.55;margin:0 0 28px\\\">Pago único activado. Licencia válida hasta en 3 Macs.</p><a href=\\\"{{$json.dmgUrl}}\\\" style=\\\"display:inline-block;background:#f2f4f7;color:#0b0d10;text-decoration:none;font-weight:600;padding:14px 22px;border-radius:10px;margin-bottom:28px\\\">Descargar StackDock (.dmg)</a><div style=\\\"margin-top:28px;padding:18px;border:1px solid #2a3038;border-radius:12px;background:#12161c\\\"><div style=\\\"font-size:12px;color:#8b939e;margin-bottom:8px\\\">Correo</div><div style=\\\"margin-bottom:16px\\\">{{$json.email}}</div><div style=\\\"font-size:12px;color:#8b939e;margin-bottom:8px\\\">License Key</div><code style=\\\"display:block;word-break:break-all;color:#7dd3fc;font-size:13px\\\">{{$json.licenseKey}}</code></div><p style=\\\"color:#6b7380;font-size:12px;margin-top:28px;line-height:1.5\\\">En StackDock: menú → Activar licencia → pega email + clave.</p></div></body></html>`\n}",
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "specifyBody": "string",
+        "body": "={{$json.resendBody}}",
         "options": {}
       },
       "id": "http-resend-stackdock",
       "name": "Resend API — Email License",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [800, 300]
+      "position": [820, 300]
     }
   ],
   "connections": {
@@ -61,14 +65,14 @@
       "main": [
         [
           {
-            "node": "Generate SDOCK License",
+            "node": "Verify Stripe + Generate SDOCK",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Generate SDOCK License": {
+    "Verify Stripe + Generate SDOCK": {
       "main": [
         [
           {
@@ -88,7 +92,7 @@
     "templateCredsSetupCompleted": false
   },
   "pinData": {},
-  "versionId": "1",
+  "versionId": "2",
   "triggerCount": 0,
   "tags": [
     {

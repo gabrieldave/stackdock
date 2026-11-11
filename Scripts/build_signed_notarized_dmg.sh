@@ -78,6 +78,11 @@ fi
 
 cp "${ROOT}/Resources/Info.plist" "${APP_PATH}/Contents/Info.plist"
 cp "${ROOT}/Resources/Entitlements.plist" "${APP_PATH}/Contents/Resources/Entitlements.plist"
+if [[ -f "${ROOT}/Resources/AppIcon.icns" ]]; then
+  cp "${ROOT}/Resources/AppIcon.icns" "${APP_PATH}/Contents/Resources/AppIcon.icns"
+  /usr/libexec/PlistBuddy -c "Delete :CFBundleIconFile" "${APP_PATH}/Contents/Info.plist" 2>/dev/null || true
+  /usr/libexec/PlistBuddy -c "Add :CFBundleIconFile string AppIcon" "${APP_PATH}/Contents/Info.plist"
+fi
 /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier ${BUNDLE_ID}" "${APP_PATH}/Contents/Info.plist" 2>/dev/null || true
 
 echo "==> Firmando app (Developer ID + hardened runtime + timestamp)"
