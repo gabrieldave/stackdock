@@ -1,5 +1,6 @@
 import Cocoa
 import CryptoKit
+import Security
 
 final class LicenseManager {
     static let shared = LicenseManager()
@@ -12,10 +13,73 @@ final class LicenseManager {
     private let prefs = UserDefaults.standard
     private let trialDurationSeconds: TimeInterval = 7 * 24 * 3600
     private var didPresentActivationThisSession = false
+    private let trialKeychainService = "com.blackeye.stackdock.trial"
+    private let trialKeychainAccount = "firstLaunchTimestamp"
 
     private init() {
-        if prefs.object(forKey: "firstLaunchTimestamp") == nil {
-            prefs.set(Date().timeIntervalSince1970, forKey: "firstLaunchTimestamp")
+        syncFirstLaunchTimestamp()
+    }
+
+    /// UserDefaults + Keychain: borrar defaults no reinicia los 7 días de trial.
+    private func syncFirstLaunchTimestamp() {
+        let defaultsTS = prefs.object(forKey: "firstLaunchTimestamp") as? Double
+        let keychainTS = readTrialTimestampFromKeychain()
+
+        if let d = defaultsTS, let k = keychainTS {
+            let earliest = min(d, k)
+            prefs.set(earliest, forKey: "firstLaunchTimestamp")
+            writeTrialTimestampToKeychain(earliest)
+            return
+        }
+        if let d = defaultsTS {
+            writeTrialTimestampToKeychain(d)
+            return
+        }
+        if let k = keychainTS {
+            prefs.set(k, forKey: "firstLaunchTimestamp")
+            return
+        }
+        let now = Date().timeIntervalSince1970
+        prefs.set(now, forKey: "firstLaunchTimestamp")
+        writeTrialTimestampToKeychain(now)
+    }
+
+    private func readTrialTimestampFromKeychain() -> Double? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: trialKeychainService,
+            kSecAttrAccount as String: trialKeychainAccount,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+        var item: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &item)
+        guard status == errSecSuccess,
+              let data = item as? Data,
+              let str = String(data: data, encoding: .utf8),
+              let value = Double(str) else {
+            return nil
+        }
+        return value
+    }
+
+    private func writeTrialTimestampToKeychain(_ ts: Double) {
+        let data = Data(String(ts).utf8)
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: trialKeychainService,
+            kSecAttrAccount as String: trialKeychainAccount
+        ]
+        let attrs: [String: Any] = [
+            kSecValueData as String: data,
+            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+        ]
+        let status = SecItemUpdate(query as CFDictionary, attrs as CFDictionary)
+        if status == errSecItemNotFound {
+            var add = query
+            add[kSecValueData as String] = data
+            add[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+            _ = SecItemAdd(add as CFDictionary, nil)
         }
     }
 
@@ -31,6 +95,7 @@ final class LicenseManager {
     var isProUnlocked: Bool { licensedEmail != nil }
 
     var trialDaysRemaining: Int {
+        syncFirstLaunchTimestamp()
         let start = prefs.double(forKey: "firstLaunchTimestamp")
         let elapsed = Date().timeIntervalSince1970 - start
         let left = trialDurationSeconds - elapsed

@@ -61,19 +61,19 @@ echo "==> Generado Resources/AppIcon.icns"
 echo "==> Recompilando e instalando con icono…"
 # Parche mínimo: asegurar que build_local copie el icns
 if ! grep -q 'AppIcon.icns' "${ROOT}/Scripts/build_local.sh"; then
-  # insert copy after Info.plist copy via awk once
-  python3 - <<'PY'
+  ROOT="$ROOT" python3 - <<'PY'
 from pathlib import Path
-p=Path('/Users/davidai/.cursor/dock/Scripts/build_local.sh')
-t=p.read_text()
-needle='cp "${ROOT}/Resources/Info.plist" "${APP_PATH}/Contents/Info.plist"'
-inject=needle+'\ncp "${ROOT}/Resources/AppIcon.icns" "${APP_PATH}/Contents/Resources/AppIcon.icns" 2>/dev/null || true'
-if 'AppIcon.icns' not in t:
-  t=t.replace(needle, inject)
-  p.write_text(t)
-  print('build_local patched for icns')
+import os
+root = Path(os.environ["ROOT"])
+p = root / "Scripts" / "build_local.sh"
+t = p.read_text()
+needle = 'cp "${ROOT}/Resources/Info.plist" "${APP_PATH}/Contents/Info.plist"'
+inject = needle + "\n" + 'cp "${ROOT}/Resources/AppIcon.icns" "${APP_PATH}/Contents/Resources/AppIcon.icns" 2>/dev/null || true'
+if "AppIcon.icns" not in t:
+    p.write_text(t.replace(needle, inject, 1))
+    print("build_local patched for icns")
 else:
-  print('build_local already has icns')
+    print("build_local already has icns")
 PY
 fi
 

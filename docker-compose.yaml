@@ -1,17 +1,16 @@
-# Coolify build pack: dockercompose
-# Puerto host 3048 = siguiente libre tras findaro (3047) en Cloudflare Tunnel.
+# Coolify build pack: dockercompose · stackdock.iareal.net → 127.0.0.1:3048
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "127.0.0.1:3048:8080"
+      - "127.0.0.1:3048:80"
     networks:
       - coolify
     read_only: true
     tmpfs:
-      - /tmp:rw,noexec,nosuid,size=64m
+      - /tmp:rw,noexec,nosuid,size=96m
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -19,7 +18,7 @@ services:
     environment:
       STRIPE_CHECKOUT_URL: ${STRIPE_CHECKOUT_URL:-}
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/api/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/api/health"]
       interval: 30s
       timeout: 5s
       retries: 3

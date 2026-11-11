@@ -83,6 +83,7 @@ final class BrowserProfileLaunchService {
         panel.directoryURL = suggested.deletingLastPathComponent()
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
+            stopAccessingBookmarkedChrome()
             try FileManager.default.createDirectory(at: supportRoot, withIntermediateDirectories: true)
             let data = try url.bookmarkData(options: [.withSecurityScope], includingResourceValuesForKeys: nil, relativeTo: nil)
             try data.write(to: bookmarkURL, options: .atomic)
@@ -91,12 +92,29 @@ final class BrowserProfileLaunchService {
         } catch {}
     }
 
+    private var scopedChromeURL: URL?
+
     private func resolvedBookmarkedChromeURL() -> URL? {
+        if let live = scopedChromeURL {
+            return live
+        }
         guard let data = try? Data(contentsOf: bookmarkURL) else { return nil }
         var stale = false
-        guard let url = try? URL(resolvingBookmarkData: data, options: [.withSecurityScope], relativeTo: nil, bookmarkDataIsStale: &stale) else { return nil }
-        _ = url.startAccessingSecurityScopedResource()
+        guard let url = try? URL(
+            resolvingBookmarkData: data,
+            options: [.withSecurityScope],
+            relativeTo: nil,
+            bookmarkDataIsStale: &stale
+        ) else { return nil }
+        guard url.startAccessingSecurityScopedResource() else { return nil }
+        scopedChromeURL = url
         return url
+    }
+
+    /// Libera el scope del bookmark de Chrome (llamar al cerrar / al cambiar carpeta).
+    func stopAccessingBookmarkedChrome() {
+        scopedChromeURL?.stopAccessingSecurityScopedResource()
+        scopedChromeURL = nil
     }
 
     private func browserSupportURL(for bundleID: String) -> URL? {
@@ -226,10 +244,13 @@ final class BrowserProfileLaunchService {
                 count += 1
                 continue
             }
-            if let urlStr = p.pictureURL, let url = URL(string: urlStr),
-               let data = try? Data(contentsOf: url) {
-                try? data.write(to: dst, options: .atomic)
-                count += 1
+            if let urlStr = p.pictureURL, let url = URL(string: urlStr) {
+                // Nunca Data(contentsOf:) de red en el hilo que sincroniza el dock: background only.
+                DispatchQueue.global(qos: .utility).async { [weak self] in
+                    guard let self, let data = try? Data(contentsOf: url) else { return }
+                    try? data.write(to: dst, options: .atomic)
+                    DispatchQueue.main.async { self.iconCache.removeAll() }
+                }
             }
         }
         iconCache.removeAll()
@@ -241,17 +262,23 @@ final class BrowserProfileLaunchService {
         if let cached = NSImage(contentsOf: cacheFile), cached.size.width > 1 {
             return cached
         }
-        // Intenta sync puntual
-        _ = syncAvatarsFromDisk(bundleID: bundleID)
-        if let cached = NSImage(contentsOf: cacheFile), cached.size.width > 1 {
-            return cached
+        // Disco local sí (rápido). Red jamás en el hilo del Dock.
+        if let rootURL = browserSupportURL(for: bundleID) {
+            let fileName = profile.pictureFileName ?? "Google Profile Picture.png"
+            let src = rootURL.appendingPathComponent("\(profile.directory)/\(fileName)")
+            if let data = try? Data(contentsOf: src), let img = NSImage(data: data), img.size.width > 1 {
+                try? data.write(to: cacheFile, options: .atomic)
+                return img
+            }
         }
-        // Último recurso: URL remota de Google (si Local State fue legible)
-        if let urlStr = profile.pictureURL, let url = URL(string: urlStr),
-           let data = try? Data(contentsOf: url),
-           let img = NSImage(data: data), img.size.width > 1 {
-            try? data.write(to: cacheFile, options: .atomic)
-            return img
+        // Prefetch remoto en background para el próximo refresh
+        if let urlStr = profile.pictureURL, let url = URL(string: urlStr) {
+            DispatchQueue.global(qos: .utility).async { [weak self] in
+                guard let self, let data = try? Data(contentsOf: url) else { return }
+                try? FileManager.default.createDirectory(at: self.cacheDir, withIntermediateDirectories: true)
+                try? data.write(to: cacheFile, options: .atomic)
+                DispatchQueue.main.async { self.iconCache.removeAll() }
+            }
         }
         return nil
     }

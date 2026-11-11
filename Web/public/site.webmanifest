@@ -1,21 +1,20 @@
 {
-  "name": "StackDock by BLACK EYE",
+  "name": "StackDock 4.0 — BLACK EYE",
   "short_name": "StackDock",
-  "description": "Tu Dock de Mac en cada monitor. 0.0% CPU en reposo.",
+  "description": "Tu Dock de Mac en cada monitor con 0.0% CPU en reposo.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
-  "lang": "es",
   "icons": [
     {
-      "src": "/icons/icon-192.png",
+      "src": "/public/android-chrome-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icons/icon-512.png",
+      "src": "/public/android-chrome-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

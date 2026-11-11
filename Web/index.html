@@ -11,18 +11,22 @@
   <meta property="og:url" content="https://stackdock.iareal.net/" />
   <meta property="og:title" content="StackDock 4.0 — Tu Dock de Mac en Cada Pantalla. 0.0% CPU." />
   <meta property="og:description" content="Invoca Docks de cristal con ⌥+D, separa perfiles de Chrome en iconos propios y teletransporta ventanas entre monitores. 100% Swift Nativo." />
-  <meta property="og:image" content="https://stackdock.iareal.net/og-image.png" />
+  <!-- Favicons & OpenGraph Social Card -->
+  <link rel="icon" type="image/svg+xml" href="./public/favicon.svg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="./public/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="./public/favicon-16x16.png" />
+  <link rel="shortcut icon" href="./public/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./public/apple-touch-icon.png" />
+  <link rel="manifest" href="./public/site.webmanifest" />
+  <meta property="og:image" content="https://stackdock.iareal.net/public/og-image.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:image" content="https://stackdock.iareal.net/og-image.png" />
-  <link rel="icon" href="/favicon.ico" sizes="any" />
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-  <link rel="manifest" href="/site.webmanifest" />
+  <meta name="twitter:image" content="https://stackdock.iareal.net/public/og-image.jpg" />
   <title>StackDock v4.0 — Tu Dock de Mac en Cada Monitor. 0.0% CPU en Reposo.</title>
 
-  <!-- Tailwind CSS v3.4.17 -->
-  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <!-- Tailwind CSS v3.4.17 (estático minificado — sin CDN) -->
+  <link rel="stylesheet" href="./public/styles.min.css" />
 
   <!-- Google Fonts: Inter & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -33,32 +37,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"SF Pro Text"', 'sans-serif'],
-            mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
-          },
-          colors: {
-            appleBlack: '#000000',
-            appleSurface: '#0A0A0D',
-            appleCard: '#121217',
-            appleElevated: '#1A1A22',
-            appleText: '#F5F5F7',
-            appleBody: '#E4E4E7',
-            appleMuted: '#A1A1AA',
-            appleBlue: '#0071E3',
-            appleBlueHover: '#0077ED',
-            appleGreen: '#30D158',
-          }
-        }
-      }
-    };
-  </script>
 
   <style>
     :root {
@@ -995,15 +973,15 @@
     // =========================================================================
     // 0. CONFIGURACIÓN LISTA PARA CURSOR / PRODUCCIÓN (COOLIFY + STRIPE + R2)
     // =========================================================================
-    // Stripe Payment Link: se inyecta en runtime desde Coolify (STRIPE_CHECKOUT_URL).
-    // Si aún no hay Payment Link, el CTA cae a #pricing.
+    // Stripe: inyectable en Coolify via STRIPE_CHECKOUT_URL → sed de __STRIPE_CHECKOUT_URL__
+    // Sin Payment Link aún: cae a #buy (sección id="buy" en esta landing).
     const STACKDOCK_CONFIG = {
       stripeCheckoutUrl: '__STRIPE_CHECKOUT_URL__',
       dmgDownloadUrl: 'https://stackdock.iareal.net/download/StackDock-4.0.0.dmg',
       verifyCmd: 'spctl --assess --type execute -vv /Applications/StackDock.app'
     };
     if (!STACKDOCK_CONFIG.stripeCheckoutUrl || STACKDOCK_CONFIG.stripeCheckoutUrl.includes('__STRIPE_CHECKOUT_URL__')) {
-      STACKDOCK_CONFIG.stripeCheckoutUrl = '#pricing';
+      STACKDOCK_CONFIG.stripeCheckoutUrl = '#buy';
     }
 
     let currentLang = 'es';

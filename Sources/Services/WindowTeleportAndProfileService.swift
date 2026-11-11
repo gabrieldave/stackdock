@@ -125,9 +125,11 @@ final class WindowTeleportAndProfileService {
     func closeSpecificWindow(_ handle: AXWindowHandle) {
         var closeRef: CFTypeRef?
         if AXUIElementCopyAttributeValue(handle.axElement, kAXCloseButtonAttribute as CFString, &closeRef) == .success,
-           let btn = closeRef {
+           let btn = closeRef,
+           CFGetTypeID(btn) == AXUIElementGetTypeID() {
             // Solo cierra ESTA ventana/perfil — nunca terminate() de la app.
-            AXUIElementPerformAction((btn as! AXUIElement), kAXPressAction as CFString)
+            let button = unsafeBitCast(btn, to: AXUIElement.self)
+            AXUIElementPerformAction(button, kAXPressAction as CFString)
         }
     }
 
@@ -194,9 +196,10 @@ final class WindowTeleportAndProfileService {
         let appAX = AXUIElementCreateApplication(frontApp.processIdentifier)
         var focusedRef: CFTypeRef?
         guard AXUIElementCopyAttributeValue(appAX, kAXFocusedWindowAttribute as CFString, &focusedRef) == .success,
-              let winObj = focusedRef else { return }
+              let winObj = focusedRef,
+              CFGetTypeID(winObj) == AXUIElementGetTypeID() else { return }
 
-        let win = winObj as! AXUIElement
+        let win = unsafeBitCast(winObj, to: AXUIElement.self)
         let frame = readQuartzFrame(of: win)
         let handle = AXWindowHandle(axElement: win, title: "", badgeLabel: "", quartzFrame: frame, isMinimized: false)
         let screens = NSScreen.screens
