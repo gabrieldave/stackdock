@@ -750,7 +750,7 @@
               <span class="text-cyan-400 font-mono group-open:rotate-45 transition-transform">+</span>
             </summary>
             <p class="mt-3 text-sm text-slate-300 leading-relaxed" data-i18n="faq_a2">
-              Yes—StackDock was born specifically for this setup. Keep your native Apple Dock on the small bottom screen while StackDock anchors a synchronized Dock on your top main monitor, toggled anytime with ⌥+D.
+              Yes—StackDock was born for stacked desks. On first launch you choose Dual (keep Apple Dock on the bottom screen + StackDock on top) or Solo StackDock (hide Apple Dock while the app runs; restores on quit). Change anytime in the menu bar.
             </p>
           </details>
 
@@ -761,6 +761,16 @@
             </summary>
             <p class="mt-3 text-sm text-slate-300 leading-relaxed" data-i18n="faq_a3">
               Right after Stripe checkout, you receive your SDOCK-... license key via email. StackDock verifies your key locally in 0.1ms using Apple CryptoKit—meaning zero background servers, zero logins, and 100% offline reliability across up to 3 Macs.
+            </p>
+          </details>
+
+          <details class="group glass-card rounded-2xl p-5 cursor-pointer">
+            <summary class="font-semibold text-white flex items-center justify-between list-none">
+              <span data-i18n="faq_q4">Can I hide the original Apple Dock completely?</span>
+              <span class="text-cyan-400 font-mono group-open:rotate-45 transition-transform">+</span>
+            </summary>
+            <p class="mt-3 text-sm text-slate-300 leading-relaxed" data-i18n="faq_a4">
+              Yes—pick Solo StackDock mode. macOS cannot permanently kill Dock.app, but StackDock puts it on autohide with a very high delay so it never peeks while you work. Your previous Apple Dock settings are restored when you quit.
             </p>
           </details>
         </div>
@@ -899,9 +909,11 @@
         faq_q1: 'Why doesn\'t StackDock ask for "Screen Recording" permission?',
         faq_a1: "We deliberately excluded live video thumbnails (ScreenCaptureKit) because recording your windows nonstop eats 200+ MB of RAM. StackDock reads window titles and coordinates via lightweight macOS Accessibility APIs only when clicked—keeping idle CPU at an authentic 0.0%.",
         faq_q2: "Does it solve vertical / portable monitors stacked underneath a main display?",
-        faq_a2: "Yes—StackDock was born specifically for this setup. Keep your native Apple Dock on the small bottom screen while StackDock anchors a synchronized Dock on your top main monitor, toggled anytime with ⌥+D.",
+        faq_a2: "Yes—StackDock was born for stacked desks. On first launch you choose Dual (keep Apple Dock on the bottom screen + StackDock on top) or Solo StackDock (hide Apple Dock while the app runs; restores on quit). Change anytime in the menu bar.",
         faq_q3: "How does the offline Ed25519 license work?",
-        faq_a3: "Right after Stripe checkout, you receive your SDOCK-... license key via email. StackDock verifies your key locally in 0.1ms using Apple CryptoKit—meaning zero background servers, zero logins, and 100% offline reliability across up to 3 Macs."
+        faq_a3: "Right after Stripe checkout, you receive your SDOCK-... license key via email. StackDock verifies your key locally in 0.1ms using Apple CryptoKit—meaning zero background servers, zero logins, and 100% offline reliability across up to 3 Macs.",
+        faq_q4: "Can I hide the original Apple Dock completely?",
+        faq_a4: "Yes—pick Solo StackDock mode. macOS cannot permanently kill Dock.app, but StackDock puts it on autohide with a very high delay so it never peeks while you work. Your previous Apple Dock settings are restored when you quit."
       },
       es: {
         nav_benchmark: "Prueba Monitor Actividad",
@@ -992,9 +1004,11 @@
         faq_q1: '¿Por qué StackDock NO pide permiso de "Grabar Pantalla"?',
         faq_a1: "Eliminamos a propósito las miniaturas de video en vivo (ScreenCaptureKit) porque grabar tus ventanas todo el día traga más de 200 MB de RAM. StackDock lee títulos y coordenadas solo en el instante del clic, manteniendo 0.0% de CPU en reposo.",
         faq_q2: "¿Resuelve el problema de tener una pantalla chiquita debajo del monitor grande?",
-        faq_a2: "Sí: nació exactamente para ese setup. Conservas tu Dock original abajo y StackDock fija un segundo Dock idéntico arriba que aparece o desaparece con ⌥+D.",
+        faq_a2: "Sí: nació para escritorios apilados. Al instalar eliges Dual (Dock de Apple abajo + StackDock arriba) o Solo StackDock (oculta el de Apple mientras corre; al salir lo restaura). Lo cambias cuando quieras en la barra de menús.",
         faq_q3: "¿Cómo funciona la licencia offline Ed25519?",
-        faq_a3: "Tras pagar en Stripe recibes tu clave SDOCK-... al instante por correo. La app verifica la firma matemática en 0.1ms con CryptoKit sin conectarse a internet, válida hasta en 3 Macs."
+        faq_a3: "Tras pagar en Stripe recibes tu clave SDOCK-... al instante por correo. La app verifica la firma matemática en 0.1ms con CryptoKit sin conectarse a internet, válida hasta en 3 Macs.",
+        faq_q4: "¿Puedo ocultar por completo el Dock original de Apple?",
+        faq_a4: "Sí: modo Solo StackDock. macOS no deja matar Dock.app para siempre, pero lo deja en autohide con delay extremo para que no asome. Al salir, StackDock restaura tu configuración anterior."
       }
     };
 

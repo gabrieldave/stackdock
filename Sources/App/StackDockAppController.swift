@@ -28,12 +28,40 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
         get { prefs.bool(forKey: "includeAppleDockScreen") }
         set { prefs.set(newValue, forKey: "includeAppleDockScreen") }
     }
-    /// Mientras StackDock esté visible, mantiene el Dock de Apple en autohide (evita el doble dock).
+    /// Solo StackDock: oculta el Dock de Apple (autohide + delay alto) mientras la app corre.
+    /// Dual: deja el Dock de Apple visible; StackDock complementa monitores extra.
     private var replaceAppleDock: Bool {
-        get { prefs.object(forKey: "replaceAppleDock") == nil ? true : prefs.bool(forKey: "replaceAppleDock") }
+        get { prefs.bool(forKey: "replaceAppleDock") }
         set { prefs.set(newValue, forKey: "replaceAppleDock") }
     }
-    /// ⌥D / atajo también oculta el Dock nativo de Apple (ambos fuera de pantalla).
+    /// El cliente ya eligió modo Dual vs Solo en el onboarding (o en el menú).
+    private var didChooseAppleDockMode: Bool {
+        get { prefs.bool(forKey: "didChooseAppleDockMode") }
+        set { prefs.set(newValue, forKey: "didChooseAppleDockMode") }
+    }
+    /// Snapshot del Dock de Apple antes de que StackDock lo modifique (para restaurar al salir).
+    private var appleDockBackupAutohide: Bool? {
+        get { prefs.object(forKey: "appleDockBackupAutohide") as? Bool }
+        set {
+            if let newValue { prefs.set(newValue, forKey: "appleDockBackupAutohide") }
+            else { prefs.removeObject(forKey: "appleDockBackupAutohide") }
+        }
+    }
+    private var appleDockBackupDelay: Double? {
+        get { prefs.object(forKey: "appleDockBackupDelay") as? Double }
+        set {
+            if let newValue { prefs.set(newValue, forKey: "appleDockBackupDelay") }
+            else { prefs.removeObject(forKey: "appleDockBackupDelay") }
+        }
+    }
+    private var appleDockBackupTimeModifier: Double? {
+        get { prefs.object(forKey: "appleDockBackupTimeModifier") as? Double }
+        set {
+            if let newValue { prefs.set(newValue, forKey: "appleDockBackupTimeModifier") }
+            else { prefs.removeObject(forKey: "appleDockBackupTimeModifier") }
+        }
+    }
+    /// ⌥D / atajo también oculta el Dock nativo de Apple (útil en modo Solo / pantalla limpia).
     private var syncAppleDockOnToggle: Bool {
         get { prefs.object(forKey: "syncAppleDockOnToggle") == nil ? true : prefs.bool(forKey: "syncAppleDockOnToggle") }
         set { prefs.set(newValue, forKey: "syncAppleDockOnToggle") }
@@ -70,16 +98,19 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
         // Nunca spamear el diálogo de Accesibilidad: solo comprobar en silencio.
         // Si falta permiso, el menú tiene "Autorizar…" (una sola vez a petición).
         _ = winService.isAXTrusted(prompt: false)
-        if replaceAppleDock {
-            setAppleDockAutohide(true)
-        }
         rebuildAllMonitors()
         registerSystemEvents()
 
-        if !LicenseManager.shared.canUseApp {
-            DispatchQueue.main.async { [weak self] in
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            if !self.didChooseAppleDockMode {
+                self.presentAppleDockModeChooser(isFirstRun: true)
+            } else if self.replaceAppleDock {
+                self.applySoloStackDockMode(persistChoice: false)
+            }
+            if !LicenseManager.shared.canUseApp {
                 LicenseManager.shared.presentActivationIfNeeded(force: true) {
-                    self?.rebuildAllMonitors()
+                    self.rebuildAllMonitors()
                 }
             }
         }
@@ -87,6 +118,7 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         hideAllStackDockPanels()
+        restoreAppleDockIfNeeded()
     }
 
     private func setupHotKeys() {
@@ -678,28 +710,37 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func isAppleDockAutohide() -> Bool {
-        let dom = UserDefaults.standard.persistentDomain(forName: "com.apple.dock")
-        return (dom?["autohide"] as? Bool) ?? false
+    private func appleDockDomain() -> [String: Any] {
+        UserDefaults.standard.persistentDomain(forName: "com.apple.dock") ?? [:]
     }
 
-    private func normalizeAppleDockHideTimingIfNeeded() {
-        let dom = UserDefaults.standard.persistentDomain(forName: "com.apple.dock") ?? [:]
-        let delay = (dom["autohide-delay"] as? Double)
-            ?? (dom["autohide-delay"] as? Int).map(Double.init)
-            ?? 0
-        guard delay > 1.0 else { return }
-        // Tu Mac tenía autohide-delay≈1000s: el Dock de Apple no se retiraba nunca.
+    private func isAppleDockAutohide() -> Bool {
+        (appleDockDomain()["autohide"] as? Bool) ?? false
+    }
+
+    private func appleDockDelayValue() -> Double {
+        let dom = appleDockDomain()
+        if let d = dom["autohide-delay"] as? Double { return d }
+        if let i = dom["autohide-delay"] as? Int { return Double(i) }
+        return 0.5
+    }
+
+    private func appleDockTimeModifierValue() -> Double {
+        let dom = appleDockDomain()
+        if let d = dom["autohide-time-modifier"] as? Double { return d }
+        if let i = dom["autohide-time-modifier"] as? Int { return Double(i) }
+        return 0.5
+    }
+
+    private func defaultsWriteDock(_ args: [String]) {
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/usr/bin/defaults")
-        task.arguments = ["write", "com.apple.dock", "autohide-delay", "-float", "0"]
+        task.arguments = ["write", "com.apple.dock"] + args
         try? task.run()
         task.waitUntilExit()
-        let task2 = Process()
-        task2.executableURL = URL(fileURLWithPath: "/usr/bin/defaults")
-        task2.arguments = ["write", "com.apple.dock", "autohide-time-modifier", "-float", "0.35"]
-        try? task2.run()
-        task2.waitUntilExit()
+    }
+
+    private func restartAppleDock() {
         let kill = Process()
         kill.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
         kill.arguments = ["Dock"]
@@ -707,36 +748,83 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
         kill.waitUntilExit()
     }
 
-    private func setAppleDockAutohide(_ enabled: Bool) {
-        // Preferir `defaults` + killall Dock: no depende de Automatización/System Events
-        // y es lo que evita el “doble dock” al probar.
-        let already = isAppleDockAutohide()
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/usr/bin/defaults")
-        task.arguments = ["write", "com.apple.dock", "autohide", "-bool", enabled ? "true" : "false"]
-        try? task.run()
-        task.waitUntilExit()
+    /// Guarda el estado actual del Dock de Apple una sola vez por sesión de “modo Solo”.
+    private func backupAppleDockSettingsIfNeeded() {
+        guard appleDockBackupAutohide == nil else { return }
+        appleDockBackupAutohide = isAppleDockAutohide()
+        appleDockBackupDelay = appleDockDelayValue()
+        appleDockBackupTimeModifier = appleDockTimeModifierValue()
+    }
 
-        if enabled {
-            // Delay alto al REVELAR con el mouse: el Dock de Apple casi no asoma debajo de StackDock
-            let d1 = Process()
-            d1.executableURL = URL(fileURLWithPath: "/usr/bin/defaults")
-            d1.arguments = ["write", "com.apple.dock", "autohide-delay", "-float", "2.5"]
-            try? d1.run()
-            d1.waitUntilExit()
-            let d2 = Process()
-            d2.executableURL = URL(fileURLWithPath: "/usr/bin/defaults")
-            d2.arguments = ["write", "com.apple.dock", "autohide-time-modifier", "-float", "0.2"]
-            try? d2.run()
-            d2.waitUntilExit()
+    /// Restaura autohide/delay del Dock de Apple al salir o al volver a modo Dual.
+    private func restoreAppleDockIfNeeded() {
+        guard let savedAutohide = appleDockBackupAutohide else { return }
+        defaultsWriteDock(["autohide", "-bool", savedAutohide ? "true" : "false"])
+        if let delay = appleDockBackupDelay {
+            defaultsWriteDock(["autohide-delay", "-float", String(delay)])
         }
+        if let mod = appleDockBackupTimeModifier {
+            defaultsWriteDock(["autohide-time-modifier", "-float", String(mod)])
+        }
+        appleDockBackupAutohide = nil
+        appleDockBackupDelay = nil
+        appleDockBackupTimeModifier = nil
+        restartAppleDock()
+    }
 
-        if already != enabled {
-            let kill = Process()
-            kill.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
-            kill.arguments = ["Dock"]
-            try? kill.run()
-            kill.waitUntilExit()
+    /// Modo Solo: el Dock de Apple queda oculto y casi no responde al borde (delay extremo).
+    private func applySoloStackDockMode(persistChoice: Bool) {
+        if persistChoice {
+            replaceAppleDock = true
+            didChooseAppleDockMode = true
+            // En monitores apilados, dibujar también donde estaba el Dock de Apple
+            includeAppleDockScreen = true
+        }
+        backupAppleDockSettingsIfNeeded()
+        defaultsWriteDock(["autohide", "-bool", "true"])
+        // Delay alto: el Dock nativo no “asoma” al pasar el mouse; StackDock es el único visible.
+        defaultsWriteDock(["autohide-delay", "-float", "1000"])
+        defaultsWriteDock(["autohide-time-modifier", "-float", "0.2"])
+        restartAppleDock()
+        rebuildAllMonitors()
+    }
+
+    /// Modo Dual: Apple Dock visible + StackDock en monitores extra / secundarios.
+    private func applyDualDockMode(persistChoice: Bool) {
+        if persistChoice {
+            replaceAppleDock = false
+            didChooseAppleDockMode = true
+            includeAppleDockScreen = false
+        }
+        restoreAppleDockIfNeeded()
+        // Si no había backup (primer Dual), no tocamos el Dock de Apple.
+        rebuildAllMonitors()
+    }
+
+    private func presentAppleDockModeChooser(isFirstRun: Bool) {
+        let alert = NSAlert()
+        alert.messageText = isFirstRun ? "¿Cómo quieres usar StackDock?" : "Cambiar modo del Dock"
+        alert.informativeText = """
+        Elige lo que mejor encaje con tu setup. Puedes cambiarlo después en el menú de StackDock.
+
+        • Solo StackDock — oculta el Dock de Apple mientras esta app corre (recomendado si no quieres doble dock). Al salir, se restaura tu Dock original.
+
+        • Dual — deja el Dock de Apple visible y usa StackDock en el/los monitor(es) extra (ideal apilado: Apple abajo + StackDock arriba).
+        """
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "Solo StackDock")
+        alert.addButton(withTitle: "Dual (Apple + StackDock)")
+        if !isFirstRun {
+            alert.addButton(withTitle: "Cancelar")
+        }
+        let response = alert.runModal()
+        switch response {
+        case .alertFirstButtonReturn:
+            applySoloStackDockMode(persistChoice: true)
+        case .alertSecondButtonReturn:
+            applyDualDockMode(persistChoice: true)
+        default:
+            break
         }
     }
 
@@ -744,16 +832,19 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
         isVisible.toggle()
         refreshStatusBarIcon()
         if isVisible {
-            // Al mostrar StackDock: Dock de Apple sigue en autohide para no volver al doble dock
-            if replaceAppleDock || syncAppleDockOnToggle {
-                setAppleDockAutohide(true)
+            if replaceAppleDock {
+                applySoloStackDockMode(persistChoice: false)
+            } else {
+                rebuildAllMonitors()
             }
-            rebuildAllMonitors()
         } else {
-            // Ocultar StackDock en TODOS los monitores + Dock nativo (vídeo a pantalla limpia)
             hideAllStackDockPanels()
+            // Pantalla limpia: si el cliente pidió sincronizar, también escondemos el de Apple
             if syncAppleDockOnToggle {
-                setAppleDockAutohide(true)
+                backupAppleDockSettingsIfNeeded()
+                defaultsWriteDock(["autohide", "-bool", "true"])
+                defaultsWriteDock(["autohide-delay", "-float", "1000"])
+                restartAppleDock()
             }
         }
     }
@@ -790,12 +881,25 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
         iso.target = self
         m.addItem(iso)
 
-        let replaceApple = NSMenuItem(title: "Reemplazar Dock de Apple (autohide mientras StackDock está activo)", action: #selector(toggleReplaceAppleDock), keyEquivalent: "")
-        replaceApple.state = replaceAppleDock ? .on : .off
-        replaceApple.target = self
-        m.addItem(replaceApple)
+        // Modo Dock: Dual vs Solo (elección del cliente)
+        let modeSub = NSMenu()
+        let soloMode = NSMenuItem(title: "Solo StackDock (oculta el Dock de Apple)", action: #selector(chooseSoloDockMode), keyEquivalent: "")
+        soloMode.state = replaceAppleDock ? .on : .off
+        soloMode.target = self
+        modeSub.addItem(soloMode)
+        let dualMode = NSMenuItem(title: "Dual (Apple Dock + StackDock)", action: #selector(chooseDualDockMode), keyEquivalent: "")
+        dualMode.state = replaceAppleDock ? .off : .on
+        dualMode.target = self
+        modeSub.addItem(dualMode)
+        modeSub.addItem(.separator())
+        let explainMode = NSMenuItem(title: "¿Cuál me conviene?…", action: #selector(showDockModeChooserAgain), keyEquivalent: "")
+        explainMode.target = self
+        modeSub.addItem(explainMode)
+        let modeRoot = NSMenuItem(title: replaceAppleDock ? "Modo Dock: Solo StackDock" : "Modo Dock: Dual", action: nil, keyEquivalent: "")
+        modeRoot.submenu = modeSub
+        m.addItem(modeRoot)
 
-        let syncApple = NSMenuItem(title: "Atajo oculta también el Dock de Apple", action: #selector(toggleSyncAppleDock), keyEquivalent: "")
+        let syncApple = NSMenuItem(title: "Al ocultar StackDock (⌥D), ocultar también el de Apple", action: #selector(toggleSyncAppleDock), keyEquivalent: "")
         syncApple.state = syncAppleDockOnToggle ? .on : .off
         syncApple.target = self
         m.addItem(syncApple)
@@ -853,10 +957,6 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
         posRoot.submenu = posSub
         m.addItem(posRoot)
 
-        let appleHide = NSMenuItem(title: "Ocultar/Mostrar Dock original de Apple", action: #selector(toggleNativeAppleDockAutoHide), keyEquivalent: "")
-        appleHide.target = self
-        m.addItem(appleHide)
-
         if #available(macOS 13.0, *) {
             let loginIt = NSMenuItem(title: "Abrir al iniciar sesión", action: #selector(toggleLogin), keyEquivalent: "")
             loginIt.state = (SMAppService.mainApp.status == .enabled) ? .on : .off
@@ -895,11 +995,9 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
     @objc private func moveActiveWinMenu() { winService.moveFrontmostWindowToNextMonitor() }
     @objc private func toggleUncombine() { uncombineMultiWindows.toggle(); rebuildAllMonitors() }
     @objc private func toggleIsolatePerMonitor() { isolateAppsPerMonitor.toggle(); rebuildAllMonitors() }
-    @objc private func toggleReplaceAppleDock() {
-        replaceAppleDock.toggle()
-        if replaceAppleDock { setAppleDockAutohide(true) }
-        rebuildAllMonitors()
-    }
+    @objc private func chooseSoloDockMode() { applySoloStackDockMode(persistChoice: true) }
+    @objc private func chooseDualDockMode() { applyDualDockMode(persistChoice: true) }
+    @objc private func showDockModeChooserAgain() { presentAppleDockModeChooser(isFirstRun: false) }
     @objc private func toggleSyncAppleDock() { syncAppleDockOnToggle.toggle() }
     @objc private func requestAXPermission() { _ = winService.isAXTrusted(prompt: true) }
     @objc private func toggleIncludeApple() { includeAppleDockScreen.toggle(); rebuildAllMonitors() }
@@ -921,12 +1019,6 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
 
     @objc private func selectPlacement(_ s: NSMenuItem) {
         if let pl = DockPlacement(rawValue: s.tag) { placement = pl; rebuildAllMonitors() }
-    }
-
-    @objc private func toggleNativeAppleDockAutoHide() {
-        let script = NSAppleScript(source: "tell application \"System Events\" to tell dock preferences to set autohide to not autohide")
-        script?.executeAndReturnError(nil)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in self?.rebuildAllMonitors() }
     }
 
     @objc private func toggleLogin() {
