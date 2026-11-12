@@ -99,8 +99,9 @@ final class UpdateChecker {
 
     // MARK: - Download + SHA-256
 
-    /// Descarga el DMG, verifica su SHA-256 y solo entonces lo abre (monta el DMG).
-    func downloadAndOpen(_ info: UpdateInfo, completion: @escaping (Result<URL, Error>) -> Void) {
+    /// Descarga el DMG, verifica su SHA-256 y devuelve la ruta local del archivo.
+    /// No lo abre: el controlador decide entre instalar automáticamente o mostrarlo en Finder.
+    func downloadVerified(_ info: UpdateInfo, completion: @escaping (Result<URL, Error>) -> Void) {
         guard !isBusy else { return }
         isBusy = true
 
@@ -150,7 +151,6 @@ final class UpdateChecker {
                 try FileManager.default.moveItem(at: tempURL, to: dest)
 
                 DispatchQueue.main.async {
-                    _ = NSWorkspace.shared.open(dest)
                     completion(.success(dest))
                 }
             } catch {

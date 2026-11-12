@@ -134,6 +134,7 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
         _ = winService.isAXTrusted(prompt: false)
         rebuildAllMonitors()
         registerSystemEvents()
+        scheduleAutomaticUpdateCheckIfNeeded()
 
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
@@ -1294,24 +1295,85 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
         updateMenuItem?.title = "Descargando actualización…"
         updateMenuItem?.isEnabled = false
 
-        UpdateChecker.shared.downloadAndOpen(info) { [weak self] result in
+        UpdateChecker.shared.downloadVerified(info) { [weak self] result in
             guard let self else { return }
             self.updateMenuItem?.title = "Buscar actualizaciones…"
             self.updateMenuItem?.isEnabled = true
 
             switch result {
             case .success(let url):
-                self.presentUpdateAlert(
-                    title: "Descarga verificada",
-                    message: "StackDock \(info.version) se guardó en \(url.path) y su SHA-256 coincide con el publicado. Arrastra la app a Aplicaciones para completar la actualización.",
-                    primary: nil
-                )
+                self.offerInstall(info: info, dmgURL: url)
             case .failure(let error):
                 self.presentUpdateAlert(
                     title: "Actualización cancelada",
                     message: error.localizedDescription,
                     primary: nil
                 )
+            }
+        }
+    }
+
+    private func offerInstall(info: UpdateInfo, dmgURL: URL) {
+        NSApp.activate(ignoringOtherApps: true)
+        let alert = NSAlert()
+        alert.alertStyle = .informational
+        alert.messageText = "StackDock \(info.version) está listo"
+        alert.informativeText = """
+        SHA-256 verificado correctamente.
+
+        StackDock se cerrará, se reemplazará por la versión nueva y volverá a abrirse solo. No necesitas arrastrar nada.
+        """
+        alert.icon = NSApp.applicationIconImage
+        alert.addButton(withTitle: "Instalar y reiniciar")
+        alert.addButton(withTitle: "Mostrar en Finder")
+        alert.addButton(withTitle: "Más tarde")
+
+        switch alert.runModal() {
+        case .alertFirstButtonReturn:
+            updateMenuItem?.title = "Instalando actualización…"
+            updateMenuItem?.isEnabled = false
+            UpdateInstaller.shared.install(from: dmgURL) { [weak self] result in
+                guard let self else { return }
+                switch result {
+                case .success:
+                    // El script auxiliar espera a que este proceso termine.
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                        NSApp.terminate(nil)
+                    }
+                case .failure(let error):
+                    self.updateMenuItem?.title = "Buscar actualizaciones…"
+                    self.updateMenuItem?.isEnabled = true
+                    self.presentUpdateAlert(
+                        title: "No se pudo instalar automáticamente",
+                        message: error.localizedDescription,
+                        primary: nil
+                    )
+                    _ = NSWorkspace.shared.open(dmgURL)
+                }
+            }
+        case .alertSecondButtonReturn:
+            NSWorkspace.shared.activateFileViewerSelecting([dmgURL])
+        default:
+            break
+        }
+    }
+
+    /// Comprobación silenciosa una vez cada 24 h. No molesta si no hay novedad.
+    private func scheduleAutomaticUpdateCheckIfNeeded() {
+        let now = Date().timeIntervalSince1970
+        let last = prefs.double(forKey: "lastAutomaticUpdateCheck")
+        guard now - last >= 24 * 3600 else { return }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 30) { [weak self] in
+            UpdateChecker.shared.check { result in
+                guard let self else { return }
+                // Solo marcamos la comprobación si hubo respuesta válida:
+                // si estás sin red, se reintenta en el próximo arranque.
+                if case .failure = result { return }
+                self.prefs.set(Date().timeIntervalSince1970, forKey: "lastAutomaticUpdateCheck")
+                if case .available(let info) = result {
+                    self.presentAvailableUpdate(info)
+                }
             }
         }
     }

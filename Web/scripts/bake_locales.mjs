@@ -496,8 +496,8 @@ function bake(locale, dict) {
 
   // Production constants must remain verbatim
   const must = [
-    'StackDock-4.0.4.dmg',
-    '50559430f781fe7c8ea6370e6ee648633147d9cafad7b4e02dea13a7f25586b2',
+    'StackDock-4.0.5.dmg',
+    '58e830794458be5e1a90dee1e020a0b540af209297aed2524003e7d31544c649',
     'YH6W55MP95',
     'stackdock@iareal.net',
     'https://wa.me/525645674407',

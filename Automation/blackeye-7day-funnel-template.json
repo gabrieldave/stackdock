@@ -71,8 +71,8 @@
     "TRIAL_SLUG": "stackdock-trial",
     "PAID_SLUG": "stackdock-paid",
     "DOMAIN": "https://stackdock.iareal.net",
-    "DMG_URL": "https://stackdock.iareal.net/download/StackDock-4.0.4.dmg",
-    "DMG_SHA256": "50559430f781fe7c8ea6370e6ee648633147d9cafad7b4e02dea13a7f25586b2",
+    "DMG_URL": "https://stackdock.iareal.net/download/StackDock-4.0.5.dmg",
+    "DMG_SHA256": "58e830794458be5e1a90dee1e020a0b540af209297aed2524003e7d31544c649",
     "TEAM_ID": "YH6W55MP95"
   },
   "defaults_findaro": {
