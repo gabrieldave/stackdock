@@ -30,6 +30,7 @@ SOURCES=(
   "${ROOT}/Sources/Services/WindowTeleportAndProfileService.swift"
   "${ROOT}/Sources/Services/BrowserProfileLaunchService.swift"
   "${ROOT}/Sources/Services/LicenseManager.swift"
+  "${ROOT}/Sources/Services/UpdateChecker.swift"
   "${ROOT}/Sources/Services/GlobalHotKeyCenter.swift"
   "${ROOT}/Sources/Views/DockTileView.swift"
   "${ROOT}/Sources/Views/DockGlassBarView.swift"

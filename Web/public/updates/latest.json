@@ -1,0 +1,9 @@
+{
+  "version": "4.0.4",
+  "build": 404,
+  "min_macos": "13.0",
+  "dmg_url": "https://stackdock.iareal.net/download/StackDock-4.0.4.dmg",
+  "sha256": "50559430f781fe7c8ea6370e6ee648633147d9cafad7b4e02dea13a7f25586b2",
+  "notes_url": "https://stackdock.iareal.net/",
+  "published_at": "2026-11-12T03:52:00Z"
+}

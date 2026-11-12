@@ -11,6 +11,8 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
     private let winService = WindowTeleportAndProfileService.shared
     private var rebuildDebounceWorkItem: DispatchWorkItem?
     private var didRegisterSystemEvents = false
+    /// Ítem "Buscar actualizaciones…" para mostrar progreso mientras se descarga.
+    private var updateMenuItem: NSMenuItem?
 
     private var isVisible: Bool {
         get { prefs.object(forKey: "isVisible") == nil ? true : prefs.bool(forKey: "isVisible") }
@@ -1062,7 +1064,9 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
 
     private func buildMasterMenu() -> NSMenu {
         let m = NSMenu()
-        let h = NSMenuItem(title: isVisible ? "StackDock v4 • ENCENDIDO" : "StackDock v4 • OCULTO", action: nil, keyEquivalent: "")
+        let v = UpdateChecker.shared
+        let versionTag = "\(v.currentShortVersion) (\(v.currentBuild))"
+        let h = NSMenuItem(title: "StackDock \(versionTag) • \(isVisible ? "ENCENDIDO" : "OCULTO")", action: nil, keyEquivalent: "")
         h.isEnabled = false
         m.addItem(h)
 
@@ -1201,10 +1205,126 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
         m.addItem(loadAvatars)
 
         m.addItem(.separator())
+        let aboutIt = NSMenuItem(title: "Acerca de StackDock", action: #selector(showAboutPanel), keyEquivalent: "")
+        aboutIt.target = self
+        m.addItem(aboutIt)
+
+        let updateIt = NSMenuItem(title: "Buscar actualizaciones…", action: #selector(checkForUpdates), keyEquivalent: "")
+        updateIt.target = self
+        m.addItem(updateIt)
+        self.updateMenuItem = updateIt
+
+        m.addItem(.separator())
         let quitIt = NSMenuItem(title: "Salir de StackDock", action: #selector(quitApp), keyEquivalent: "q")
         quitIt.target = self
         m.addItem(quitIt)
         return m
+    }
+
+    // MARK: - Acerca de / Actualizaciones
+
+    @objc private func showAboutPanel() {
+        NSApp.activate(ignoringOtherApps: true)
+        let v = UpdateChecker.shared
+        let alert = NSAlert()
+        alert.alertStyle = .informational
+        alert.messageText = "StackDock"
+        alert.informativeText = """
+        Versión \(v.currentShortVersion) (build \(v.currentBuild))
+
+        Dock multimonitor con perfiles de navegador, teletransporte de ventanas y acceso a Descargas/Papelera.
+
+        © 2026 Black Eye
+        stackdock.iareal.net
+        """
+        alert.icon = NSApp.applicationIconImage
+        alert.addButton(withTitle: "Cerrar")
+        alert.addButton(withTitle: "Sitio web")
+        if alert.runModal() == .alertSecondButtonReturn,
+           let url = URL(string: "https://stackdock.iareal.net/") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    @objc private func checkForUpdates() {
+        NSApp.activate(ignoringOtherApps: true)
+        updateMenuItem?.title = "Buscando actualizaciones…"
+        updateMenuItem?.isEnabled = false
+
+        UpdateChecker.shared.check { [weak self] result in
+            guard let self else { return }
+            self.updateMenuItem?.title = "Buscar actualizaciones…"
+            self.updateMenuItem?.isEnabled = true
+
+            switch result {
+            case .upToDate(let short, let build):
+                self.presentUpdateAlert(
+                    title: "Estás al día",
+                    message: "Tienes la última versión de StackDock: \(short) (build \(build)).",
+                    primary: nil
+                )
+            case .available(let info):
+                self.presentAvailableUpdate(info)
+            case .failure(let message):
+                self.presentUpdateAlert(
+                    title: "No se pudo comprobar",
+                    message: message,
+                    primary: nil
+                )
+            }
+        }
+    }
+
+    private func presentAvailableUpdate(_ info: UpdateInfo) {
+        let v = UpdateChecker.shared
+        let alert = NSAlert()
+        alert.alertStyle = .informational
+        alert.messageText = "StackDock \(info.version) disponible"
+        alert.informativeText = """
+        Tienes \(v.currentShortVersion) (build \(v.currentBuild)).
+
+        Se descargará desde stackdock.iareal.net, se verificará su SHA-256 y solo entonces se abrirá el instalador.
+        """
+        alert.icon = NSApp.applicationIconImage
+        alert.addButton(withTitle: "Descargar actualización")
+        alert.addButton(withTitle: "Más tarde")
+
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+
+        updateMenuItem?.title = "Descargando actualización…"
+        updateMenuItem?.isEnabled = false
+
+        UpdateChecker.shared.downloadAndOpen(info) { [weak self] result in
+            guard let self else { return }
+            self.updateMenuItem?.title = "Buscar actualizaciones…"
+            self.updateMenuItem?.isEnabled = true
+
+            switch result {
+            case .success(let url):
+                self.presentUpdateAlert(
+                    title: "Descarga verificada",
+                    message: "StackDock \(info.version) se guardó en \(url.path) y su SHA-256 coincide con el publicado. Arrastra la app a Aplicaciones para completar la actualización.",
+                    primary: nil
+                )
+            case .failure(let error):
+                self.presentUpdateAlert(
+                    title: "Actualización cancelada",
+                    message: error.localizedDescription,
+                    primary: nil
+                )
+            }
+        }
+    }
+
+    private func presentUpdateAlert(title: String, message: String, primary: String?) {
+        NSApp.activate(ignoringOtherApps: true)
+        let alert = NSAlert()
+        alert.alertStyle = .informational
+        alert.messageText = title
+        alert.informativeText = message
+        alert.icon = NSApp.applicationIconImage
+        alert.addButton(withTitle: primary ?? "Aceptar")
+        alert.runModal()
     }
 
     @objc private func loadChromeAvatars() {
