@@ -19,8 +19,8 @@
   "product": "stackdock",
   "version": "4.0.0",
   "source": "landing_download_modal",
-  "dmg_url": "https://stackdock.iareal.net/download/StackDock-4.0.0.dmg",
-  "dmg_sha256": "3449e4976099f77f5b083fe9e4a5c6cfe01087821010dc13768eddac7f4a8920",
+  "dmg_url": "https://stackdock.iareal.net/download/StackDock-4.0.3.dmg",
+  "dmg_sha256": "5cc46c726ac89771d1eb8b06e7aa2d51b9be41888a2fb42633168f92a3c06e4d",
   "team_id": "YH6W55MP95",
   "ts": "2026-11-11T02:00:00.000Z"
 }

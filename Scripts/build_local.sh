@@ -33,6 +33,7 @@ SOURCES=(
   "${ROOT}/Sources/Services/GlobalHotKeyCenter.swift"
   "${ROOT}/Sources/Views/DockTileView.swift"
   "${ROOT}/Sources/Views/DockGlassBarView.swift"
+  "${ROOT}/Sources/Views/DockSpecialIcons.swift"
   "${ROOT}/Sources/App/StackDockAppController.swift"
   "${ROOT}/Sources/main.swift"
 )

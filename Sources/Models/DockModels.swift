@@ -7,6 +7,8 @@ enum DockPlacement: Int {
     case bottomOriginal = 0
     case bottomElevated = 1
     case topUnderMenu   = 2
+    /// Abajo en la pantalla del Dock de Apple, arriba (bajo la barra de menús) en los monitores extra.
+    case autoPerMonitor = 3
 }
 
 enum HotKeyTogglePreset: Int, CaseIterable {

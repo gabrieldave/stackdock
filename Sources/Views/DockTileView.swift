@@ -20,7 +20,7 @@ final class DockTileView: NSView {
         iconSize: CGFloat
     ) {
         self.iconSize = iconSize
-        super.init(frame: NSRect(x: 0, y: 0, width: iconSize + 12, height: iconSize + 24))
+        super.init(frame: NSRect(x: 0, y: 0, width: iconSize + 12, height: iconSize + 20))
         setupVisuals(icon: icon, tooltipText: tooltipText, badgeText: badgeText, runningCount: runningCount)
     }
 
@@ -36,7 +36,7 @@ final class DockTileView: NSView {
         imageView.wantsLayer = true
         imageView.layer?.masksToBounds = true
         imageView.layer?.cornerRadius = iconSize * 0.22
-        imageView.frame = NSRect(x: 6, y: 11, width: iconSize, height: iconSize)
+        imageView.frame = NSRect(x: 6, y: 9, width: iconSize, height: iconSize)
         addSubview(imageView)
 
         if let badge = badgeText, !badge.isEmpty {
@@ -83,14 +83,14 @@ final class DockTileView: NSView {
     override func mouseEntered(with event: NSEvent) {
         NSAnimationContext.runAnimationGroup { ctx in
             ctx.duration = 0.1
-            imageView.animator().frame = NSRect(x: 3, y: 14, width: iconSize + 6, height: iconSize + 6)
+            imageView.animator().frame = NSRect(x: 3, y: 12, width: iconSize + 6, height: iconSize + 6)
         }
     }
 
     override func mouseExited(with event: NSEvent) {
         NSAnimationContext.runAnimationGroup { ctx in
             ctx.duration = 0.1
-            imageView.animator().frame = NSRect(x: 6, y: 11, width: iconSize, height: iconSize)
+            imageView.animator().frame = NSRect(x: 6, y: 9, width: iconSize, height: iconSize)
         }
     }
 

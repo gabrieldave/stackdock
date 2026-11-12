@@ -1,5 +1,6 @@
 import Cocoa
 import ServiceManagement
+import UniformTypeIdentifiers
 
 // MARK: - Controlador Maestro StackDock v4.0
 
@@ -70,7 +71,7 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
         set { prefs.set(newValue, forKey: "clickActiveToHide") }
     }
     private var iconSize: CGFloat {
-        get { let s = prefs.double(forKey: "iconSize"); return s > 0 ? CGFloat(s) : 46 }
+        get { let s = prefs.double(forKey: "iconSize"); return s > 0 ? CGFloat(s) : 38 }
         set { prefs.set(Double(newValue), forKey: "iconSize") }
     }
     private var placement: DockPlacement {
@@ -89,6 +90,38 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
     private var disabledMonitors: Set<UInt32> {
         get { Set(prefs.array(forKey: "disabledMonitors") as? [UInt32] ?? []) }
         set { prefs.set(Array(newValue), forKey: "disabledMonitors") }
+    }
+
+    /// App con la que se abren Descargas y Papelera (Finder por defecto).
+    /// Si el usuario no eligió nada y Findaro está instalado, se usa Findaro.
+    private var storedFolderOpenerPath: String? {
+        get { prefs.string(forKey: "folderOpenerAppPath") }
+        set {
+            if let newValue { prefs.set(newValue, forKey: "folderOpenerAppPath") }
+            else { prefs.removeObject(forKey: "folderOpenerAppPath") }
+        }
+    }
+
+    private var finderAppURL: URL {
+        URL(fileURLWithPath: "/System/Library/CoreServices/Finder.app")
+    }
+
+    private var findaroAppURL: URL? {
+        NSWorkspace.shared.urlForApplication(withBundleIdentifier: "app.findaro.files")
+    }
+
+    private var folderOpenerAppURL: URL {
+        if let path = storedFolderOpenerPath,
+           FileManager.default.fileExists(atPath: path) {
+            return URL(fileURLWithPath: path)
+        }
+        return findaroAppURL ?? finderAppURL
+    }
+
+    private var folderOpenerName: String {
+        let url = folderOpenerAppURL
+        let name = FileManager.default.displayName(atPath: url.path).replacingOccurrences(of: ".app", with: "")
+        return name.isEmpty ? "Finder" : name
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -295,6 +328,20 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
         return nil
     }
 
+    /// Auto por monitor: abajo en la pantalla donde vive el Dock de Apple,
+    /// arriba (bajo la barra de menús) en los monitores extra.
+    private func resolvedPlacement(for screen: NSScreen) -> DockPlacement {
+        guard placement == .autoPerMonitor else { return placement }
+        let screens = NSScreen.screens
+        guard screens.count > 1 else { return .bottomElevated }
+        if let appleScreen = appleNativeDockScreenID() {
+            return screenID(screen) == appleScreen ? .bottomElevated : .topUnderMenu
+        }
+        // Si el Dock de Apple está oculto, usa la pantalla principal como referencia.
+        let reference = screens.first
+        return (reference.map { screenID($0) } == screenID(screen)) ? .bottomElevated : .topUnderMenu
+    }
+
     private func enabledScreens() -> [NSScreen] {
         let all = NSScreen.screens
         if all.count <= 1 { return all }
@@ -309,7 +356,7 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
 
     private func makePanel() -> (panel: NSPanel, bar: DockGlassBarView) {
         let p = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 400, height: 72),
+            contentRect: NSRect(x: 0, y: 0, width: 400, height: 58),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
@@ -327,7 +374,7 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
         bar.blendingMode = .behindWindow
         bar.state = .active
         bar.wantsLayer = true
-        bar.layer?.cornerRadius = 20
+        bar.layer?.cornerRadius = 16
         bar.layer?.masksToBounds = true
         bar.layer?.borderWidth = 0.8
         bar.layer?.borderColor = NSColor.white.withAlphaComponent(0.24).cgColor
@@ -393,8 +440,8 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
 
         let maxW = max(120, screen.frame.width - 28)
         let spacing: CGFloat = 3
-        let pad: CGFloat = 10
-        let dividerW: CGFloat = 13
+        let pad: CGFloat = 8
+        let dividerW: CGFloat = 11
         let totalSlots = max(1, CGFloat(entries.count + 2)) // + Descargas + Papelera
 
         var sz = iconSize
@@ -404,7 +451,7 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
         }
 
         let tileW = sz + 12
-        let barH = sz + 24
+        let barH = sz + 20
         var x = pad
 
         for entry in entries {
@@ -436,7 +483,7 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
             x += tileW + spacing
         }
 
-        let div = NSView(frame: NSRect(x: x + 5, y: 12, width: 1, height: barH - 24))
+        let div = NSView(frame: NSRect(x: x + 5, y: 10, width: 1, height: barH - 20))
         div.wantsLayer = true
         div.layer?.backgroundColor = NSColor.white.withAlphaComponent(0.28).cgColor
         bar.addSubview(div)
@@ -445,31 +492,34 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
         // Carpeta rápida Descargas
         let dlPath = NSHomeDirectory() + "/Downloads"
         let dlTile = DockTileView(
-            icon: NSWorkspace.shared.icon(forFile: dlPath),
-            tooltipText: "Descargas",
+            icon: DockSpecialIcons.downloads(),
+            tooltipText: "Descargas\n• Clic: abrir con \(folderOpenerName) | Menú: elegir app",
             badgeText: nil,
             runningCount: 0,
             iconSize: sz
         )
         dlTile.frame.origin = NSPoint(x: x, y: 0)
-        dlTile.onSingleClick = { NSWorkspace.shared.open(URL(fileURLWithPath: dlPath)) }
-        dlTile.menuBuilder = { [weak self] in self?.buildMasterMenu() ?? NSMenu() }
+        dlTile.onSingleClick = { [weak self] in
+            self?.openFolder(URL(fileURLWithPath: dlPath))
+        }
+        dlTile.menuBuilder = { [weak self] in self?.buildDownloadsMenu() ?? NSMenu() }
         bar.addSubview(dlTile)
         x += tileW + spacing
 
         // Papelera
         let trashPath = NSHomeDirectory() + "/.Trash"
         let hasTrash = ((try? FileManager.default.contentsOfDirectory(atPath: trashPath))?.isEmpty == false)
-        let trashIcon = NSImage(named: hasTrash ? NSImage.trashFullName : NSImage.trashEmptyName) ?? NSWorkspace.shared.icon(forFile: trashPath)
         let trashTile = DockTileView(
-            icon: trashIcon,
-            tooltipText: "Papelera",
+            icon: DockSpecialIcons.trash(full: hasTrash),
+            tooltipText: "Papelera\n• Clic: abrir con \(folderOpenerName) | Menú: elegir app",
             badgeText: nil,
             runningCount: 0,
             iconSize: sz
         )
         trashTile.frame.origin = NSPoint(x: x, y: 0)
-        trashTile.onSingleClick = { NSWorkspace.shared.open(URL(fileURLWithPath: trashPath)) }
+        trashTile.onSingleClick = { [weak self] in
+            self?.openFolder(URL(fileURLWithPath: trashPath))
+        }
         trashTile.menuBuilder = { [weak self] in self?.buildTrashMenu() ?? NSMenu() }
         bar.addSubview(trashTile)
         x += tileW
@@ -477,10 +527,11 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
         let totalW = x + pad
         let originX = screen.frame.midX - (totalW / 2)
         let originY: CGFloat
-        switch placement {
+        switch resolvedPlacement(for: screen) {
         case .bottomOriginal: originY = screen.frame.minY + 6
-        case .bottomElevated: originY = screen.frame.minY + 28
+        case .bottomElevated: originY = screen.frame.minY + 24
         case .topUnderMenu:   originY = screen.visibleFrame.maxY - barH - 8
+        case .autoPerMonitor: originY = screen.frame.minY + 24
         }
 
         panel.setFrame(NSRect(x: originX, y: originY, width: totalW, height: barH), display: true)
@@ -691,14 +742,167 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
         let openT = NSMenuItem(title: "Abrir Papelera", action: #selector(openTrash), keyEquivalent: "")
         openT.target = self
         m.addItem(openT)
+        let openerRoot = NSMenuItem(title: "Abrir con: \(folderOpenerName)", action: nil, keyEquivalent: "")
+        openerRoot.submenu = buildOpenerSubmenu()
+        m.addItem(openerRoot)
         let emptyT = NSMenuItem(title: "Vaciar Papelera…", action: #selector(emptyTrash), keyEquivalent: "")
         emptyT.target = self
         m.addItem(emptyT)
+        m.addItem(.separator())
+        let master = NSMenuItem(title: "Opciones de StackDock", action: nil, keyEquivalent: "")
+        master.submenu = buildMasterMenu()
+        m.addItem(master)
         return m
     }
 
+    // MARK: - Apertura configurable de Descargas / Papelera
+
+    private func openFolder(_ url: URL) {
+        let app = folderOpenerAppURL
+        let isFinder = app.standardizedFileURL.path == finderAppURL.standardizedFileURL.path
+        guard !isFinder else {
+            NSWorkspace.shared.open(url)
+            return
+        }
+        let cfg = NSWorkspace.OpenConfiguration()
+        cfg.activates = true
+
+        // Algunos visores (p. ej. Findaro) ignoran la carpeta si se les envía
+        // mientras están arrancando en frío. Si la app no corre, la lanzamos
+        // primero y le pasamos el documento cuando termina de arrancar.
+        let bundleID = Bundle(url: app)?.bundleIdentifier
+        let alreadyRunning = bundleID.flatMap {
+            NSRunningApplication.runningApplications(withBundleIdentifier: $0).first
+        }
+
+        if alreadyRunning != nil {
+            sendOpenDocument(url, with: app, configuration: cfg)
+            return
+        }
+
+        NSWorkspace.shared.openApplication(at: app, configuration: cfg) { [weak self] running, error in
+            guard let self, error == nil, let running else {
+                // Si no se pudo lanzar la app elegida, Finder como respaldo.
+                NSWorkspace.shared.open(url)
+                return
+            }
+            self.waitUntilFinishedLaunching(running) { ready in
+                if ready {
+                    self.sendOpenDocument(url, with: app, configuration: cfg)
+                } else {
+                    NSWorkspace.shared.open(url)
+                }
+            }
+        }
+    }
+
+    private func sendOpenDocument(
+        _ url: URL,
+        with app: URL,
+        configuration: NSWorkspace.OpenConfiguration
+    ) {
+        NSWorkspace.shared.open([url], withApplicationAt: app, configuration: configuration) { _, error in
+            // Si la app elegida no puede abrir la carpeta, Finder como respaldo.
+            if error != nil { NSWorkspace.shared.open(url) }
+        }
+    }
+
+    private func waitUntilFinishedLaunching(
+        _ app: NSRunningApplication,
+        attempts: Int = 0,
+        completion: @escaping (Bool) -> Void
+    ) {
+        if app.isFinishedLaunching {
+            completion(true)
+            return
+        }
+        if app.isTerminated || attempts >= 30 {
+            completion(!app.isTerminated)
+            return
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
+            self?.waitUntilFinishedLaunching(app, attempts: attempts + 1, completion: completion)
+        }
+    }
+
+    private func buildOpenerSubmenu() -> NSMenu {
+        let sub = NSMenu()
+        let current = folderOpenerAppURL.standardizedFileURL.path
+        let options: [(String, URL?)] = [
+            ("Finder", finderAppURL),
+            ("Findaro", findaroAppURL)
+        ]
+        for (name, url) in options {
+            guard let url else { continue }
+            let item = NSMenuItem(title: name, action: #selector(setFolderOpener(_:)), keyEquivalent: "")
+            item.representedObject = url
+            item.target = self
+            item.state = current == url.standardizedFileURL.path ? .on : .off
+            sub.addItem(item)
+        }
+        sub.addItem(.separator())
+        let other = NSMenuItem(title: "Otra app…", action: #selector(chooseFolderOpenerApp), keyEquivalent: "")
+        other.target = self
+        sub.addItem(other)
+        let reset = NSMenuItem(title: "Restablecer (Finder)", action: #selector(resetFolderOpener), keyEquivalent: "")
+        reset.target = self
+        sub.addItem(reset)
+        return sub
+    }
+
+    private func buildDownloadsMenu() -> NSMenu {
+        let m = NSMenu()
+        let openD = NSMenuItem(title: "Abrir Descargas", action: #selector(openDownloads), keyEquivalent: "")
+        openD.target = self
+        m.addItem(openD)
+        let openerRoot = NSMenuItem(title: "Abrir con: \(folderOpenerName)", action: nil, keyEquivalent: "")
+        openerRoot.submenu = buildOpenerSubmenu()
+        m.addItem(openerRoot)
+        let reveal = NSMenuItem(title: "Mostrar en Finder", action: #selector(revealDownloads), keyEquivalent: "")
+        reveal.target = self
+        m.addItem(reveal)
+        m.addItem(.separator())
+        let master = NSMenuItem(title: "Opciones de StackDock", action: nil, keyEquivalent: "")
+        master.submenu = buildMasterMenu()
+        m.addItem(master)
+        return m
+    }
+
+    @objc private func openDownloads() {
+        openFolder(URL(fileURLWithPath: NSHomeDirectory() + "/Downloads"))
+    }
+
+    @objc private func revealDownloads() {
+        NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: NSHomeDirectory() + "/Downloads")])
+    }
+
+    @objc private func setFolderOpener(_ s: NSMenuItem) {
+        guard let url = s.representedObject as? URL else { return }
+        storedFolderOpenerPath = url.path
+        rebuildAllMonitors()
+    }
+
+    @objc private func chooseFolderOpenerApp() {
+        let panel = NSOpenPanel()
+        panel.title = "Elige la app para abrir Descargas y Papelera"
+        panel.prompt = "Usar esta app"
+        panel.directoryURL = URL(fileURLWithPath: "/Applications")
+        panel.allowedContentTypes = [.application]
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        storedFolderOpenerPath = url.path
+        rebuildAllMonitors()
+    }
+
+    @objc private func resetFolderOpener() {
+        storedFolderOpenerPath = nil
+        rebuildAllMonitors()
+    }
+
     @objc private func openTrash() {
-        NSWorkspace.shared.open(URL(fileURLWithPath: NSHomeDirectory() + "/.Trash"))
+        openFolder(URL(fileURLWithPath: NSHomeDirectory() + "/.Trash"))
     }
 
     @objc private func emptyTrash() {
@@ -911,6 +1115,10 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
         syncApple.target = self
         m.addItem(syncApple)
 
+        let openerRoot = NSMenuItem(title: "Abrir Descargas y Papelera con: \(folderOpenerName)", action: nil, keyEquivalent: "")
+        openerRoot.submenu = buildOpenerSubmenu()
+        m.addItem(openerRoot)
+
         if !winService.isAXTrusted(prompt: false) {
             let axBtn = NSMenuItem(title: "⚠️ Autorizar Permiso para Mover Ventanas y Perfiles Chrome…", action: #selector(requestAXPermission), keyEquivalent: "")
             axBtn.target = self
@@ -966,7 +1174,7 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
 
         // Submenú Posición
         let posSub = NSMenu()
-        for (lbl, pl) in [("Abajo (como el original)", DockPlacement.bottomOriginal), ("Abajo elevado (anti-cruce)", DockPlacement.bottomElevated), ("Arriba (bajo barra de menús)", DockPlacement.topUnderMenu)] {
+        for (lbl, pl) in [("Abajo (como el original)", DockPlacement.bottomOriginal), ("Abajo elevado (anti-cruce)", DockPlacement.bottomElevated), ("Arriba (bajo barra de menús)", DockPlacement.topUnderMenu), ("Auto por monitor (abajo principal / arriba extra)", DockPlacement.autoPerMonitor)] {
             let it = NSMenuItem(title: lbl, action: #selector(selectPlacement(_:)), keyEquivalent: "")
             it.tag = pl.rawValue
             it.state = (placement == pl) ? .on : .off
