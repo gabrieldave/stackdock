@@ -27,6 +27,7 @@ services:
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       RESEND_FROM: ${RESEND_FROM:-stackdock@iareal.net}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       N8N_PAYMENT_WEBHOOK: ${N8N_PAYMENT_WEBHOOK:-https://n8n.vibesystems.tech/webhook/payment}
       N8N_TRIAL_WEBHOOK: ${N8N_TRIAL_WEBHOOK:-}
     volumes:

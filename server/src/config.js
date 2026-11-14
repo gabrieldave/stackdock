@@ -40,6 +40,7 @@ export const config = {
 
   licensePrivateKey: str('LICENSE_PRIVATE_KEY', ''),
   stripeWebhookSecret: str('STRIPE_WEBHOOK_SECRET', ''),
+  stripeSecretKey: str('STRIPE_SECRET_KEY', ''),
 
   googleClientId: str('GOOGLE_CLIENT_ID', DEFAULT_GOOGLE_CLIENT_ID),
   googleClientSecret: str('GOOGLE_CLIENT_SECRET', ''),
@@ -72,6 +73,7 @@ export function describeConfig() {
     resend: config.resendApiKey ? 'configured' : 'missing',
     licenseKey: config.licensePrivateKey ? 'configured' : 'missing',
     stripeWebhookSecret: config.stripeWebhookSecret ? 'configured' : 'missing',
+    stripeApi: config.stripeSecretKey ? 'configured' : 'missing',
     googleOauth: config.googleClientSecret ? 'configured' : 'missing',
     publicUrl: config.publicUrl,
     sessionSecret: config.sessionSecret ? 'configured' : 'missing',

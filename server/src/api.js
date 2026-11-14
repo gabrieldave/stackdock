@@ -7,6 +7,7 @@ import { isValidEmail, normalizeEmail } from './license.js';
 import { resolveLocale } from './geo.js';
 import { computeQuote, buildPaymentPayload } from './pricing.js';
 import { createCheckoutSession, notifyTrialLead } from './n8n.js';
+import { createStripeCheckout } from './stripe.js';
 import { HttpError, getClientIp, readJsonBody, sendJson } from './http.js';
 
 const trialHits = new Map();
@@ -76,6 +77,15 @@ export async function handleCheckout(req, res) {
     source: 'stackdock-server',
   });
 
-  const url = await createCheckoutSession(payload);
+  let url;
+  try {
+    url = await createCheckoutSession(payload);
+  } catch (gatewayError) {
+    // La pasarela universal (n8n) aún no mapea appId "stackdock": usamos la API
+    // oficial de Stripe con la misma cotización exacta (Personal 9.99 / Pro 19 / +Findaro 29).
+    if (!config.stripeSecretKey) throw gatewayError;
+    console.warn('[checkout] pasarela n8n no disponible, usando Stripe directo:', gatewayError.message);
+    url = await createStripeCheckout(quote);
+  }
   sendJson(res, 200, { url });
 }
