@@ -1,0 +1,50 @@
+/* Chasis físico fijo (AGENTS.md) — aparición de secciones al hacer scroll.
+   Los controles del Hero usan su propia respuesta seca de 120 ms (main.css). */
+html.js-reveal [data-reveal] {
+  transition:
+    opacity .7s cubic-bezier(0.16, 1, 0.3, 1),
+    transform .7s cubic-bezier(0.16, 1, 0.3, 1),
+    filter .7s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: calc(var(--i, 0) * 60ms);
+}
+html.js-reveal [data-reveal]:not(.is-revealed) {
+  opacity: 0;
+  transform: translateY(16px);
+  filter: blur(6px);
+}
+/* Una vez revelado, el filtro y el transform no deben crear capas permanentes */
+html.js-reveal [data-reveal].is-revealed { filter: none; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  html.js-reveal [data-reveal] { transition: none; }
+  html.js-reveal [data-reveal]:not(.is-revealed) { opacity: 1; transform: none; filter: none; }
+  .win, .sd-dock, .rotary .knob, .sw-thumb, .kc-top, .btn, .pf { transition: none !important; }
+  .trace-g { animation: none; opacity: 1; }
+  .loader span { animation: none; }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .nav { background: var(--stone) !important; backdrop-filter: none !important; }
+  .sd-dock { background: var(--paper-hi); }
+}
+
+/* Marcas de registro en las esquinas de figuras grandes (detalle de plano) */
+.rig, .viewer, .plate { position: relative; }
+.viewer::before, .viewer::after {
+  content: ''; position: absolute; width: 10px; height: 10px; pointer-events: none; z-index: 2;
+  border-color: var(--ink); border-style: solid;
+}
+.viewer::before { left: 6px; bottom: 6px; border-width: 0 0 1px 1px; }
+.viewer::after { right: 6px; bottom: 6px; border-width: 0 1px 1px 0; }
+
+/* Paso activo de la narrativa sticky */
+@media (min-width: 861px) {
+  .step { opacity: .45; transition: opacity 240ms ease; }
+  .step.is-current { opacity: 1; }
+  html:not(.js) .step { opacity: 1; }
+}
+
+@media print {
+  .nav, .wa, .console, dialog { display: none !important; }
+  html.js-reveal [data-reveal]:not(.is-revealed) { opacity: 1; transform: none; filter: none; }
+}

@@ -61,7 +61,7 @@ if (!staticData.leads[email]) {
 }
 
 const dmgUrl = 'https://stackdock.iareal.net/download/StackDock-4.0.6.dmg';
-const sha = '960d29e7ae2722de99cbdb632653569c960a8dc0cb07eae235f17e07caa21fb8';
+const sha = '18d4ad10278c3710e1516f34554a1da0d7ac7b9489ae4eaba68e0140f543ac79';
 const team = 'YH6W55MP95';
 
 const templates = {

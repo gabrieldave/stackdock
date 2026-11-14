@@ -1,36 +1,42 @@
-# Coolify (raíz): misma imagen que Web/Dockerfile
-FROM nginx:1.27-alpine
+# StackDock 4.0.6 — web prerenderizada (Vite) + backend Node 22 + PostgreSQL 17
+# Compatible con read_only: solo escribe en /app/storage y /tmp.
+
+# ─────────────────────────── builder: web ───────────────────────────
+FROM node:22-alpine AS web-builder
+WORKDIR /app/web
+COPY Web/package.json Web/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY Web/ ./
+RUN npm run build
+
+# ─────────────────────────── runtime ───────────────────────────
+FROM node:22-alpine AS runtime
+ENV NODE_ENV=production \
+    PORT=8080 \
+    PUBLIC_DIR=/app/public \
+    STORAGE_DIR=/app/storage
 
 RUN apk add --no-cache wget \
- && mkdir -p /opt/stackdock-web
+ && addgroup -g 1001 -S stackdock \
+ && adduser -u 1001 -S stackdock -G stackdock -h /app
 
-COPY Web/nginx.conf /etc/nginx/conf.d/default.conf
-COPY Web/docker-entrypoint.sh /docker-entrypoint.sh
-COPY Web/index.html /opt/stackdock-web/index.html
-COPY Web/es/ /opt/stackdock-web/es/
-COPY Web/public/ /opt/stackdock-web/public/
+WORKDIR /app
 
-RUN chmod +x /docker-entrypoint.sh \
- && printf '%s\n' \
-  'pid /tmp/nginx.pid;' \
-  'error_log /tmp/nginx-error.log warn;' \
-  'events { worker_connections 1024; }' \
-  'http {' \
-  '  include /etc/nginx/mime.types;' \
-  '  default_type application/octet-stream;' \
-  '  sendfile on;' \
-  '  keepalive_timeout 65;' \
-  '  client_body_temp_path /tmp/client_temp;' \
-  '  proxy_temp_path /tmp/proxy_temp;' \
-  '  fastcgi_temp_path /tmp/fastcgi_temp;' \
-  '  uwsgi_temp_path /tmp/uwsgi_temp;' \
-  '  scgi_temp_path /tmp/scgi_temp;' \
-  '  include /etc/nginx/conf.d/*.conf;' \
-  '}' > /etc/nginx/nginx.conf
+COPY server/package.json server/package-lock.json ./server/
+RUN cd server \
+ && npm ci --omit=dev --no-audit --no-fund \
+ && npm cache clean --force
 
-EXPOSE 80
+COPY server/src ./server/src
+COPY server/db ./server/db
+COPY --from=web-builder /app/web/dist ./public
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=8s --retries=3 \
-  CMD wget -qO- http://127.0.0.1/api/health || exit 1
+RUN mkdir -p /app/storage && chown -R stackdock:stackdock /app
 
-ENTRYPOINT ["/docker-entrypoint.sh"]
+USER stackdock
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:8080/api/health || exit 1
+
+ENTRYPOINT ["node", "server/src/index.js"]

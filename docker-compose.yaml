@@ -1,36 +1,44 @@
-# Coolify build pack: dockercompose · stackdock.iareal.net → 127.0.0.1:3048
+# Coolify build pack: dockercompose · stackdock.iareal.net → 127.0.0.1:3048 (Cloudflare Tunnel)
+# La web prerenderizada y la API/licencias viven en el mismo proceso Node (server/src/index.js).
+
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "127.0.0.1:3048:80"
+      - "127.0.0.1:3048:8080"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      NODE_ENV: production
+      PORT: "8080"
+      PUBLIC_DIR: /app/public
+      STORAGE_DIR: /app/storage
+      DATABASE_SSL: ${DATABASE_SSL:-auto}
+      PUBLIC_URL: ${PUBLIC_URL:-https://stackdock.iareal.net}
+    volumes:
+      - /opt/stackdock/storage:/app/storage
     networks:
       - coolify
     read_only: true
     tmpfs:
-      - /tmp:rw,noexec,nosuid,size=96m
+      - /tmp:rw,noexec,nosuid,size=64m
+      - /dev/shm:rw,noexec,nosuid,size=64m
+    cap_drop:
+      - ALL
     security_opt:
       - no-new-privileges:true
-    # nginx necesita crear temp paths; no dropear CAP_CHOWN/SETUID en alpine
-    cap_drop:
-      - NET_RAW
-      - SYS_ADMIN
-      - SYS_PTRACE
-    environment:
-      STRIPE_CHECKOUT_URL: ${STRIPE_CHECKOUT_URL:-}
+    mem_limit: 256m
+    cpus: 0.5
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/api/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/api/health"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
-    deploy:
-      resources:
-        limits:
-          memory: 128M
-          cpus: "0.25"
 
 networks:
   coolify:

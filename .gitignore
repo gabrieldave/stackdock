@@ -34,3 +34,11 @@ xcuserdata/
 # Local license tooling output
 Scripts/.license_cache/
 *.license.txt
+
+# Node / web build
+node_modules/
+**/node_modules/
+dist-preview/
+Web/dist/
+server/.env
+!.env.example

@@ -1,11 +1,23 @@
+# Contexto mínimo para la imagen de producción
 .git
 .gitignore
+.DS_Store
 build
 dist
+docs
 Sources
+Resources
 Scripts
 Automation
-*.md
-.DS_Store
-**/.DS_Store
-agent-transcripts
+README.md
+README.es.md
+agents.md
+Web/node_modules
+Web/dist
+Web/dist-preview
+server/node_modules
+**/*.dmg
+*.pem
+*.key
+.env
+.env.*

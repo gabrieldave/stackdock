@@ -1115,8 +1115,9 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
         let v = UpdateChecker.shared
         let versionTag = "\(v.currentShortVersion) (\(v.currentBuild))"
 
-        // Ítem protagonista: Panel Grande (⌘,)
-        let openPanel = NSMenuItem(title: "Abrir Panel de Control…", action: #selector(openControlCenter), keyEquivalent: ",")
+        // Ítem protagonista: Control Panel / Panel de Control (⌘,)
+        let isSpanishUI = (Locale.preferredLanguages.first ?? "en").lowercased().hasPrefix("es")
+        let openPanel = NSMenuItem(title: isSpanishUI ? "Panel de Control…" : "Control Panel…", action: #selector(openControlCenter), keyEquivalent: ",")
         openPanel.keyEquivalentModifierMask = [.command]
         openPanel.target = self
         m.addItem(openPanel)

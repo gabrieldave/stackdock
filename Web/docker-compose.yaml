@@ -1,0 +1,30 @@
+# Coolify build pack: dockercompose · stackdock.iareal.net → 127.0.0.1:3048
+# Si este proyecto vive en Web/ del repo, usar en la raíz: build.context: ./Web
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:3048:80"
+    networks:
+      - coolify
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=96m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [NET_RAW, SYS_ADMIN, SYS_PTRACE]
+    environment:
+      CHECKOUT_UPSTREAM: ${CHECKOUT_UPSTREAM:-http://127.0.0.1:9/unconfigured}
+      NGINX_RESOLVER: ${NGINX_RESOLVER:-1.1.1.1 8.8.8.8}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+networks:
+  coolify:
+    external: true
