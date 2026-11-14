@@ -82,7 +82,9 @@ final class UpdateChecker {
                 let info = try JSONDecoder().decode(UpdateInfo.self, from: json)
                 try self.validate(info)
 
-                if self.isNewer(info.version, than: self.currentShortVersion) {
+                if self.isNewer(info.version, than: self.currentShortVersion)
+                    || (info.version == self.currentShortVersion
+                        && (info.build ?? 0) > (Int(self.currentBuild) ?? 0)) {
                     result = .available(info)
                 } else {
                     result = .upToDate(short: self.currentShortVersion, build: self.currentBuild)

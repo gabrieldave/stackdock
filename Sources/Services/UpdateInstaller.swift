@@ -174,6 +174,27 @@ final class UpdateInstaller {
         guard details.contains("Authority=Developer ID Application") else {
             throw InstallError.invalidSignature("no es Developer ID Application")
         }
+
+        // Anti-downgrade: la versión del .app instalable debe ser estrictamente mayor.
+        let remoteVersion = (bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? "0"
+        let remoteBuild = Int((bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String) ?? "0") ?? 0
+        let localVersion = (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? "0"
+        let localBuild = Int((Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String) ?? "0") ?? 0
+        guard Self.isVersion(remoteVersion, build: remoteBuild, newerThan: localVersion, build: localBuild) else {
+            throw InstallError.invalidSignature("downgrade bloqueado: \(remoteVersion) (\(remoteBuild)) ≤ \(localVersion) (\(localBuild))")
+        }
+    }
+
+    /// Comparación estricta versión+build (monótona).
+    static func isVersion(_ remoteVersion: String, build remoteBuild: Int, newerThan localVersion: String, build localBuild: Int) -> Bool {
+        let a = remoteVersion.split(separator: ".").map { Int($0) ?? 0 }
+        let b = localVersion.split(separator: ".").map { Int($0) ?? 0 }
+        for i in 0..<max(a.count, b.count) {
+            let x = i < a.count ? a[i] : 0
+            let y = i < b.count ? b[i] : 0
+            if x != y { return x > y }
+        }
+        return remoteBuild > localBuild
     }
 
     @discardableResult

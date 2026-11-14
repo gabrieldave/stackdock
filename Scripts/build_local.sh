@@ -57,6 +57,7 @@ echo "==> Compilando con swiftc (SDK: ${SDK_PATH})"
   -framework ApplicationServices \
   -framework ServiceManagement \
   -framework CryptoKit \
+  -framework IOKit \
   "${SOURCES[@]}" \
   -o "${APP_PATH}/Contents/MacOS/${APP_NAME}"
 

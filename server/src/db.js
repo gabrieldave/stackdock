@@ -6,6 +6,7 @@ import fs from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 import { config } from './config.js';
+import { encryptSecret, hashLicenseKey } from './crypto-store.js';
 
 const SCHEMA_PATH = fileURLToPath(new URL('../db/schema.sql', import.meta.url));
 
@@ -84,6 +85,7 @@ export async function migrate() {
   }
   const sql = await fs.readFile(SCHEMA_PATH, 'utf8');
   await active.query(sql);
+  await encryptLegacyLicenses(active);
   migrated = true;
   console.log('[db] esquema verificado (idempotente)');
   return true;
@@ -98,4 +100,41 @@ export async function closePool() {
     await pool.end().catch(() => {});
     pool = null;
   }
+}
+
+/**
+ * Migra licencias legadas en texto plano a AES-256-GCM (idempotente).
+ * Nunca deja copias en claro en la tabla.
+ */
+async function encryptLegacyLicenses(active) {
+  if (!config.sessionSecret || config.sessionSecret.length < 16) return 0;
+  let migratedRows = 0;
+  for (let round = 0; round < 10; round += 1) {
+    const result = await active.query(
+      `SELECT id, license_key, findaro_key FROM orders
+       WHERE (license_key IS NOT NULL AND license_key_enc IS NULL)
+          OR (findaro_key IS NOT NULL AND findaro_key_enc IS NULL)
+       LIMIT 500`,
+    );
+    if (!result.rows.length) break;
+    for (const row of result.rows) {
+      const licenseEnc = row.license_key ? encryptSecret(row.license_key, config.sessionSecret) : null;
+      const licenseHash = row.license_key ? hashLicenseKey(row.license_key) : null;
+      const findaroEnc = row.findaro_key ? encryptSecret(row.findaro_key, config.sessionSecret) : null;
+      await active.query(
+        `UPDATE orders
+         SET license_key_enc = COALESCE($1, license_key_enc),
+             license_key_hash = COALESCE($2, license_key_hash),
+             findaro_key_enc = COALESCE($3, findaro_key_enc),
+             license_key = NULL,
+             findaro_key = NULL
+         WHERE id = $4`,
+        [licenseEnc, licenseHash, findaroEnc, row.id],
+      );
+      migratedRows += 1;
+    }
+    if (result.rows.length < 500) break;
+  }
+  if (migratedRows > 0) console.log('[db] licencias migradas a AES-256-GCM:', migratedRows);
+  return migratedRows;
 }

@@ -60,8 +60,8 @@ if (!staticData.leads[email]) {
   staticData.leads[email].lang = lang;
 }
 
-const dmgUrl = 'https://stackdock.iareal.net/download/StackDock-4.0.7.dmg';
-const sha = '44913154846a28f01b133d486ebe7d87523e302c3373bfd2f73cbd0ffd141630';
+const dmgUrl = 'https://stackdock.iareal.net/download/StackDock-4.0.8.dmg';
+const sha = '24c30eb463dd142dccd9596804bff34b4108db5769bd07858c74ecb6a33ca7f3';
 const team = 'YH6W55MP95';
 
 const templates = {

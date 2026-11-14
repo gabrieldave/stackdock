@@ -56,3 +56,37 @@ CREATE TABLE IF NOT EXISTS admin_sessions (
 );
 
 CREATE INDEX IF NOT EXISTS admin_sessions_expires_at_idx ON admin_sessions (expires_at);
+
+-- ── Capa 5/6: licencias cifradas en reposo + control de asientos ──
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS license_key_enc text;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS license_key_hash text;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS findaro_key_enc text;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS stripe_payment_intent text;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS revoked_at timestamptz;
+
+CREATE INDEX IF NOT EXISTS orders_license_key_hash_idx ON orders (license_key_hash);
+CREATE INDEX IF NOT EXISTS orders_stripe_payment_intent_idx ON orders (stripe_payment_intent);
+
+CREATE TABLE IF NOT EXISTS hardware_trials (
+  device_id      text PRIMARY KEY,
+  first_seen_at  timestamptz NOT NULL DEFAULT now(),
+  last_seen_at   timestamptz NOT NULL DEFAULT now(),
+  app_version    text,
+  ip_country     text
+);
+
+CREATE TABLE IF NOT EXISTS license_activations (
+  id             serial PRIMARY KEY,
+  license_hash   text NOT NULL,
+  order_id       integer REFERENCES orders(id) ON DELETE CASCADE,
+  email          text NOT NULL,
+  plan           text NOT NULL,
+  device_id      text NOT NULL,
+  app_version    text,
+  first_seen_at  timestamptz NOT NULL DEFAULT now(),
+  last_seen_at   timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (license_hash, device_id)
+);
+
+CREATE INDEX IF NOT EXISTS license_activations_hash_idx ON license_activations (license_hash);
+CREATE INDEX IF NOT EXISTS license_activations_email_idx ON license_activations (email);

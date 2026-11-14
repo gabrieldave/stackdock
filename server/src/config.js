@@ -23,7 +23,7 @@ function int(name, fallback) {
 export const config = {
   env: str('NODE_ENV', 'production'),
   port: int('PORT', 8080),
-  version: '4.0.7',
+  version: '4.0.8',
 
   publicDir: str('PUBLIC_DIR', '/app/public'),
   storageDir: str('STORAGE_DIR', '/app/storage'),
@@ -53,10 +53,11 @@ export const config = {
   publicUrl: str('PUBLIC_URL', 'https://stackdock.iareal.net').replace(/\/+$/, ''),
   sessionSecret: str('SESSION_SECRET', ''),
 
-  dmgFileName: 'StackDock-4.0.7.dmg',
+  dmgFileName: 'StackDock-4.0.8.dmg',
   sessionHours: 8,
   jsonLimitBytes: 64 * 1024,
-  trialRateLimit: { max: 10, windowMs: 60 * 60 * 1000 },
+  rateLimit: { max: 10, windowMs: 15 * 60 * 1000 },
+  trialRateLimit: { max: 10, windowMs: 15 * 60 * 1000 },
 };
 
 /** Resumen sin secretos, seguro para logs de arranque. */

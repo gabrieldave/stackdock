@@ -7,11 +7,12 @@ BUILD_DIR="${ROOT}/build"
 DIST_DIR="${ROOT}/dist"
 APP_NAME="StackDock"
 BUNDLE_ID="com.blackeye.stackdock"
-VERSION="4.0.7"
+VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "${ROOT}/Resources/Info.plist")"
 APP_PATH="${BUILD_DIR}/${APP_NAME}.app"
 DMG_NAME="${STACKDOCK_DMG_NAME:-StackDock-${VERSION}.dmg}"
 DMG_PATH="${DIST_DIR}/${DMG_NAME}"
 MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-13.0}"
+STACKDOCK_NOTARY_PROFILE="${STACKDOCK_NOTARY_PROFILE:-ordena-notary}"
 
 # Autodetecta Developer ID Application del Llavero (sin hardcodear secretos)
 detect_developer_id() {
@@ -65,15 +66,15 @@ BIN_X86="${BUILD_DIR}/StackDock.x86_64"
 "${SWIFTC}" \
   -sdk "${SDK_PATH}" \
   -target "arm64-apple-macosx${MACOSX_DEPLOYMENT_TARGET}" \
-  -O -swift-version 5 \
-  -framework Cocoa -framework Carbon -framework ApplicationServices -framework ServiceManagement -framework CryptoKit \
+  -O -swift-version 5 -D RELEASE \
+  -framework Cocoa -framework Carbon -framework ApplicationServices -framework ServiceManagement -framework CryptoKit -framework IOKit \
   "${SOURCES[@]}" -o "${BIN_ARM}"
 
 if "${SWIFTC}" \
   -sdk "${SDK_PATH}" \
   -target "x86_64-apple-macosx${MACOSX_DEPLOYMENT_TARGET}" \
-  -O -swift-version 5 \
-  -framework Cocoa -framework Carbon -framework ApplicationServices -framework ServiceManagement -framework CryptoKit \
+  -O -swift-version 5 -D RELEASE \
+  -framework Cocoa -framework Carbon -framework ApplicationServices -framework ServiceManagement -framework CryptoKit -framework IOKit \
   "${SOURCES[@]}" -o "${BIN_X86}" 2>/dev/null; then
   lipo -create -output "${APP_PATH}/Contents/MacOS/${APP_NAME}" "${BIN_ARM}" "${BIN_X86}"
   echo "    Binario universal (arm64 + x86_64)"
@@ -138,7 +139,8 @@ if [[ "${NOTARIZED}" -eq 1 ]]; then
   xcrun stapler staple "${DMG_PATH}"
   xcrun stapler validate "${DMG_PATH}"
   # También staple la .app dentro del build para instalar local
-  xcrun stapler staple "${APP_PATH}" 2>/dev/null || true
+  xcrun stapler staple "${APP_PATH}" || true
+  xcrun stapler validate "${APP_PATH}" || true
 fi
 
 if [[ "${STACKDOCK_NO_INSTALL:-0}" != "1" ]]; then

@@ -132,10 +132,11 @@ export function renderSuccessPage({ order, locale = 'en', sessionId = '' }) {
   const support = config.resendFrom;
 
   let content;
-  if (order && order.license_key) {
+  const successKey = order?.license_key_dec || order?.license_key;
+  if (order && successKey) {
     const email = escapeHtml(order.email || '');
-    const license = escapeHtml(order.license_key);
-    const findaro = order.findaro_key ? escapeHtml(order.findaro_key) : '';
+    const license = escapeHtml(successKey);
+    const findaro = order.findaro_key_dec || order.findaro_key ? escapeHtml(order.findaro_key_dec || order.findaro_key) : '';
     const plan = escapeHtml(planLabel(order.plan, locale));
     const amount = escapeHtml(formatUsd(order.amount_cents));
     const findaroBlock = findaro
@@ -227,13 +228,15 @@ function orderRows(orders, locale) {
   }
   return orders
     .map((order) => {
-      const hasKey = Boolean(order.license_key);
+      const orderKey = order.license_key_dec || order.license_key || '';
+      const hasKey = Boolean(orderKey);
       const keyHtml = hasKey
-        ? `<code class="key" data-copy="${escapeHtml(order.license_key)}" title="${escapeHtml(order.license_key)}">${escapeHtml(order.license_key)}</code>`
+        ? `<code class="key" data-copy="${escapeHtml(orderKey)}" title="${escapeHtml(orderKey)}">${escapeHtml(orderKey)}</code>`
         : '<span class="muted">—</span>';
-      const resend = hasKey
-        ? `<button type="button" class="btn btn-ghost" style="padding:6px 10px;font-size:12px" data-resend="${Number(order.id)}">${locale === 'es' ? 'Reenviar' : 'Resend'}</button>`
-        : `<button type="button" class="btn btn-ghost" style="padding:6px 10px;font-size:12px" data-resend="${Number(order.id)}">${locale === 'es' ? 'Emitir y enviar' : 'Issue & send'}</button>`;
+      const isRevoked = order.status === 'revoked' || order.status === 'refunded';
+      const resend = `<button type="button" class="btn btn-ghost" style="padding:6px 10px;font-size:12px" data-resend="${Number(order.id)}">${hasKey ? (locale === 'es' ? 'Reenviar' : 'Resend') : (locale === 'es' ? 'Emitir y enviar' : 'Issue & send')}</button>`;
+      const toggle = `<button type="button" class="btn btn-ghost" style="padding:6px 10px;font-size:12px" data-toggle="${Number(order.id)}">${isRevoked ? (locale === 'es' ? 'Reactivar' : 'Reactivate') : (locale === 'es' ? 'Revocar' : 'Revoke')}</button>`;
+      const remove = `<button type="button" class="btn btn-ghost" style="padding:6px 10px;font-size:12px" data-delete="${Number(order.id)}">${locale === 'es' ? 'Eliminar' : 'Delete'}</button>`;
       return `<tr>
         <td class="num muted" style="white-space:nowrap">${escapeHtml(formatDate(order.created_at))}</td>
         <td style="overflow-wrap:anywhere">${escapeHtml(order.email || '—')}</td>
@@ -241,7 +244,7 @@ function orderRows(orders, locale) {
         <td class="num" style="white-space:nowrap">${escapeHtml(formatUsd(order.amount_cents))} <span class="muted">${escapeHtml(order.currency || 'usd')}</span></td>
         <td><span class="badge badge-soft">${escapeHtml(order.status || '—')}</span></td>
         <td>${keyHtml}</td>
-        <td>${resend}</td>
+        <td><div class="row" style="gap:6px;flex-wrap:wrap">${resend}${toggle}${remove}</div></td>
       </tr>`;
     })
     .join('');
@@ -337,6 +340,50 @@ const ADMIN_SCRIPT = `
     } finally {
       if (submit) submit.disabled = false;
     }
+  });
+
+  document.querySelectorAll('[data-toggle]').forEach(function (btn) {
+    btn.addEventListener('click', async function () {
+      var original = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '…';
+      try {
+        var response = await fetch('/api/admin/orders/' + Number(btn.getAttribute('data-toggle')) + '/toggle-revoke', {
+          method: 'POST',
+          headers: { Accept: 'application/json' }
+        });
+        var data = await response.json().catch(function () { return {}; });
+        if (!response.ok) throw new Error(data.error || ('HTTP ' + response.status));
+        setToast('Status: ' + data.status);
+        location.reload();
+      } catch (error) {
+        btn.textContent = '✕';
+        setToast(error.message);
+        setTimeout(function () { btn.disabled = false; btn.textContent = original; }, 1800);
+      }
+    });
+  });
+
+  document.querySelectorAll('[data-delete]').forEach(function (btn) {
+    btn.addEventListener('click', async function () {
+      if (!window.confirm('Delete this order?')) return;
+      var original = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '…';
+      try {
+        var response = await fetch('/api/admin/orders/' + Number(btn.getAttribute('data-delete')), {
+          method: 'DELETE',
+          headers: { Accept: 'application/json' }
+        });
+        var data = await response.json().catch(function () { return {}; });
+        if (!response.ok) throw new Error(data.error || ('HTTP ' + response.status));
+        location.reload();
+      } catch (error) {
+        btn.textContent = '✕';
+        setToast(error.message);
+        setTimeout(function () { btn.disabled = false; btn.textContent = original; }, 1800);
+      }
+    });
   });
 
   var logout = document.querySelector('[data-logout]');

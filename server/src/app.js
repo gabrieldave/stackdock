@@ -14,10 +14,19 @@ import {
 } from './http.js';
 import { cookieLocale, resolveLocale } from './geo.js';
 import { serveDmg, servePublic, serveStorage, headersForUpdates, UPDATE_CACHE_CONTROL } from './static.js';
-import { handleCheckout, handleHealth, handleTrial } from './api.js';
+import { handleCheckout, handleHealth, handleLicenseActivate, handleTrial, handleTrialSync } from './api.js';
 import { handlePaymentWebhook } from './webhooks.js';
 import { getAdminEmail, handleGoogleCallback, handleGoogleStart, handleLogout } from './auth.js';
-import { getDashboardData, handleIssueLicense, handleResendLicense } from './admin.js';
+import {
+  getDashboardData,
+  handleDeleteOrder,
+  handleIssueLicense,
+  handleResendLicense,
+  handleResendOrderById,
+  handleToggleRevoke,
+} from './admin.js';
+import { safeDecrypt } from './crypto-store.js';
+import { config } from './config.js';
 import { renderAdminPage, renderNotFoundPage, renderSuccessPage } from './pages.js';
 
 const LANG_COOKIE = 'stackdock-lang';
@@ -88,11 +97,18 @@ async function getOrderBySession(sessionId) {
   if (!sessionId) return null;
   try {
     const result = await query(
-      `SELECT id, email, plan, add_findaro, amount_cents, currency, status, license_key, findaro_key, locale
+      `SELECT id, email, plan, add_findaro, amount_cents, currency, status,
+              license_key, license_key_enc, findaro_key, findaro_key_enc, locale
        FROM orders WHERE stripe_session_id = $1 LIMIT 1`,
       [sessionId],
     );
-    return result.rows[0] || null;
+    const row = result.rows[0];
+    if (!row) return null;
+    return {
+      ...row,
+      license_key_dec: safeDecrypt(row.license_key_enc, config.sessionSecret) || row.license_key || null,
+      findaro_key_dec: safeDecrypt(row.findaro_key_enc, config.sessionSecret) || row.findaro_key || null,
+    };
   } catch (error) {
     if (error.statusCode === 503) return null;
     throw error;
@@ -149,7 +165,7 @@ export function createHandler() {
     try {
       if (pathname === '/api/health') {
         if (!isRead(req)) return methodNotAllowed(res, 'GET, HEAD');
-        return handleHealth(req, res);
+        return await handleHealth(req, res);
       }
 
       if (pathname === '/') {
@@ -165,6 +181,16 @@ export function createHandler() {
       if (pathname === '/api/trial') {
         if (req.method !== 'POST') return methodNotAllowed(res, 'POST');
         return await handleTrial(req, res);
+      }
+
+      if (pathname === '/api/trial/sync') {
+        if (req.method !== 'POST') return methodNotAllowed(res, 'POST');
+        return await handleTrialSync(req, res);
+      }
+
+      if (pathname === '/api/license/activate') {
+        if (req.method !== 'POST') return methodNotAllowed(res, 'POST');
+        return await handleLicenseActivate(req, res);
       }
 
       if (pathname === '/api/checkout') {
@@ -200,6 +226,24 @@ export function createHandler() {
       if (pathname === '/api/admin/issue-license') {
         if (req.method !== 'POST') return methodNotAllowed(res, 'POST');
         return await handleIssueLicense(req, res);
+      }
+
+      const adminResend = /^\/api\/admin\/orders\/(\d+)\/resend$/.exec(pathname);
+      if (adminResend) {
+        if (req.method !== 'POST') return methodNotAllowed(res, 'POST');
+        return await handleResendOrderById(req, res, adminResend[1]);
+      }
+
+      const adminToggle = /^\/api\/admin\/orders\/(\d+)\/toggle-revoke$/.exec(pathname);
+      if (adminToggle) {
+        if (req.method !== 'POST') return methodNotAllowed(res, 'POST');
+        return await handleToggleRevoke(req, res, adminToggle[1]);
+      }
+
+      const adminDelete = /^\/api\/admin\/orders\/(\d+)$/.exec(pathname);
+      if (adminDelete) {
+        if (req.method !== 'DELETE') return methodNotAllowed(res, 'DELETE');
+        return await handleDeleteOrder(req, res, adminDelete[1]);
       }
 
       if (pathname === '/admin' || pathname === '/admin/') {

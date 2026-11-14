@@ -1,39 +1,158 @@
 import Cocoa
 import CryptoKit
 import Security
+import IOKit
+
+// MARK: - Licencias, trial de 14 días y anti-tamper (Capa 2 + Capa 3)
 
 final class LicenseManager {
     static let shared = LicenseManager()
 
     /// Llave pública Ed25519 (32 bytes Base64). Par generado para StackDock v4.
-    /// Privada fuera del repo: ~/.blackeye/secrets/stackdock/private_key.pem
+    /// La clave privada NUNCA vive en el cliente ni en el repositorio.
     private let publicKeyBase64 = "0w+VAs+30kw6Xn+wnBwZphuBhGKjuMsSNrHAtxX5WeQ="
     let checkoutURL = URL(string: "https://stackdock.iareal.net/#pricing")!
+    private let apiBase = URL(string: "https://stackdock.iareal.net")!
 
     private let prefs = UserDefaults.standard
     /// Prueba gratuita de 14 días sin pedir tarjeta.
     private let trialDurationSeconds: TimeInterval = 14 * 24 * 3600
+    /// Tolerancia ante desfases de reloj (NTP, cambio de zona horaria).
+    private let clockTolerance: TimeInterval = 300
+
     private var didPresentActivationThisSession = false
+    private var didPresentRevocationThisSession = false
+    private var clockTimer: Timer?
+
     private let trialKeychainService = "com.blackeye.stackdock.trial"
-    private let trialKeychainAccount = "firstLaunchTimestamp"
+    private let firstLaunchAccount = "firstLaunchTimestamp"
+    private let lastSeenAccount = "lastSeenTimestamp"
+    private let deviceFallbackAccount = "deviceFallbackId"
+
+    /// El reloj del sistema fue atrasado (anti-tamper del trial).
+    private(set) var isClockTampered = false
 
     private init() {
         syncFirstLaunchTimestamp()
+        syncMonotonicAnchor()
+        startClockWatchdog()
+
+        // Red sin bloquear el hilo principal (fail-open si no hay internet).
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+            self?.syncTrialWithServer()
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { [weak self] in
+            self?.verifyStoredLicenseRemotely()
+        }
     }
+
+    deinit {
+        clockTimer?.invalidate()
+    }
+
+    // MARK: - Identidad del dispositivo (deviceId determinista)
+
+    /// SHA-256("stackdock-device-v1|" + IOPlatformUUID) en hex de 64 caracteres.
+    lazy var deviceId: String = {
+        let seed = ioPlatformUUID() ?? fallbackDeviceUUID()
+        let digest = SHA256.hash(data: Data("stackdock-device-v1|\(seed)".utf8))
+        return digest.map { String(format: "%02x", $0) }.joined()
+    }()
+
+    private func ioPlatformUUID() -> String? {
+        let service = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("IOPlatformExpertDevice"))
+        guard service != 0 else { return nil }
+        defer { IOObjectRelease(service) }
+        guard let raw = IORegistryEntryCreateCFProperty(
+            service,
+            kIOPlatformUUIDKey as CFString,
+            kCFAllocatorDefault,
+            0
+        )?.takeRetainedValue() as? String else { return nil }
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
+    /// Respaldo persistido en Keychain solo si IOKit no entrega UUID.
+    private func fallbackDeviceUUID() -> String {
+        if let stored = readKeychainString(deviceFallbackAccount) {
+            return stored
+        }
+        let generated = UUID().uuidString
+        writeKeychainString(generated, account: deviceFallbackAccount)
+        return generated
+    }
+
+    private var appVersion: String {
+        let short = (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? "0"
+        let build = (Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String) ?? "0"
+        return "\(short) (\(build))"
+    }
+
+    private var systemLanguageIsSpanish: Bool {
+        (Locale.preferredLanguages.first ?? "en").lowercased().hasPrefix("es")
+    }
+
+    // MARK: - Keychain helpers
+
+    private func readKeychainString(_ account: String) -> String? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: trialKeychainService,
+            kSecAttrAccount as String: account,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+        var item: CFTypeRef?
+        guard SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess,
+              let data = item as? Data,
+              let value = String(data: data, encoding: .utf8) else { return nil }
+        return value
+    }
+
+    private func writeKeychainString(_ value: String, account: String) {
+        let data = Data(value.utf8)
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: trialKeychainService,
+            kSecAttrAccount as String: account
+        ]
+        let attrs: [String: Any] = [
+            kSecValueData as String: data,
+            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+        ]
+        if SecItemUpdate(query as CFDictionary, attrs as CFDictionary) == errSecItemNotFound {
+            var add = query
+            add[kSecValueData as String] = data
+            add[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+            _ = SecItemAdd(add as CFDictionary, nil)
+        }
+    }
+
+    private func readKeychainDouble(_ account: String) -> Double? {
+        guard let raw = readKeychainString(account) else { return nil }
+        return Double(raw)
+    }
+
+    private func writeKeychainDouble(_ value: Double, account: String) {
+        writeKeychainString(String(value), account: account)
+    }
+
+    // MARK: - Ancla del trial (UserDefaults + Keychain)
 
     /// UserDefaults + Keychain: borrar defaults no reinicia los 14 días de trial.
     private func syncFirstLaunchTimestamp() {
         let defaultsTS = prefs.object(forKey: "firstLaunchTimestamp") as? Double
-        let keychainTS = readTrialTimestampFromKeychain()
+        let keychainTS = readKeychainDouble(firstLaunchAccount)
 
         if let d = defaultsTS, let k = keychainTS {
             let earliest = min(d, k)
             prefs.set(earliest, forKey: "firstLaunchTimestamp")
-            writeTrialTimestampToKeychain(earliest)
+            writeKeychainDouble(earliest, account: firstLaunchAccount)
             return
         }
         if let d = defaultsTS {
-            writeTrialTimestampToKeychain(d)
+            writeKeychainDouble(d, account: firstLaunchAccount)
             return
         }
         if let k = keychainTS {
@@ -42,47 +161,47 @@ final class LicenseManager {
         }
         let now = Date().timeIntervalSince1970
         prefs.set(now, forKey: "firstLaunchTimestamp")
-        writeTrialTimestampToKeychain(now)
+        writeKeychainDouble(now, account: firstLaunchAccount)
     }
 
-    private func readTrialTimestampFromKeychain() -> Double? {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: trialKeychainService,
-            kSecAttrAccount as String: trialKeychainAccount,
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne
-        ]
-        var item: CFTypeRef?
-        let status = SecItemCopyMatching(query as CFDictionary, &item)
-        guard status == errSecSuccess,
-              let data = item as? Data,
-              let str = String(data: data, encoding: .utf8),
-              let value = Double(str) else {
-            return nil
-        }
-        return value
+    /// Fija el primer arranque efectivo en ambas anclas (nunca hacia adelante).
+    private func setEffectiveFirstLaunch(_ value: Double) {
+        let current = prefs.double(forKey: "firstLaunchTimestamp")
+        let effective = current > 0 ? min(current, value) : value
+        prefs.set(effective, forKey: "firstLaunchTimestamp")
+        writeKeychainDouble(effective, account: firstLaunchAccount)
     }
 
-    private func writeTrialTimestampToKeychain(_ ts: Double) {
-        let data = Data(String(ts).utf8)
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: trialKeychainService,
-            kSecAttrAccount as String: trialKeychainAccount
-        ]
-        let attrs: [String: Any] = [
-            kSecValueData as String: data,
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
-        ]
-        let status = SecItemUpdate(query as CFDictionary, attrs as CFDictionary)
-        if status == errSecItemNotFound {
-            var add = query
-            add[kSecValueData as String] = data
-            add[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
-            _ = SecItemAdd(add as CFDictionary, nil)
+    private func startClockWatchdog() {
+        clockTimer = Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { [weak self] _ in
+            self?.syncMonotonicAnchor()
+        }
+        if let timer = clockTimer {
+            RunLoop.main.add(timer, forMode: .common)
         }
     }
+
+    /// Ancla local monótona: detecta reloj atrasado sin retroceder `lastSeen`.
+    private func syncMonotonicAnchor() {
+        let now = Date().timeIntervalSince1970
+        let first = prefs.double(forKey: "firstLaunchTimestamp")
+        let lastSeen = readKeychainDouble(lastSeenAccount) ?? (prefs.object(forKey: "lastSeenTimestamp") as? Double)
+
+        let firstIsFuture = first > 0 && now < first - clockTolerance
+        let seenIsFuture = (lastSeen.map { now < $0 - clockTolerance }) ?? false
+
+        if firstIsFuture || seenIsFuture {
+            isClockTampered = true
+            return
+        }
+
+        isClockTampered = false
+        let updated = max(lastSeen ?? now, now)
+        prefs.set(updated, forKey: "lastSeenTimestamp")
+        writeKeychainDouble(updated, account: lastSeenAccount)
+    }
+
+    // MARK: - Identidad de licencia
 
     var licensedEmail: String? {
         licenseInfo?.email
@@ -98,6 +217,13 @@ final class LicenseManager {
             switch self {
             case .personal: return "stackdock-personal|1mac"
             case .pro:      return "stackdock-pro|3macs"
+            }
+        }
+
+        var seats: Int {
+            switch self {
+            case .personal: return 1
+            case .pro:      return 3
             }
         }
 
@@ -134,15 +260,22 @@ final class LicenseManager {
 
     var licensePlan: Plan? { licenseInfo?.plan }
 
-    /// En compilaciones firmadas con Developer ID se exige el Team ID oficial.
-    /// Los builds locales ad-hoc quedan fuera de esta compuerta (solo desarrollo).
+    /// Capa 1 — En Release firmado se exige Developer ID + Team ID oficial.
     private var signatureIsTrustworthy: Bool {
-        switch BinaryIntegrityVerifier.check() {
+        let status = BinaryIntegrityVerifier.check()
+        #if RELEASE
+        if case .verified(let team) = status, team == BinaryIntegrityVerifier.expectedTeamID {
+            return true
+        }
+        return false
+        #else
+        switch status {
         case .wrongTeam, .invalidSignature:
             return false
         case .verified, .unsignedOrAdHoc, .unavailable:
             return true
         }
+        #endif
     }
 
     var isProUnlocked: Bool { licenseInfo != nil && signatureIsTrustworthy }
@@ -156,7 +289,7 @@ final class LicenseManager {
     }
 
     var canUseApp: Bool {
-        isProUnlocked || trialDaysRemaining > 0
+        signatureIsTrustworthy && (isProUnlocked || (!isClockTampered && trialDaysRemaining > 0))
     }
 
     var menuStatusTitle: String {
@@ -166,6 +299,9 @@ final class LicenseManager {
             case .pro:      return "Licencia Pro Activa (Hasta 3 Macs) · \(info.email)"
             }
         }
+        if isClockTampered {
+            return "Fecha del sistema atrasada — Restaura la hora automática de macOS o activa tu licencia (SDOCK-…)"
+        }
         let days = trialDaysRemaining
         if days > 0 {
             let unit = days == 1 ? "día restante" : "días restantes"
@@ -173,6 +309,8 @@ final class LicenseManager {
         }
         return "Prueba expirada — Activar licencia (Personal $9.99 / Pro $19)"
     }
+
+    // MARK: - Verificación Ed25519 offline
 
     /// Verifica firma Ed25519 offline (0 llamadas de red) contra ambos planes.
     /// Retrocompatible: las claves antiguas "email|stackdock-pro|3macs" siguen siendo válidas como Pro.
@@ -215,8 +353,109 @@ final class LicenseManager {
         guard verifiedPlan(email: email, licenseKey: licenseKey) != nil else { return false }
         prefs.set(email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(), forKey: "licensedEmail")
         prefs.set(licenseKey.trimmingCharacters(in: .whitespacesAndNewlines), forKey: "licenseKey")
+        // Capa 3: control de asientos / revocación en segundo plano (fail-open sin red).
+        verifyStoredLicenseRemotely()
         return true
     }
+
+    private func clearLicense() {
+        prefs.removeObject(forKey: "licensedEmail")
+        prefs.removeObject(forKey: "licenseKey")
+        NotificationCenter.default.post(name: Notification.Name("StackDockLicenseStateChanged"), object: nil)
+    }
+
+    // MARK: - Red (trial remoto + activación por asiento)
+
+    private func postJSON(
+        _ path: String,
+        body: [String: Any],
+        completion: @escaping (Int, [String: Any]?) -> Void
+    ) {
+        guard let url = URL(string: path, relativeTo: apiBase) else {
+            completion(0, nil)
+            return
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.timeoutInterval = 10
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("StackDock/\(appVersion) (macOS)", forHTTPHeaderField: "User-Agent")
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+
+        URLSession.shared.dataTask(with: request) { data, response, _ in
+            let code = (response as? HTTPURLResponse)?.statusCode ?? 0
+            let json = data.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }
+            DispatchQueue.main.async { completion(code, json) }
+        }.resume()
+    }
+
+    /// Ancla remota hardware_trials: borrar Keychain jamás reinicia los 14 días.
+    func syncTrialWithServer() {
+        let localFirstLaunch = prefs.double(forKey: "firstLaunchTimestamp")
+        postJSON("/api/trial/sync", body: [
+            "deviceId": deviceId,
+            "localFirstLaunch": localFirstLaunch,
+            "version": appVersion
+        ]) { [weak self] code, json in
+            guard let self, code == 200, let json else { return }
+            let serverFirst = (json["serverFirstSeenEpoch"] as? NSNumber)?.doubleValue
+            let serverNow = (json["serverNowEpoch"] as? NSNumber)?.doubleValue
+            if let serverFirst, serverFirst > 0 {
+                self.setEffectiveFirstLaunch(serverFirst)
+            }
+            if let serverNow, Date().timeIntervalSince1970 < serverNow - 600 {
+                self.isClockTampered = true
+            }
+            self.syncMonotonicAnchor()
+        }
+    }
+
+    /// Verificación remota de asientos/revocación. 5xx o sin red => fail-open offline.
+    func verifyStoredLicenseRemotely() {
+        guard let email = prefs.string(forKey: "licensedEmail"),
+              let key = prefs.string(forKey: "licenseKey") else {
+            return
+        }
+        postJSON("/api/license/activate", body: [
+            "email": email,
+            "licenseKey": key,
+            "deviceId": deviceId,
+            "version": appVersion
+        ]) { [weak self] code, json in
+            guard let self, code == 403 else { return }
+            let reason = (json?["reason"] as? String) ?? ""
+            guard reason == "revoked" || reason == "seat_limit_exceeded" else { return }
+            self.clearLicense()
+            self.presentRevocationAlert(reason: reason)
+        }
+    }
+
+    private func presentRevocationAlert(reason: String) {
+        guard !didPresentRevocationThisSession else { return }
+        didPresentRevocationThisSession = true
+        NSApp.activate(ignoringOtherApps: true)
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        let spanish = systemLanguageIsSpanish
+        if reason == "revoked" {
+            alert.messageText = spanish ? "Licencia revocada" : "License revoked"
+            alert.informativeText = spanish
+                ? "Esta licencia fue revocada (por ejemplo, tras un reembolso). Si crees que es un error, escribe a stackdock@iareal.net."
+                : "This license was revoked (for example, after a refund). If you believe this is a mistake, email stackdock@iareal.net."
+        } else {
+            alert.messageText = spanish ? "Tope de Macs alcanzado" : "Mac seat limit reached"
+            alert.informativeText = spanish
+                ? "Esta clave ya está activa en el máximo de Macs de tu plan (Personal 1 Mac · Pro 3 Macs). Libera una Mac o actualiza a Pro. Soporte: stackdock@iareal.net"
+                : "This key is already active on the maximum number of Macs for your plan (Personal 1 Mac · Pro 3 Macs). Free a Mac or upgrade to Pro. Support: stackdock@iareal.net"
+        }
+        alert.addButton(withTitle: spanish ? "Entendido" : "OK")
+        alert.addButton(withTitle: spanish ? "Comprar licencia" : "Buy license")
+        if alert.runModal() == .alertSecondButtonReturn {
+            NSWorkspace.shared.open(checkoutURL)
+        }
+    }
+
+    // MARK: - Diálogos
 
     func presentActivationIfNeeded(force: Bool = false, onSuccess: @escaping () -> Void) {
         guard force || !canUseApp else { return }
@@ -229,14 +468,24 @@ final class LicenseManager {
         NSApp.activate(ignoringOtherApps: true)
         let alert = NSAlert()
         alert.messageText = "Activar StackDock"
-        alert.informativeText = isProUnlocked
-            ? "Licencia activa para: \(licensedEmail ?? "")\nPlan: \(licensePlan?.displayTitle ?? "—")"
-            : """
-              Ingresa el correo con el que compraste y tu clave SDOCK. Pago único, sin suscripciones.
-              Personal $9.99 USD (1 Mac) · Pro $19 USD (hasta 3 Macs).
-              Prueba gratuita: \(trialDaysRemaining) día(s) restantes.
-              Soporte: stackdock@iareal.net
-              """
+        if isProUnlocked {
+            alert.informativeText = "Licencia activa para: \(licensedEmail ?? "")\nPlan: \(licensePlan?.displayTitle ?? "—")"
+        } else if isClockTampered {
+            alert.informativeText = """
+            La fecha del sistema fue atrasada y la prueba de 14 días quedó bloqueada.
+            Restaura la hora automática de macOS (Ajustes del Sistema → General → Fecha y hora) o activa una licencia SDOCK-….
+
+            Personal $9.99 USD (1 Mac) · Pro $19 USD (hasta 3 Macs).
+            Soporte: stackdock@iareal.net
+            """
+        } else {
+            alert.informativeText = """
+            Ingresa el correo con el que compraste y tu clave SDOCK. Pago único, sin suscripciones.
+            Personal $9.99 USD (1 Mac) · Pro $19 USD (hasta 3 Macs).
+            Prueba gratuita: \(trialDaysRemaining) día(s) restantes.
+            Soporte: stackdock@iareal.net
+            """
+        }
         alert.alertStyle = .informational
         alert.addButton(withTitle: "Activar Licencia")
         alert.addButton(withTitle: "Comprar licencia…")
@@ -275,10 +524,6 @@ final class LicenseManager {
 }
 
 // MARK: - Integridad del binario (solo lectura — no altera la criptografía Ed25519)
-//
-// En compilaciones Release firmadas con Developer ID se exige que el Team ID
-// real del proceso sea YH6W55MP95 y que el sello de código siga válido.
-// En builds locales (ad-hoc) devuelve `false` sin bloquear el desarrollo.
 
 extension LicenseManager {
     var isBinaryIntegrityVerified: Bool {

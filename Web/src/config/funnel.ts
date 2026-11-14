@@ -14,13 +14,13 @@ export const funnel = {
   siteUrl: 'https://stackdock.iareal.net',
 
   // ── Release ────────────────────────────────────────────────
-  version: '4.0.7',
-  build: 407,
+  version: '4.0.8',
+  build: 408,
   minMacOS: '13.0+',
   teamId: 'YH6W55MP95',
-  dmgUrl: '/download/StackDock-4.0.7.dmg',
-  dmgFileName: 'StackDock-4.0.7.dmg',
-  sha256: '44913154846a28f01b133d486ebe7d87523e302c3373bfd2f73cbd0ffd141630',
+  dmgUrl: '/download/StackDock-4.0.8.dmg',
+  dmgFileName: 'StackDock-4.0.8.dmg',
+  sha256: '24c30eb463dd142dccd9596804bff34b4108db5769bd07858c74ecb6a33ca7f3',
 
   // ── Embudo ─────────────────────────────────────────────────
   /** POST { plan, addFindaro, locale, customerEmail? } → { url } (Payment Gateway Universal en n8n) */
@@ -48,7 +48,7 @@ export const funnel = {
   /** Medición propia (captura de telemetría del repo) */
   measurement: { machine: 'Mac mini M4', cpuIdle: '0.0', footprintMB: 32, rssMB: 92.6 },
 
-  /** Ficha técnica del Panel Grande 4.0.6 */
+  /** Ficha técnica del Panel Grande 4.0.8 */
   panel: {
     media: { en: '/media/media_control_panel_en.webp', es: '/media/media_control_panel_es.webp' },
     /** Posición (%) de cada marcador sobre el visor. Ajustar cuando lleguen las capturas reales. */
@@ -108,7 +108,7 @@ const en = {
     skip: 'Skip to content',
   },
   hero: {
-    eyebrow: 'v4.0.7 · build 407 · macOS 13+ · Universal',
+    eyebrow: 'v4.0.8 · build 408 · macOS 13+ · Universal',
     h1a: 'The Dock, on the screen',
     h1b: 'you’re actually looking at.',
     sub: 'StackDock draws a native Dock on every monitor, gives each Chrome profile its own icon with its avatar, and sends the active window to the next screen with <kbd>⌃W</kbd>. Swift and AppKit. No screen recording.',
@@ -203,11 +203,11 @@ const en = {
     ],
   },
   panel: {
-    eyebrow: '§ 03 — New in 4.0.6',
+    eyebrow: '§ 03 — New in 4.0.8',
     h2: 'The Control Panel. Spec sheet ①–⑥.',
     sub: 'Everything that used to live in the menu bar menu, on one large panel.',
-    pending: 'Wireframe · real 4.0.6 capture loads here when published',
-    figLabel: 'FIG. 03 — CONTROL PANEL 4.0.6',
+    pending: 'Wireframe · real 4.0.8 capture loads here when published',
+    figLabel: 'FIG. 03 — CONTROL PANEL 4.0.8',
     callouts: [
       { title: 'Display map', body: 'Pick which monitors draw a Dock, and the 4 real placements: bottom, elevated, top, auto.' },
       { title: 'Solo vs Dual', body: 'Solo hides Apple’s Dock and restores it on quit. Dual keeps both.' },
@@ -221,10 +221,10 @@ const en = {
     eyebrow: '§ 04 — Tutorial',
     h2: 'Install to first ⌃W in under three minutes.',
     play: 'Play tutorial',
-    pendingTitle: 'Tutorial video ships with 4.0.6',
+    pendingTitle: 'Tutorial video ships with 4.0.8',
     pendingBody: 'Until then, these are the exact steps the video follows:',
     steps: [
-      'Open StackDock-4.0.6.dmg and drag StackDock into Applications.',
+      'Open StackDock-4.0.8.dmg and drag StackDock into Applications.',
       'Launch it. There’s no main window: it lives in the menu bar.',
       'Grant Accessibility when macOS asks (System Settings → Privacy & Security).',
       'Press ⌥D. A Dock appears on every selected display.',
@@ -327,7 +327,7 @@ const en = {
   },
   modal: {
     close: 'Close',
-    dlTitle: 'Download StackDock 4.0.6',
+    dlTitle: 'Download StackDock 4.0.8',
     dlBody: 'Universal installer, signed and notarized by Apple. 14-day free trial, no card required.',
     emailLabel: 'Email for setup tips (optional)',
     emailHint: 'A short 14-day sequence. Skip it if you like.',
@@ -376,7 +376,7 @@ const es: Copy = {
     skip: 'Saltar al contenido',
   },
   hero: {
-    eyebrow: 'v4.0.6 · build 406 · macOS 13+ · Universal',
+    eyebrow: 'v4.0.8 · build 408 · macOS 13+ · Universal',
     h1a: 'El Dock, en la pantalla',
     h1b: 'que estás mirando.',
     sub: 'StackDock dibuja un Dock nativo en cada monitor, le da a cada perfil de Chrome su propio icono con avatar y manda la ventana activa a la siguiente pantalla con <kbd>⌃W</kbd>. Swift y AppKit. Sin grabación de pantalla.',
@@ -471,11 +471,11 @@ const es: Copy = {
     ],
   },
   panel: {
-    eyebrow: '§ 03 — Nuevo en 4.0.6',
+    eyebrow: '§ 03 — Nuevo en 4.0.8',
     h2: 'El Panel de Control. Ficha técnica ①–⑥.',
     sub: 'Todo lo que antes vivía en el menú de la barra, en un solo panel grande.',
-    pending: 'Wireframe · aquí carga la captura real de 4.0.6 al publicarse',
-    figLabel: 'FIG. 03 — PANEL DE CONTROL 4.0.6',
+    pending: 'Wireframe · aquí carga la captura real de 4.0.8 al publicarse',
+    figLabel: 'FIG. 03 — PANEL DE CONTROL 4.0.8',
     callouts: [
       { title: 'Mapa de pantallas', body: 'Elige qué monitores dibujan Dock y las 4 posiciones reales: abajo, elevado, arriba y auto.' },
       { title: 'Solo vs Dual', body: 'Solo oculta el Dock de Apple y lo restaura al salir. Dual mantiene los dos.' },
@@ -489,10 +489,10 @@ const es: Copy = {
     eyebrow: '§ 04 — Tutorial',
     h2: 'De instalar a tu primer ⌃W en menos de tres minutos.',
     play: 'Reproducir tutorial',
-    pendingTitle: 'El video tutorial llega con 4.0.6',
+    pendingTitle: 'El video tutorial llega con 4.0.8',
     pendingBody: 'Mientras tanto, estos son los pasos exactos que sigue el video:',
     steps: [
-      'Abre StackDock-4.0.6.dmg y arrastra StackDock a Aplicaciones.',
+      'Abre StackDock-4.0.8.dmg y arrastra StackDock a Aplicaciones.',
       'Ábrelo. No tiene ventana principal: vive en la barra de menús.',
       'Concede Accesibilidad cuando macOS lo pida (Ajustes del Sistema → Privacidad y seguridad).',
       'Pulsa ⌥D. Aparece un Dock en cada pantalla seleccionada.',
@@ -595,7 +595,7 @@ const es: Copy = {
   },
   modal: {
     close: 'Cerrar',
-    dlTitle: 'Descargar StackDock 4.0.6',
+    dlTitle: 'Descargar StackDock 4.0.8',
     dlBody: 'Instalador universal, firmado y notarizado por Apple. Prueba gratuita de 14 días sin tarjeta.',
     emailLabel: 'Email para tips de configuración (opcional)',
     emailHint: 'Una secuencia corta de 14 días. Puedes omitirlo.',

@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 export default defineConfig({
   publicDir: 'public',
   build: {
+    sourcemap: false,
     outDir: 'dist',
     emptyOutDir: true,
     assetsDir: 'assets',

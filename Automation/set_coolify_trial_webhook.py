@@ -6,7 +6,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-SECRETS = Path("/Users/daveax/Documents/VibeSystems/secrets.env")
+SECRETS = Path.home() / "Documents/VibeSystems/secrets.env"
 HOST = "root@147.93.181.3"
 APP = "rg1yofysovlxtm2h2dbl4e8h"
 VALUE = "https://n8n.vibesystems.tech/webhook/stackdock-trial"
