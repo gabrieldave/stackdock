@@ -14,13 +14,13 @@ export const funnel = {
   siteUrl: 'https://stackdock.iareal.net',
 
   // ── Release ────────────────────────────────────────────────
-  version: '4.0.6',
-  build: 406,
+  version: '4.0.7',
+  build: 407,
   minMacOS: '13.0+',
   teamId: 'YH6W55MP95',
-  dmgUrl: '/download/StackDock-4.0.6.dmg',
-  dmgFileName: 'StackDock-4.0.6.dmg',
-  sha256: '18d4ad10278c3710e1516f34554a1da0d7ac7b9489ae4eaba68e0140f543ac79',
+  dmgUrl: '/download/StackDock-4.0.7.dmg',
+  dmgFileName: 'StackDock-4.0.7.dmg',
+  sha256: '44913154846a28f01b133d486ebe7d87523e302c3373bfd2f73cbd0ffd141630',
 
   // ── Embudo ─────────────────────────────────────────────────
   /** POST { plan, addFindaro, locale, customerEmail? } → { url } (Payment Gateway Universal en n8n) */
@@ -108,7 +108,7 @@ const en = {
     skip: 'Skip to content',
   },
   hero: {
-    eyebrow: 'v4.0.6 · build 406 · macOS 13+ · Universal',
+    eyebrow: 'v4.0.7 · build 407 · macOS 13+ · Universal',
     h1a: 'The Dock, on the screen',
     h1b: 'you’re actually looking at.',
     sub: 'StackDock draws a native Dock on every monitor, gives each Chrome profile its own icon with its avatar, and sends the active window to the next screen with <kbd>⌃W</kbd>. Swift and AppKit. No screen recording.',

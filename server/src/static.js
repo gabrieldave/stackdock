@@ -57,6 +57,20 @@ export function safeJoin(baseDir, urlPath) {
   return target;
 }
 
+/**
+ * El feed de actualizaciones NUNCA debe cachearse: la app debe leer siempre
+ * el último latest.json (y su .sig) para no servir una versión obsoleta.
+ */
+export const UPDATE_CACHE_CONTROL = 'no-store';
+
+export function headersForUpdates() {
+  return {
+    'Cache-Control': UPDATE_CACHE_CONTROL,
+    Pragma: 'no-cache',
+    Expires: '0',
+  };
+}
+
 export function cacheControlFor(urlPath) {
   if (/^\/assets\//.test(urlPath)) return 'public, max-age=31536000, immutable';
   if (/\.html?$/.test(urlPath)) return 'no-cache, must-revalidate';
@@ -169,11 +183,11 @@ export async function servePublic(req, res, urlPath, options = {}) {
 }
 
 /** Sirve un archivo de STORAGE_DIR (dmg, update feed). */
-export async function serveStorage(req, res, relativePath, { download = false } = {}) {
+export async function serveStorage(req, res, relativePath, { download = false, cacheControl = 'public, max-age=300' } = {}) {
   const target = safeJoin(config.storageDir, relativePath);
   if (!target) return false;
   return serveFile(req, res, target, {
-    cacheControl: 'public, max-age=300',
+    cacheControl,
     contentType: contentTypeFor(target),
     download,
   });

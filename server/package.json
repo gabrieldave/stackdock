@@ -1,6 +1,6 @@
 {
   "name": "stackdock-server",
-  "version": "4.0.6",
+  "version": "4.0.7",
   "private": true,
   "type": "module",
   "description": "StackDock production backend: prerendered site + licensing/checkout API",

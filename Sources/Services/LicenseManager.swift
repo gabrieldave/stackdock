@@ -235,6 +235,7 @@ final class LicenseManager {
               Ingresa el correo con el que compraste y tu clave SDOCK. Pago único, sin suscripciones.
               Personal $9.99 USD (1 Mac) · Pro $19 USD (hasta 3 Macs).
               Prueba gratuita: \(trialDaysRemaining) día(s) restantes.
+              Soporte: stackdock@iareal.net
               """
         alert.alertStyle = .informational
         alert.addButton(withTitle: "Activar Licencia")
@@ -264,7 +265,7 @@ final class LicenseManager {
             } else {
                 let err = NSAlert()
                 err.messageText = "Clave inválida"
-                err.informativeText = "Verifica que el correo coincida exactamente con el de tu compra."
+                err.informativeText = "Verifica que el correo coincida exactamente con el de tu compra.\nSoporte: stackdock@iareal.net"
                 err.runModal()
             }
         } else if response == .alertSecondButtonReturn {

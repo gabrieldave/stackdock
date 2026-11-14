@@ -36,6 +36,7 @@ final class AboutWindowController: NSWindowController, NSWindowDelegate {
     private let permissionsRowValue = NSTextField(labelWithString: "")
     private let copyButton = NSButton(title: "", target: nil, action: nil)
     private let websiteButton = NSButton(title: "", target: nil, action: nil)
+    private let supportButton = NSButton(title: "", target: nil, action: nil)
     private let closeButton = NSButton(title: "", target: nil, action: nil)
     private let languageControl = NSSegmentedControl(labels: ["ES", "EN"], trackingMode: .selectOne, target: nil, action: nil)
     private let languageLabel = NSTextField(labelWithString: "")
@@ -173,6 +174,12 @@ final class AboutWindowController: NSWindowController, NSWindowDelegate {
         websiteButton.action = #selector(openWebsite)
         websiteButton.bezelStyle = .rounded
 
+        supportButton.target = self
+        supportButton.action = #selector(openSupportEmail)
+        supportButton.bezelStyle = .rounded
+        supportButton.title = "Soporte"
+        supportButton.toolTip = "stackdock@iareal.net"
+
         closeButton.target = self
         closeButton.action = #selector(closeWindow)
         closeButton.bezelStyle = .rounded
@@ -186,12 +193,13 @@ final class AboutWindowController: NSWindowController, NSWindowDelegate {
         let spacer = NSView()
         spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
 
-        let buttons = NSStackView(views: [languageStack, spacer, websiteButton, copyButton, closeButton])
+        let buttons = NSStackView(views: [languageStack, spacer, supportButton, websiteButton, copyButton, closeButton])
         buttons.orientation = .horizontal
         buttons.spacing = 10
         buttons.alignment = .centerY
 
         let footer = NSTextField(labelWithString: "© 2026 Black Eye — stackdock.iareal.net")
+        footer.stringValue = "© 2026 Black Eye — stackdock.iareal.net · stackdock@iareal.net"
         footer.font = .systemFont(ofSize: 10)
         footer.textColor = .tertiaryLabelColor
         footer.alignment = .center
@@ -310,6 +318,8 @@ final class AboutWindowController: NSWindowController, NSWindowDelegate {
         integrityRowValue.stringValue = BinaryIntegrityVerifier.summary(language: languageCode)
         permissionsRowValue.stringValue = permissionsText
 
+        supportButton.title = isSpanish ? "Soporte" : "Support"
+        supportButton.toolTip = "stackdock@iareal.net"
         copyButton.title = isSpanish ? "Copiar diagnóstico de soporte" : "Copy support diagnostics"
         websiteButton.title = isSpanish ? "Sitio web" : "Website"
         closeButton.title = isSpanish ? "Cerrar" : "Close"
@@ -352,6 +362,7 @@ final class AboutWindowController: NSWindowController, NSWindowDelegate {
         Team ID: \(BinaryIntegrityVerifier.expectedTeamID)
         \(isSpanish ? "Firma" : "Signature"): \(BinaryIntegrityVerifier.summary(language: languageCode))
         \(isSpanish ? "Licencia" : "License"): \(license)
+        \(isSpanish ? "Soporte" : "Support"): stackdock@iareal.net
         Accessibility: \(ax) · Screen Recording: \(screen)
         \(screenText)
         """
@@ -364,6 +375,12 @@ final class AboutWindowController: NSWindowController, NSWindowDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) { [weak self] in
             guard let self else { return }
             self.copyButton.title = self.isSpanish ? "Copiar diagnóstico de soporte" : "Copy support diagnostics"
+        }
+    }
+
+    @objc private func openSupportEmail() {
+        if let url = URL(string: "mailto:stackdock@iareal.net") {
+            NSWorkspace.shared.open(url)
         }
     }
 

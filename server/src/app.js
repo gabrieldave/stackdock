@@ -13,7 +13,7 @@ import {
   serializeCookie,
 } from './http.js';
 import { cookieLocale, resolveLocale } from './geo.js';
-import { serveDmg, servePublic, serveStorage } from './static.js';
+import { serveDmg, servePublic, serveStorage, headersForUpdates, UPDATE_CACHE_CONTROL } from './static.js';
 import { handleCheckout, handleHealth, handleTrial } from './api.js';
 import { handlePaymentWebhook } from './webhooks.js';
 import { getAdminEmail, handleGoogleCallback, handleGoogleStart, handleLogout } from './auth.js';
@@ -220,9 +220,11 @@ export function createHandler() {
 
       if (pathname === '/updates/latest.json' || pathname === '/updates/latest.json.sig') {
         if (!isRead(req)) return methodNotAllowed(res, 'GET, HEAD');
-        const fromStorage = await serveStorage(req, res, pathname);
+        // Triple sello: el feed jamás se cachea (no-store, sin public ni max-age).
+        for (const [key, value] of Object.entries(headersForUpdates())) res.setHeader(key, value);
+        const fromStorage = await serveStorage(req, res, pathname, { cacheControl: UPDATE_CACHE_CONTROL });
         if (fromStorage) return;
-        const fromPublic = await servePublic(req, res, pathname);
+        const fromPublic = await servePublic(req, res, pathname, { cacheControl: UPDATE_CACHE_CONTROL });
         if (fromPublic) return;
         sendJson(res, 404, { error: 'Archivo no encontrado' });
         return;
