@@ -3,13 +3,29 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SECRETS = Path("/Users/daveax/Documents/VibeSystems/secrets.env")
+
+
+def _secrets_path() -> Path:
+    """Ruta dinámica y portable a las llaves (sin rutas de usuario hardcodeadas)."""
+    candidates = [
+        os.environ.get("STACKDOCK_SECRETS"),
+        str(Path.home() / "Documents" / "VibeSystems" / "secrets.env"),
+        str(Path.home() / ".config" / "blackeye" / "secrets.env"),
+    ]
+    for candidate in candidates:
+        if candidate and Path(candidate).is_file():
+            return Path(candidate)
+    return Path.home() / "Documents" / "VibeSystems" / "secrets.env"
+
+
+SECRETS = _secrets_path()
 SDK = Path(__file__).resolve().parent / "n8n_stackdock_trial_sequence.sdk.js"
 HOST = "root@147.93.181.3"
 
@@ -31,7 +47,7 @@ def extract_jscodes(sdk_text: str) -> list[str]:
 def build_workflow(codes: list[str]) -> dict:
     register_code, evaluate_code, attach_code, stop_code = codes[:4]
     return {
-        "name": "BLACK EYE — StackDock 7-Day Trial Sequence (EN/ES + Resend)",
+        "name": "BLACK EYE — StackDock 14-Day Trial Sequence (EN/ES + Resend)",
         "nodes": [
             {
                 "parameters": {
@@ -84,7 +100,7 @@ def build_workflow(codes: list[str]) -> dict:
                     "jsCode": evaluate_code,
                 },
                 "id": "b1a00001-0004-4000-8000-000000000004",
-                "name": "Evaluar Dias 2-4-6-7 (EN y ES)",
+                "name": "Evaluar Dias 2-5-10-13-14 (EN y ES)",
                 "type": "n8n-nodes-base.code",
                 "typeVersion": 2,
                 "position": [500, 440],
@@ -164,10 +180,10 @@ def build_workflow(codes: list[str]) -> dict:
             },
             "Revision Diaria 9AM": {
                 "main": [
-                    [{"node": "Evaluar Dias 2-4-6-7 (EN y ES)", "type": "main", "index": 0}]
+                    [{"node": "Evaluar Dias 2-5-10-13-14 (EN y ES)", "type": "main", "index": 0}]
                 ]
             },
-            "Evaluar Dias 2-4-6-7 (EN y ES)": {
+            "Evaluar Dias 2-5-10-13-14 (EN y ES)": {
                 "main": [[{"node": "Adjuntar RESEND_API_KEY", "type": "main", "index": 0}]]
             },
             "Adjuntar RESEND_API_KEY": {
@@ -230,7 +246,7 @@ data=json.load(open('/tmp/n8n_wfs.json'))
 items=data.get('data') or data
 for w in items:
   n=w.get('name','')
-  if '7-Day Trial' in n and 'StackDock' in n:
+  if '14-Day Trial' in n and 'StackDock' in n:
     print('EXISTING', w.get('id'), 'active='+str(w.get('active')))
 PY
 HTTP=$(curl -sS -o /tmp/n8n_create.json -w '%{http_code}' -X POST \

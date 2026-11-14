@@ -15,7 +15,7 @@ final class AboutWindowController: NSWindowController, NSWindowDelegate {
 
     private var languageCode: String {
         if let stored = prefs.string(forKey: "ccLanguage"),
-           !stored.isEmpty {
+           stored == "es" || stored == "en" {
             return stored
         }
         return (Locale.preferredLanguages.first ?? "en").lowercased().hasPrefix("es") ? "es" : "en"
@@ -256,15 +256,22 @@ final class AboutWindowController: NSWindowController, NSWindowDelegate {
 
     private var licenseText: String {
         let manager = LicenseManager.shared
-        if manager.isProUnlocked {
+        if manager.isProUnlocked, let plan = manager.licensePlan {
             let email = manager.maskedLicensedEmail ?? "—"
-            return isSpanish ? "Pro activa · \(email)" : "Pro active · \(email)"
+            let planName: String
+            switch plan {
+            case .personal:
+                planName = isSpanish ? "Personal · 1 Mac" : "Personal · 1 Mac"
+            case .pro:
+                planName = isSpanish ? "Pro · Hasta 3 Macs" : "Pro · Up to 3 Macs"
+            }
+            return "\(planName) · \(email)"
         }
         let days = manager.trialDaysRemaining
         if days > 0 {
             return isSpanish
-                ? "Prueba gratuita · \(days) día(s) restantes"
-                : "Free trial · \(days) day(s) left"
+                ? "Prueba gratuita 14 días · \(days) restantes"
+                : "14-day free trial · \(days) left"
         }
         return isSpanish ? "Prueba expirada · sin licencia" : "Trial expired · no license"
     }
@@ -330,9 +337,14 @@ final class AboutWindowController: NSWindowController, NSWindowDelegate {
 
         let ax = AXIsProcessTrusted() ? "OK" : "MISSING"
         let screen = CGPreflightScreenCaptureAccess() ? "OK" : "MISSING"
-        let license = LicenseManager.shared.isProUnlocked
-            ? "Pro (\(LicenseManager.shared.maskedLicensedEmail ?? "-"))"
-            : "Trial \(LicenseManager.shared.trialDaysRemaining)d"
+        let manager = LicenseManager.shared
+        let license: String
+        if manager.isProUnlocked, let plan = manager.licensePlan {
+            let planName = plan == .personal ? "Personal 1 Mac" : "Pro 3 Macs"
+            license = "\(planName) (\(manager.maskedLicensedEmail ?? "-"))"
+        } else {
+            license = "Trial 14d (\(manager.trialDaysRemaining)d left)"
+        }
 
         let text = """
         StackDock \(currentShortVersion) (\(currentBuild))

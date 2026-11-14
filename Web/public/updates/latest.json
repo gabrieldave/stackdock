@@ -3,7 +3,7 @@
   "build": 406,
   "min_macos": "13.0",
   "dmg_url": "https://stackdock.iareal.net/download/StackDock-4.0.6.dmg",
-  "sha256": "180f1a4cab69a279a47a338e564b9bda7455048fa2dd55b9c6552e013dd7015e",
+  "sha256": "960d29e7ae2722de99cbdb632653569c960a8dc0cb07eae235f17e07caa21fb8",
   "notes_url": "https://stackdock.iareal.net/",
-  "published_at": "2026-11-14T00:35:20Z"
+  "published_at": "2026-11-14T00:52:49Z"
 }

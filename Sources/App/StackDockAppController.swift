@@ -1116,7 +1116,7 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
         let versionTag = "\(v.currentShortVersion) (\(v.currentBuild))"
 
         // Ítem protagonista: Panel Grande (⌘,)
-        let openPanel = NSMenuItem(title: "Abrir Panel de StackDock…", action: #selector(openControlCenter), keyEquivalent: ",")
+        let openPanel = NSMenuItem(title: "Abrir Panel de Control…", action: #selector(openControlCenter), keyEquivalent: ",")
         openPanel.keyEquivalentModifierMask = [.command]
         openPanel.target = self
         m.addItem(openPanel)
@@ -1717,19 +1717,10 @@ extension StackDockAppController: ControlCenterHost {
 
     var ccAccessibilityGranted: Bool { winService.isAXTrusted(prompt: false) }
 
-    var ccScreenRecordingGranted: Bool { CGPreflightScreenCaptureAccess() }
-
     func ccRequestAccessibility() {
         _ = winService.isAXTrusted(prompt: true)
         openSystemSettings(paths: [
             "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
-        ])
-    }
-
-    func ccRequestScreenRecording() {
-        if !CGPreflightScreenCaptureAccess() { _ = CGRequestScreenCaptureAccess() }
-        openSystemSettings(paths: [
-            "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"
         ])
     }
 
@@ -1739,15 +1730,20 @@ extension StackDockAppController: ControlCenterHost {
         ])
     }
 
-    func ccOpenScreenRecordingSettings() {
-        openSystemSettings(paths: [
-            "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"
-        ])
-    }
-
     var ccLicenseEmail: String? { LicenseManager.shared.licensedEmail }
+
+    var ccLicenseTier: String? { LicenseManager.shared.licensePlan?.rawValue }
 
     var ccIsPro: Bool { LicenseManager.shared.isProUnlocked }
 
     var ccTrialDays: Int { LicenseManager.shared.trialDaysRemaining }
+
+    func ccActivateLicense(email: String, key: String) -> Bool {
+        let ok = LicenseManager.shared.activate(email: email, licenseKey: key)
+        if ok {
+            rebuildAllMonitors()
+            refreshStatusBarIcon()
+        }
+        return ok
+    }
 }

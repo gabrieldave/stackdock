@@ -60,8 +60,8 @@ if (!staticData.leads[email]) {
   staticData.leads[email].lang = lang;
 }
 
-const dmgUrl = 'https://stackdock.iareal.net/download/StackDock-4.0.0.dmg';
-const sha = '3449e4976099f77f5b083fe9e4a5c6cfe01087821010dc13768eddac7f4a8920';
+const dmgUrl = 'https://stackdock.iareal.net/download/StackDock-4.0.6.dmg';
+const sha = '960d29e7ae2722de99cbdb632653569c960a8dc0cb07eae235f17e07caa21fb8';
 const team = 'YH6W55MP95';
 
 const templates = {
@@ -80,7 +80,7 @@ const templates = {
       '2. Press Option + D to summon or hide native glass Docks across all your monitors at once.',
       '3. Hold Shift + Click on any app icon to teleport and auto-scale its window to your current screen.',
       '',
-      'Your full 7-day trial is unlocked — no account, no cloud login, 0.0% idle CPU.',
+      'Your full 14-day trial is unlocked — no account, no cloud login, 0.0% idle CPU.',
       'Reply directly to this email if anything feels off on your monitor layout.',
       '',
       '— David',
@@ -102,7 +102,7 @@ const templates = {
       '2. Pulsa Option + D para invocar u ocultar Docks nativos en todos tus monitores a la vez.',
       '3. Haz Shift + Clic sobre cualquier icono para teletransportar y reescalar esa ventana a tu pantalla actual.',
       '',
-      'Tienes 7 días completos desbloqueados, sin cuentas y con 0.0% de CPU en reposo.',
+      'Tienes 14 días completos desbloqueados, sin cuentas y con 0.0% de CPU en reposo.',
       'Si tienes cualquier duda con tus monitores, responde directo a este correo.',
       '',
       '— David',
@@ -145,7 +145,7 @@ const evaluateSequence = node({
   type: 'n8n-nodes-base.code',
   version: 2,
   config: {
-    name: 'Evaluar Dias 2-4-6-7 (EN y ES)',
+    name: 'Evaluar Dias 2-5-10-13-14 (EN y ES)',
     position: [500, 440],
     parameters: {
       mode: 'runOnceForAllItems',
@@ -163,7 +163,7 @@ const sequence = {
     en: {
       subject: 'Quick trick: split your Chrome & Cursor windows in StackDock',
       text: [
-        'Quick tip for Day 2 of your StackDock trial:',
+        'Quick tip for Day 2 of your 14-day StackDock trial:',
         '',
         'macOS normally buries all your Chrome, Brave, Edge, or Cursor windows behind a single icon — forcing you to right-click and hunt for your Work vs. Personal profile.',
         '',
@@ -196,7 +196,7 @@ const sequence = {
     }
   },
   3: {
-    minDays: 4,
+    minDays: 5,
     en: {
       subject: 'Open Activity Monitor and look for StackDock',
       text: [
@@ -241,13 +241,58 @@ const sequence = {
     }
   },
   4: {
-    minDays: 6,
+    minDays: 10,
     en: {
-      subject: 'Your 7-day StackDock trial wraps up tomorrow',
+      subject: 'Halfway there: move any window between screens with one key',
       text: [
-        'Heads up — your 7-day StackDock v4.0 trial ends tomorrow. Since there is no credit card on file, you will never be charged automatically.',
+        'You are halfway through your 14-day StackDock trial. Here is the shortcut most people keep using after day 10:',
         '',
-        'If Option + D and Shift + Click have saved you cursor miles across your monitors this week, you can own StackDock forever with a single payment:',
+        'Press Control + W (or Shift + Click a Dock icon) to teleport the active window to your next monitor.',
+        'StackDock keeps at least 35% of the window visible and rescales it proportionally, so a 4K window never lands tiny on a MacBook screen — or gigantic on an external display.',
+        '',
+        'Two more things worth testing this week:',
+        '• Option + D summons or hides the glass Dock on every display at once.',
+        '• Right-click any icon to send a specific window to Monitor 1, 2, 3…',
+        '',
+        'Keep it forever with a single payment — no subscription:',
+        'Personal (1 Mac): $9.99 USD one-time',
+        'Pro (Up to 3 Macs): $19.00 USD one-time',
+        'https://stackdock.iareal.net/#pricing',
+        '',
+        '— David',
+        'BLACK EYE'
+      ].join('\\n')
+    },
+    es: {
+      subject: 'Mitad de camino: mueve cualquier ventana entre pantallas con una tecla',
+      text: [
+        'Vas por la mitad de tus 14 días de prueba de StackDock. Este es el atajo que casi todos conservan después del día 10:',
+        '',
+        'Pulsa Control + W (o Shift + Clic sobre un icono del Dock) para teletransportar la ventana activa a tu siguiente monitor.',
+        'StackDock mantiene al menos el 35% de la ventana visible y la reescala proporcionalmente, así que una ventana 4K nunca aparece diminuta en un MacBook ni gigante en un monitor externo.',
+        '',
+        'Dos cosas más que vale la pena probar esta semana:',
+        '• Option + D invoca u oculta el Dock de cristal en todas las pantallas a la vez.',
+        '• Clic derecho en cualquier icono para enviar esa ventana concreta al Monitor 1, 2, 3…',
+        '',
+        'Consérvalo para siempre con un solo pago, sin suscripciones:',
+        'Personal (1 Mac): $9.99 USD pago único',
+        'Pro (Hasta 3 Macs): $19.00 USD pago único',
+        'https://stackdock.iareal.net/es/#pricing',
+        '',
+        '— David',
+        'BLACK EYE'
+      ].join('\\n')
+    }
+  },
+  5: {
+    minDays: 13,
+    en: {
+      subject: 'Your 14-day StackDock trial wraps up tomorrow',
+      text: [
+        'Heads up — your 14-day StackDock v4.0 trial ends tomorrow. Since there is no credit card on file, you will never be charged automatically.',
+        '',
+        'If Option + D and Shift + Click have saved you cursor miles across your monitors these two weeks, you can own StackDock forever with a single payment:',
         '',
         '• StackDock Personal ($9.99 USD one-time): Valid on 1 Mac.',
         '• StackDock Pro ($19.00 USD one-time): Valid on up to 3 Macs (ideal for desktop Mac + MacBook).',
@@ -262,9 +307,9 @@ const sequence = {
       ].join('\\n')
     },
     es: {
-      subject: 'Mañana termina tu prueba de 7 días de StackDock',
+      subject: 'Mañana termina tu prueba de 14 días de StackDock',
       text: [
-        'Un aviso rápido: mañana concluyen tus 7 días de prueba en StackDock v4.0. Como no pedimos tarjeta, jamás habrá cobros automáticos.',
+        'Un aviso rápido: mañana concluyen tus 14 días de prueba en StackDock v4.0. Como no pedimos tarjeta, jamás habrá cobros automáticos.',
         '',
         'Si invocar tu Dock con Option + D y mover ventanas con Shift + Clic ya te ahorra fricción diaria entre pantallas, puedes conservarlo para siempre con un solo pago:',
         '',
@@ -281,12 +326,12 @@ const sequence = {
       ].join('\\n')
     }
   },
-  5: {
-    minDays: 7,
+  6: {
+    minDays: 14,
     en: {
       subject: 'Your StackDock trial ended (activate your offline key anytime)',
       text: [
-        'Your 7-day trial of StackDock v4.0 has ended, and your Dock preferences remain saved locally on your Mac.',
+        'Your 14-day trial of StackDock v4.0 has ended, and your Dock preferences remain saved locally on your Mac.',
         '',
         'Whenever you are ready to unlock it permanently — no subscriptions, no cloud accounts, and a fraction of competing Docks — pick your lifetime key here:',
         '',
@@ -302,7 +347,7 @@ const sequence = {
     es: {
       subject: 'Tu prueba de StackDock concluyó (activa tu clave cuando quieras)',
       text: [
-        'Tus 7 días de prueba de StackDock v4.0 han finalizado; tu configuración de pantallas sigue guardada localmente en tu Mac.',
+        'Tus 14 días de prueba de StackDock v4.0 han finalizado; tu configuración de pantallas sigue guardada localmente en tu Mac.',
         '',
         'Cuando quieras desbloquearlo de forma vitalicia — sin suscripciones ni cuentas online — elige tu clave aquí:',
         '',
@@ -316,6 +361,7 @@ const sequence = {
       ].join('\\n')
     }
   }
+};
 };
 
 for (const email of Object.keys(staticData.leads)) {
@@ -490,7 +536,7 @@ return [{ json: { ok: true, email, stopped: Boolean(email) } }];`,
   output: [{ ok: true, email: 'tester@example.com', stopped: true }],
 });
 
-export default workflow('stackdock-trial-sequence', 'BLACK EYE — StackDock 7-Day Trial Sequence (EN/ES + Resend)')
+export default workflow('stackdock-trial-sequence', 'BLACK EYE — StackDock 14-Day Trial Sequence (EN/ES + Resend)')
   .add(trialWebhook)
   .to(registerTrialEmail1)
   .to(attachResendKey)

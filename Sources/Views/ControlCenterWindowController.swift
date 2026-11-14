@@ -5,7 +5,7 @@ import ApplicationServices
 
 // MARK: - Panel Grande de StackDock (ControlCenter)
 //
-// NSWindow transpartente + sidebar NSVisualEffectView + contenido SwiftUI
+// NSWindow transparente + sidebar NSVisualEffectView + contenido SwiftUI
 // alojado en NSHostingView. Toda la lógica protegida vive en
 // StackDockAppController; este panel solo enlaza getters/setters limpios.
 
@@ -34,7 +34,7 @@ enum CCSection: Int, CaseIterable, Identifiable {
         case .monitors: return "display.2"
         case .profiles: return "person.2"
         case .hotkeys:  return "keyboard"
-        case .system:   return "gearshape"
+        case .system:   return "lock.shield"
         }
     }
 }
@@ -70,7 +70,7 @@ protocol ControlCenterHost: AnyObject {
     func ccSetScreen(_ id: CGDirectDisplayID, enabled: Bool)
     func ccSetPlacement(_ placement: DockPlacement, forScreen id: CGDirectDisplayID)
 
-    // Perfiles de Chrome e integraciones
+    // Perfiles de navegador e integraciones
     var ccUncombineMultiWindows: Bool { get }
     func ccSetUncombineMultiWindows(_ value: Bool)
 
@@ -99,15 +99,14 @@ protocol ControlCenterHost: AnyObject {
     func ccSetShowsDockIcon(_ value: Bool)
 
     var ccAccessibilityGranted: Bool { get }
-    var ccScreenRecordingGranted: Bool { get }
     func ccRequestAccessibility()
-    func ccRequestScreenRecording()
     func ccOpenAccessibilitySettings()
-    func ccOpenScreenRecordingSettings()
 
     var ccLicenseEmail: String? { get }
+    var ccLicenseTier: String? { get }
     var ccIsPro: Bool { get }
     var ccTrialDays: Int { get }
+    func ccActivateLicense(email: String, key: String) -> Bool
 }
 
 // MARK: - Modelo observable del panel
@@ -116,7 +115,9 @@ final class ControlCenterModel: ObservableObject {
     weak var host: ControlCenterHost?
 
     @Published var section: CCSection = .monitors
-    @Published var languageCode: String
+
+    /// Preferencia de idioma: "system" | "es" | "en".
+    @Published var languagePreference: String
 
     @Published var isVisible = true
     @Published var replaceAppleDock = false
@@ -138,20 +139,33 @@ final class ControlCenterModel: ObservableObject {
     @Published var launchAtLogin = false
     @Published var showsDockIcon = false
     @Published var axGranted = false
-    @Published var screenGranted = true
 
     @Published var licenseEmail: String?
+    @Published var licenseTier: String?
     @Published var isPro = false
     @Published var trialDays = 0
+
+    @Published var activationEmail = ""
+    @Published var activationKey = ""
+    @Published var activationMessage: String?
+    @Published var activationSucceeded = false
 
     @Published var versionText = ""
 
     init() {
-        let systemCode = (Locale.preferredLanguages.first ?? "en").lowercased().hasPrefix("es") ? "es" : "en"
-        languageCode = UserDefaults.standard.string(forKey: "ccLanguage") ?? systemCode
+        let stored = UserDefaults.standard.string(forKey: "ccLanguage")
+        languagePreference = (stored == "es" || stored == "en") ? (stored ?? "system") : "system"
     }
 
     // MARK: Localización
+
+    static var systemLanguageCode: String {
+        (Locale.preferredLanguages.first ?? "en").lowercased().hasPrefix("es") ? "es" : "en"
+    }
+
+    var languageCode: String {
+        languagePreference == "system" ? Self.systemLanguageCode : languagePreference
+    }
 
     var isSpanish: Bool { languageCode.lowercased().hasPrefix("es") }
 
@@ -159,17 +173,18 @@ final class ControlCenterModel: ObservableObject {
 
     func title(for section: CCSection) -> String {
         switch section {
-        case .monitors: return t("Monitores y Docks", "Monitors & Docks")
-        case .profiles: return t("Perfiles e Integraciones", "Profiles & Integrations")
-        case .hotkeys:  return t("Atajos Globales", "Global Shortcuts")
-        case .system:   return t("Sistema y Licencia", "System & License")
+        case .monitors: return t("Pantallas y Posiciones", "Screens & Positions")
+        case .profiles: return t("Perfiles y Ecosistema", "Profiles & Ecosystem")
+        case .hotkeys:  return t("Teletransporte y Atajos", "Teleport & Shortcuts")
+        case .system:   return t("Privacidad, Inicio y Licencia", "Privacy, Launch & License")
         }
     }
 
-    func setLanguage(_ code: String) {
-        guard languageCode != code else { return }
-        languageCode = code
-        UserDefaults.standard.set(code, forKey: "ccLanguage")
+    func setLanguagePreference(_ value: String) {
+        guard languagePreference != value else { return }
+        languagePreference = value
+        UserDefaults.standard.set(value, forKey: "ccLanguage")
+        objectWillChange.send()
     }
 
     var maskedEmail: String? {
@@ -180,6 +195,27 @@ final class ControlCenterModel: ObservableObject {
 
     var statusTitle: String {
         isVisible ? t("ENCENDIDO", "ON") : t("PAUSADO", "PAUSED")
+    }
+
+    /// Etiqueta corta del plan activo (cabecera y Acerca de).
+    var planLabel: String {
+        if let tier = licenseTier {
+            return tier == "personal"
+                ? t("Personal · 1 Mac", "Personal · 1 Mac")
+                : t("Pro · 3 Macs", "Pro · 3 Macs")
+        }
+        return t("Trial · \(trialDays) días", "Trial · \(trialDays) days")
+    }
+
+    var licenseStatusText: String {
+        if isPro {
+            let base = licenseTier == "personal"
+                ? t("Licencia Personal Activa (1 Mac)", "Personal license active (1 Mac)")
+                : t("Licencia Pro Activa (Hasta 3 Macs)", "Pro license active (up to 3 Macs)")
+            return "\(base) · \(maskedEmail ?? "")"
+        }
+        return t("Prueba gratuita · \(trialDays) día(s) restantes",
+                 "Free trial · \(trialDays) day(s) left")
     }
 
     // MARK: Bindings helpers
@@ -218,10 +254,10 @@ final class ControlCenterModel: ObservableObject {
         guard let host else { return }
         let ax = host.ccAccessibilityGranted
         if ax != axGranted { axGranted = ax }
-        let sr = host.ccScreenRecordingGranted
-        if sr != screenGranted { screenGranted = sr }
         let pro = host.ccIsPro
         if pro != isPro { isPro = pro }
+        let tier = host.ccLicenseTier
+        if tier != licenseTier { licenseTier = tier }
         let email = host.ccLicenseEmail
         if email != licenseEmail { licenseEmail = email }
         let days = host.ccTrialDays
@@ -302,6 +338,27 @@ final class ControlCenterModel: ObservableObject {
         showsDockIcon = value
         host?.ccSetShowsDockIcon(value)
         refresh()
+    }
+
+    func activateLicense() {
+        let email = activationEmail.trimmingCharacters(in: .whitespacesAndNewlines)
+        let key = activationKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !email.isEmpty, !key.isEmpty else {
+            activationSucceeded = false
+            activationMessage = t("Ingresa tu correo y la clave SDOCK-…",
+                                  "Enter your email and the SDOCK-… key")
+            return
+        }
+        let ok = host?.ccActivateLicense(email: email, key: key) ?? false
+        activationSucceeded = ok
+        activationMessage = ok
+            ? t("Licencia activada correctamente.", "License activated successfully.")
+            : t("Clave inválida o correo distinto al de la compra.",
+                "Invalid key or email does not match the purchase.")
+        if ok {
+            activationKey = ""
+            refresh()
+        }
     }
 }
 
@@ -389,28 +446,19 @@ struct ControlCenterSidebarView: View {
 
             Spacer(minLength: 8)
 
-            VStack(alignment: .leading, spacing: 8) {
-                Picker("", selection: model.binding({ model.languageCode }, model.setLanguage)) {
-                    Text("Español").tag("es")
-                    Text("English").tag("en")
+            Button {
+                model.host?.ccShowAboutWindow()
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "info.circle")
+                    Text(model.t("Acerca de StackDock", "About StackDock"))
+                    Spacer(minLength: 0)
                 }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-
-                Button {
-                    model.host?.ccShowAboutWindow()
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "info.circle")
-                        Text(model.t("Acerca de StackDock", "About StackDock"))
-                        Spacer(minLength: 0)
-                    }
-                    .font(.system(size: 11))
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
+                .font(.system(size: 11))
                 .foregroundColor(.secondary)
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
             .padding(.horizontal, 14)
             .padding(.bottom, 14)
         }
@@ -454,14 +502,16 @@ struct ControlCenterDetailView: View {
                 .font(.system(size: 19, weight: .bold))
                 .tracking(0.6)
 
-            Text("StackDock \(model.versionText)")
+            Text("v\(model.versionText)")
                 .font(.system(size: 11))
                 .foregroundColor(.secondary)
                 .padding(.top, 2)
 
-            Spacer(minLength: 8)
+            Spacer(minLength: 6)
 
-            licenseBadge
+            planBadge
+
+            languageSelector
 
             Button {
                 model.host?.ccRefreshAll()
@@ -473,19 +523,18 @@ struct ControlCenterDetailView: View {
             .keyboardShortcut("r", modifiers: [.command])
             .help(model.t("Refrescar Docks y Ventanas (⌘R)", "Refresh docks and windows (⌘R)"))
         }
-        .padding(.horizontal, 18)
+        .padding(.horizontal, 16)
         .padding(.top, 12)
         .padding(.bottom, 10)
     }
 
-    private var licenseBadge: some View {
+    private var planBadge: some View {
         HStack(spacing: 5) {
             Image(systemName: model.isPro ? "checkmark.seal.fill" : "clock")
                 .font(.system(size: 10))
-            Text(model.isPro
-                 ? model.t("Pro · \(model.maskedEmail ?? "")", "Pro · \(model.maskedEmail ?? "")")
-                 : model.t("Trial · \(model.trialDays)d", "Trial · \(model.trialDays)d"))
+            Text(model.planLabel)
                 .font(.system(size: 10.5, weight: .medium))
+                .lineLimit(1)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
@@ -493,13 +542,30 @@ struct ControlCenterDetailView: View {
             Capsule().fill((model.isPro ? Color.green : Color.orange).opacity(0.16))
         )
         .foregroundColor(model.isPro ? .green : .orange)
-        .help(model.isPro
-              ? (model.licenseEmail ?? "")
-              : model.t("Prueba gratuita activa", "Free trial active"))
+        .help(model.isPro ? (model.licenseEmail ?? "") : model.t("Prueba gratuita de 14 días sin tarjeta",
+                                                                "14-day free trial, no card required"))
+    }
+
+    private var languageSelector: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "globe")
+                .font(.system(size: 10.5))
+                .foregroundColor(.secondary)
+            Picker("", selection: model.binding({ model.languagePreference }, model.setLanguagePreference)) {
+                Text(model.t("Sistema", "System")).tag("system")
+                Text("Español").tag("es")
+                Text("English").tag("en")
+            }
+            .pickerStyle(.menu)
+            .labelsHidden()
+            .controlSize(.small)
+            .frame(width: 104)
+            .help(model.t("Idioma de la interfaz", "Interface language"))
+        }
     }
 }
 
-// MARK: - Sección 1: Monitores y Docks
+// MARK: - Sección 1: Pantallas y Posiciones
 
 struct MonitorsSection: View {
     @ObservedObject var model: ControlCenterModel
@@ -511,8 +577,8 @@ struct MonitorsSection: View {
             VStack(alignment: .leading, spacing: 10) {
                 Text(model.t("Mapa de pantallas", "Display map"))
                     .font(.system(size: 13, weight: .semibold))
-                Text(model.t("Elige dónde vive el Dock en cada monitor conectado.",
-                             "Choose where the dock lives on each connected display."))
+                Text(model.t("Las 4 posiciones reales del Dock: abajo, abajo elevado, arriba bajo la barra de menús y automática por monitor.",
+                             "The 4 real dock positions: bottom, elevated bottom, top under the menu bar and automatic per display."))
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
 
@@ -536,8 +602,8 @@ struct MonitorsSection: View {
                 .labelsHidden()
 
                 Text(model.replaceAppleDock
-                     ? model.t("StackDock oculta el Dock de Apple mientras la app corre y lo restaura al salir.",
-                               "StackDock hides the Apple Dock while running and restores it on exit.")
+                     ? model.t("StackDock oculta el Dock de Apple (autohide) mientras la app corre y lo restaura al salir.",
+                               "StackDock hides the Apple Dock (autohide) while running and restores it on exit.")
                      : model.t("El Dock de Apple sigue visible; StackDock se dibuja en los monitores extra.",
                                "The Apple Dock stays visible; StackDock draws on the extra displays."))
                     .font(.system(size: 11))
@@ -595,11 +661,12 @@ struct MonitorsSection: View {
             Picker("", selection: model.binding({ screen.placement }, { model.setPlacement($0, for: screen.id) })) {
                 Text(model.t("Abajo", "Bottom")).tag(DockPlacement.bottomOriginal)
                 Text(model.t("Abajo elevado", "Bottom elevated")).tag(DockPlacement.bottomElevated)
-                Text(model.t("Arriba", "Top")).tag(DockPlacement.topUnderMenu)
-                Text(model.t("Auto", "Auto")).tag(DockPlacement.autoPerMonitor)
+                Text(model.t("Arriba bajo la barra", "Top under menu bar")).tag(DockPlacement.topUnderMenu)
+                Text(model.t("Automática por monitor", "Automatic per display")).tag(DockPlacement.autoPerMonitor)
             }
             .labelsHidden()
             .controlSize(.small)
+            .padding(.trailing, 2)
             .disabled(!screen.enabled)
         }
         .padding(10)
@@ -615,22 +682,28 @@ struct MonitorsSection: View {
     }
 }
 
-// MARK: - Sección 2: Perfiles e Integraciones
+// MARK: - Sección 2: Perfiles y Ecosistema
 
 struct ProfilesSection: View {
     @ObservedObject var model: ControlCenterModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            VStack(alignment: .leading, spacing: 12) {
-                Text(model.t("Perfiles de Chrome", "Chrome profiles"))
+            VStack(alignment: .leading, spacing: 10) {
+                Text(model.t("Iconos por perfil y ventana", "Per-profile and per-window icons"))
                     .font(.system(size: 13, weight: .semibold))
 
-                Toggle(model.t("Separar perfiles/ventanas de Chrome en iconos propios",
-                               "Split Chrome profiles/windows into their own icons"),
+                Toggle(model.t("Separar perfiles/ventanas en iconos propios",
+                               "Split profiles/windows into their own icons"),
                        isOn: model.binding({ model.uncombine }, model.setUncombine))
                     .toggleStyle(.switch)
                     .controlSize(.small)
+
+                Text(model.t("Avatares reales de perfil para Chrome, Brave y Edge. Safari, Arc, Cursor y VS Code usan etiquetas por ventana de máx. 14 caracteres.",
+                             "Real profile avatars for Chrome, Brave and Edge. Safari, Arc, Cursor and VS Code use per-window labels of max. 14 characters."))
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Divider()
 
@@ -666,28 +739,15 @@ struct ProfilesSection: View {
                     .foregroundColor(.secondary)
 
                 HStack(spacing: 10) {
-                    Button {
+                    openerButton(title: "Finder", selected: model.folderOpenerIsFinder) {
                         model.host?.ccSetFolderOpenerFinder()
                         model.refresh()
-                    } label: {
-                        HStack(spacing: 5) {
-                            Image(systemName: model.folderOpenerIsFinder ? "largecircle.fill.circle" : "circle")
-                            Text("Finder")
-                        }
                     }
-                    .controlSize(.small)
 
-                    Button {
+                    openerButton(title: "Findaro", selected: model.folderOpenerIsFindaro, enabled: model.findaroInstalled) {
                         model.host?.ccSetFolderOpenerFindaro()
                         model.refresh()
-                    } label: {
-                        HStack(spacing: 5) {
-                            Image(systemName: model.folderOpenerIsFindaro ? "largecircle.fill.circle" : "circle")
-                            Text("Findaro")
-                        }
                     }
-                    .controlSize(.small)
-                    .disabled(!model.findaroInstalled)
                     .help(model.findaroInstalled
                           ? model.t("Abrir Descargas y Papelera con Findaro", "Open Downloads and Trash with Findaro")
                           : model.t("Findaro.app no está instalado en /Applications", "Findaro.app is not installed in /Applications"))
@@ -710,9 +770,25 @@ struct ProfilesSection: View {
             .ccCard()
         }
     }
+
+    private func openerButton(
+        title: String,
+        selected: Bool,
+        enabled: Bool = true,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 5) {
+                Image(systemName: selected ? "largecircle.fill.circle" : "circle")
+                Text(title)
+            }
+        }
+        .controlSize(.small)
+        .disabled(!enabled)
+    }
 }
 
-// MARK: - Sección 3: Atajos Globales
+// MARK: - Sección 3: Teletransporte y Atajos
 
 struct HotKeysSection: View {
     @ObservedObject var model: ControlCenterModel
@@ -738,12 +814,13 @@ struct HotKeysSection: View {
             .ccCard()
 
             VStack(alignment: .leading, spacing: 10) {
-                Text(model.t("Tecla Mover ventana activa", "Move active window shortcut"))
+                Text(model.t("Tecla Mover ventana al siguiente monitor", "Move window to next display"))
                     .font(.system(size: 13, weight: .semibold))
-                Text(model.t("Teletransporta la ventana activa al siguiente monitor. Por defecto ⌃W.",
-                             "Teleports the active window to the next display. Default ⌃W."))
+                Text(model.t("Por defecto ⌃W. Conserva al menos el 35% de la ventana visible y reescala proporcionalmente para que nunca quede diminuta o gigante al cambiar de pantalla.",
+                             "Default ⌃W. Keeps at least 35% of the window visible and rescales proportionally so it never lands tiny or gigantic when switching displays."))
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Picker("", selection: model.binding({ model.movePreset }, model.setMovePreset)) {
                     ForEach(HotKeyMovePreset.allCases, id: \.rawValue) { preset in
@@ -766,7 +843,7 @@ struct HotKeysSection: View {
     }
 }
 
-// MARK: - Sección 4: Sistema y Licencia
+// MARK: - Sección 4: Privacidad, Inicio y Licencia
 
 struct SystemSection: View {
     @ObservedObject var model: ControlCenterModel
@@ -774,28 +851,46 @@ struct SystemSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 12) {
-                Text(model.t("Permisos del sistema", "System permissions"))
+                Text(model.t("Privacidad y permisos", "Privacy & permissions"))
                     .font(.system(size: 13, weight: .semibold))
 
-                permissionRow(
-                    title: model.t("Accesibilidad", "Accessibility"),
-                    detail: model.t("Necesaria para mover ventanas y separar perfiles.",
-                                    "Required to move windows and split profiles."),
-                    granted: model.axGranted,
-                    buttonTitle: model.t("Abrir Ajustes", "Open Settings"),
-                    action: { model.host?.ccRequestAccessibility() }
-                )
+                HStack(spacing: 10) {
+                    CCStatusDot(on: model.axGranted)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(model.t("Accesibilidad", "Accessibility"))
+                            .font(.system(size: 12, weight: .medium))
+                        Text(model.t("Necesaria para mover ventanas y separar perfiles.",
+                                     "Required to move windows and split profiles."))
+                            .font(.system(size: 10.5))
+                            .foregroundColor(.secondary)
+                    }
+                    Spacer(minLength: 8)
+                    Text(model.axGranted ? model.t("Concedido", "Granted") : model.t("Pendiente", "Pending"))
+                        .font(.system(size: 10.5, weight: .medium))
+                        .foregroundColor(model.axGranted ? .green : .orange)
+                        .padding(.trailing, 2)
+                    Button {
+                        model.host?.ccRequestAccessibility()
+                        model.refresh()
+                    } label: {
+                        Text(model.t("Abrir Ajustes", "Open Settings"))
+                    }
+                    .controlSize(.small)
+                }
 
-                Divider()
-
-                permissionRow(
-                    title: model.t("Grabación de pantalla", "Screen Recording"),
-                    detail: model.t("Necesaria para leer las ventanas de otras apps.",
-                                    "Required to read other apps' windows."),
-                    granted: model.screenGranted,
-                    buttonTitle: model.t("Conceder", "Grant"),
-                    action: { model.host?.ccRequestScreenRecording() }
-                )
+                HStack(spacing: 6) {
+                    Image(systemName: "lock.shield.fill")
+                        .font(.system(size: 11))
+                    Text(model.t("0 Permisos de Grabación de Pantalla requeridos",
+                                 "0 Screen Recording permissions required"))
+                        .font(.system(size: 11.5, weight: .medium))
+                }
+                .padding(.horizontal, 9)
+                .padding(.vertical, 5)
+                .background(Capsule().fill(Color.green.opacity(0.14)))
+                .foregroundColor(.green)
+                .help(model.t("StackDock no captura ni graba tus pantallas.",
+                              "StackDock never captures or records your displays."))
 
                 Divider()
 
@@ -804,8 +899,7 @@ struct SystemSection: View {
                     .toggleStyle(.switch)
                     .controlSize(.small)
 
-                Toggle(model.t("Mostrar icono de StackDock en el Dock de aplicaciones",
-                               "Show StackDock icon in the Dock"),
+                Toggle(model.t("Mostrar icono en el Dock de macOS", "Show icon in the macOS Dock"),
                        isOn: model.binding({ model.showsDockIcon }, model.setShowsDockIcon))
                     .toggleStyle(.switch)
                     .controlSize(.small)
@@ -818,12 +912,9 @@ struct SystemSection: View {
 
                 HStack(spacing: 8) {
                     CCStatusDot(on: model.isPro)
-                    Text(model.isPro
-                         ? model.t("Licencia Pro Activa · \(model.maskedEmail ?? "")",
-                                   "Pro license active · \(model.maskedEmail ?? "")")
-                         : model.t("Prueba gratuita · \(model.trialDays) día(s) restantes",
-                                   "Free trial · \(model.trialDays) day(s) left"))
+                    Text(model.licenseStatusText)
                         .font(.system(size: 12))
+                        .lineLimit(1)
                     Spacer(minLength: 8)
                     Button {
                         model.host?.ccPresentActivation()
@@ -831,9 +922,45 @@ struct SystemSection: View {
                     } label: {
                         Text(model.isPro
                              ? model.t("Gestionar licencia…", "Manage license…")
-                             : model.t("Activar licencia…", "Activate license…"))
+                             : model.t("Comprar licencia…", "Buy license…"))
                     }
                     .controlSize(.small)
+                }
+
+                if !model.isPro {
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(spacing: 8) {
+                            TextField(model.t("tu@correo.com", "you@email.com"),
+                                      text: model.binding({ model.activationEmail }, { model.activationEmail = $0 }))
+                                .textFieldStyle(.roundedBorder)
+                                .frame(width: 186)
+
+                            TextField("SDOCK-…",
+                                      text: model.binding({ model.activationKey }, { model.activationKey = $0 }))
+                                .textFieldStyle(.roundedBorder)
+                                .font(.system(size: 11, design: .monospaced))
+                                .frame(width: 208)
+
+                            Button {
+                                model.activateLicense()
+                            } label: {
+                                Text(model.t("Activar", "Activate"))
+                            }
+                            .controlSize(.small)
+                            .keyboardShortcut(.return, modifiers: [.command])
+                        }
+
+                        if let message = model.activationMessage {
+                            Text(message)
+                                .font(.system(size: 10.5))
+                                .foregroundColor(model.activationSucceeded ? .green : .red)
+                        } else {
+                            Text(model.t("Personal $9.99 USD (1 Mac) · Pro $19 USD (hasta 3 Macs). Pago único, verificación Ed25519 offline.",
+                                         "Personal $9.99 USD (1 Mac) · Pro $19 USD (up to 3 Macs). One-time payment, offline Ed25519 verification."))
+                                .font(.system(size: 10.5))
+                                .foregroundColor(.secondary)
+                        }
+                    }
                 }
 
                 Divider()
@@ -850,34 +977,15 @@ struct SystemSection: View {
                         Text(model.t("Buscar actualizaciones", "Check for updates"))
                     }
                     .controlSize(.small)
+                    Button {
+                        model.host?.ccShowAboutWindow()
+                    } label: {
+                        Text(model.t("Acerca de StackDock", "About StackDock"))
+                    }
+                    .controlSize(.small)
                 }
             }
             .ccCard()
-        }
-    }
-
-    private func permissionRow(
-        title: String,
-        detail: String,
-        granted: Bool,
-        buttonTitle: String,
-        action: @escaping () -> Void
-    ) -> some View {
-        HStack(spacing: 10) {
-            CCStatusDot(on: granted)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(title).font(.system(size: 12, weight: .medium))
-                Text(detail).font(.system(size: 10.5)).foregroundColor(.secondary)
-            }
-            Spacer(minLength: 8)
-            Text(granted ? model.t("Concedido", "Granted") : model.t("Pendiente", "Pending"))
-                .font(.system(size: 10.5, weight: .medium))
-                .foregroundColor(granted ? .green : .orange)
-                .padding(.trailing, 2)
-            Button(action: action) {
-                Text(buttonTitle)
-            }
-            .controlSize(.small)
         }
     }
 }
@@ -916,7 +1024,7 @@ final class ControlCenterWindowController: NSWindowController, NSWindowDelegate 
 
     private func buildWindow() {
         let win = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 860, height: 560),
+            contentRect: NSRect(x: 0, y: 0, width: 880, height: 580),
             styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -927,7 +1035,7 @@ final class ControlCenterWindowController: NSWindowController, NSWindowDelegate 
         win.isReleasedWhenClosed = false
         win.isMovableByWindowBackground = false
         win.backgroundColor = .windowBackgroundColor
-        win.minSize = NSSize(width: 860, height: 560)
+        win.minSize = NSSize(width: 880, height: 580)
         win.delegate = self
         win.setFrameAutosaveName("StackDockControlCenter")
 
@@ -961,7 +1069,7 @@ final class ControlCenterWindowController: NSWindowController, NSWindowDelegate 
             sidebar.topAnchor.constraint(equalTo: container.topAnchor),
             sidebar.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             sidebar.bottomAnchor.constraint(equalTo: container.bottomAnchor),
-            sidebar.widthAnchor.constraint(equalToConstant: 214),
+            sidebar.widthAnchor.constraint(equalToConstant: 238),
 
             detailHost.topAnchor.constraint(equalTo: container.safeAreaLayoutGuide.topAnchor),
             detailHost.leadingAnchor.constraint(equalTo: sidebar.trailingAnchor),
