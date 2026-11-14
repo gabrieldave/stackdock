@@ -321,7 +321,7 @@
   <rect x="40" y="30" width="1120" height="700" rx="14" class="w-frame"/>
   <path d="M40 74h1120" class="w-line"/>
   <circle cx="68" cy="52" r="6" class="w-dot"/><circle cx="88" cy="52" r="6" class="w-dot"/><circle cx="108" cy="52" r="6" class="w-dot"/>
-  <text x="600" y="57" class="w-t c">StackDock — Control Panel 4.0.6</text>
+  <text x="600" y="57" class="w-t c">StackDock — Control Panel 4.0.8</text>
   <path d="M280 74v656" class="w-line"/>
   <g class="w-side">
     <rect x="56" y="96" width="208" height="30" rx="6" class="w-sel"/>
@@ -376,7 +376,7 @@
   <rect x="852" y="616" width="246" height="70" rx="8" fill="url(#hatch)" class="w-hb"/>
 </svg>
           <img class="viewer-img" data-panel-img data-src-en="/media/media_control_panel_en.webp" data-src-es="/media/media_control_panel_es.webp" src="/media/media_control_panel_en.webp" alt="FIG. 03 — CONTROL PANEL 4.0.8" loading="lazy" decoding="async" hidden>
-          <button type="button" class="marker mono" data-marker="1" style="left:26.7%;top:13.2%" aria-label="1">①</button><button type="button" class="marker mono" data-marker="2" style="left:69.2%;top:13.2%" aria-label="2">②</button><button type="button" class="marker mono" data-marker="3" style="left:69.2%;top:27.6%" aria-label="3">③</button><button type="button" class="marker mono" data-marker="4" style="left:26.7%;top:50%" aria-label="4">④</button><button type="button" class="marker mono" data-marker="5" style="left:26.7%;top:67.1%" aria-label="5">⑤</button><button type="button" class="marker mono" data-marker="6" style="left:69.2%;top:56.6%" aria-label="6">⑥</button>
+          <button type="button" class="marker mono" data-marker="1" style="left:26.7%;top:13.2%" aria-label="1: Display map">①</button><button type="button" class="marker mono" data-marker="2" style="left:69.2%;top:13.2%" aria-label="2: Solo vs Dual">②</button><button type="button" class="marker mono" data-marker="3" style="left:69.2%;top:27.6%" aria-label="3: Profiles">③</button><button type="button" class="marker mono" data-marker="4" style="left:26.7%;top:50%" aria-label="4: Findaro">④</button><button type="button" class="marker mono" data-marker="5" style="left:26.7%;top:67.1%" aria-label="5: Global shortcuts">⑤</button><button type="button" class="marker mono" data-marker="6" style="left:69.2%;top:56.6%" aria-label="6: Privacy &amp; license">⑥</button>
         </div>
       </figure>
       <ol class="callouts">
@@ -443,7 +443,7 @@
     <div class="stats">
       <div class="stat" data-reveal style="--i:0"><p class="stat-v"><span class="num" data-count="0">0</span><span class="unit mono"></span></p><p class="stat-l mono" data-i18n="proof.stats.0.label">Screen Recording permissions requested</p></div><div class="stat" data-reveal style="--i:1"><p class="stat-v"><span class="num" data-count="0.0">0.0</span><span class="unit mono">%</span></p><p class="stat-l mono" data-i18n="proof.stats.1.label">CPU at idle*</p></div><div class="stat" data-reveal style="--i:2"><p class="stat-v"><span class="num" data-count="32">32</span><span class="unit mono">MB</span></p><p class="stat-l mono" data-i18n="proof.stats.2.label">memory footprint*</p></div>
     </div>
-    <dl class="spec spec-wide" data-reveal><div class="spec-row"><dt data-i18n="proof.bullets.0.0">Network</dt><dd data-i18n="proof.bullets.0.1">Signed update feed only. No telemetry, no account.</dd></div><div class="spec-row"><dt data-i18n="proof.bullets.1.0">License</dt><dd data-i18n="proof.bullets.1.1">Ed25519 signature verified on the Mac. No activation server.</dd></div><div class="spec-row"><dt data-i18n="proof.bullets.2.0">Binary</dt><dd data-i18n="proof.bullets.2.1">Universal Swift (arm64 + x86_64). No Electron, no runtime.</dd></div><div class="spec-row"><dt data-i18n="proof.bullets.3.0">Distribution</dt><dd data-i18n="proof.bullets.3.1">Developer ID signed and notarized by Apple.</dd></div></dl>
+    <dl class="spec spec-wide" data-reveal><div class="spec-row"><dt data-i18n="proof.bullets.0.0">Network</dt><dd data-i18n="proof.bullets.0.1">Signed update feed only, plus a light trial and Mac-seat sync. No account, no usage telemetry.</dd></div><div class="spec-row"><dt data-i18n="proof.bullets.1.0">License</dt><dd data-i18n="proof.bullets.1.1">Ed25519 signature verified on the Mac, plus a light Mac-seat check (1 on Personal, 3 on Pro). No activation server, no account.</dd></div><div class="spec-row"><dt data-i18n="proof.bullets.2.0">Binary</dt><dd data-i18n="proof.bullets.2.1">Universal Swift (arm64 + x86_64). No Electron, no runtime.</dd></div><div class="spec-row"><dt data-i18n="proof.bullets.3.0">Distribution</dt><dd data-i18n="proof.bullets.3.1">Developer ID signed and notarized by Apple.</dd></div></dl>
     <p class="foot mono" data-reveal data-i18n="proof.footnote">* Our own measurement on a Mac mini M4 at idle. The same capture reports 92.6 MB RSS, which also counts shared system frameworks. Your numbers will vary with apps and displays.</p>
     <div class="captures">
       <p class="cap-label mono" data-reveal data-i18n="proof.capturesLabel">Real captures, not renders</p>
@@ -539,7 +539,7 @@
       </details>
       <details class="qa" data-reveal style="--i:3">
         <summary><span class="mono qn">Q04</span><span data-i18n="faq.items.3.q">How many Macs can I use?</span><span class="plus" aria-hidden="true"></span></summary>
-        <p data-i18n="faq.items.3.a">Personal covers 1 Mac, Pro up to 3. The key is checked offline on your Mac: no account, no activation server.</p>
+        <p data-i18n="faq.items.3.a">Personal covers 1 Mac, Pro up to 3. The key is verified offline on your Mac with Ed25519; a light seat check keeps the Mac count accurate — no account, no activation server.</p>
       </details>
       <details class="qa" data-reveal style="--i:0">
         <summary><span class="mono qn">Q05</span><span data-i18n="faq.items.4.q">What happens after 14 days?</span><span class="plus" aria-hidden="true"></span></summary>
@@ -596,7 +596,7 @@
 </a>
 
 <!-- Modales -->
-<dialog class="modal" data-modal="download" aria-labelledby="dl-t">
+<dialog class="modal" closedby="any" data-modal="download" aria-labelledby="dl-t">
   <form method="dialog" class="modal-in" data-dl-form novalidate>
     <header class="modal-h"><img src="/media/appicon-128.webp" width="44" height="44" alt=""><div><h3 id="dl-t" data-i18n="modal.dlTitle">Download StackDock 4.0.8</h3><p data-i18n="modal.dlBody">Universal installer, signed and notarized by Apple. 14-day free trial, no card required.</p></div><button type="button" class="x" data-close aria-label="Close">✕</button></header>
     <label class="field"><span data-i18n="modal.emailLabel">Email for setup tips (optional)</span><input type="email" name="email" autocomplete="email" inputmode="email" placeholder="you@studio.com"><small data-i18n="modal.emailHint">A short 14-day sequence. Skip it if you like.</small><small class="err" data-err hidden data-i18n="modal.emailInvalid">That email doesn’t look right.</small></label>
@@ -614,14 +614,14 @@
   </form>
 </dialog>
 
-<dialog class="modal" data-modal="checkout" aria-labelledby="co-t">
+<dialog class="modal" closedby="any" data-modal="checkout" aria-labelledby="co-t">
   <div class="modal-in">
     <header class="modal-h"><div><h3 id="co-t" data-co-title></h3></div><button type="button" class="x" data-close aria-label="Close">✕</button></header>
     <div data-co-body></div>
   </div>
 </dialog>
 
-<dialog class="modal" data-modal="legal" aria-labelledby="lg-t">
+<dialog class="modal" closedby="any" data-modal="legal" aria-labelledby="lg-t">
   <div class="modal-in">
     <header class="modal-h"><div><h3 id="lg-t" data-legal-title></h3></div><button type="button" class="x" data-close aria-label="Close">✕</button></header>
     <div class="legal-body" data-legal-body></div>

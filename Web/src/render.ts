@@ -75,7 +75,7 @@ export function render({ locale, mode, asset }: RenderOpts): string {
     .join('');
 
   const markers = funnel.panel.callouts
-    .map((m) => `<button type="button" class="marker mono" data-marker="${m.n}" style="left:${m.x}%;top:${m.y}%" aria-label="${m.n}">${'①②③④⑤⑥'[m.n - 1]}</button>`)
+    .map((m) => `<button type="button" class="marker mono" data-marker="${m.n}" style="left:${m.x}%;top:${m.y}%" aria-label="${m.n}: ${esc(c.panel.callouts[m.n - 1].title)}">${'①②③④⑤⑥'[m.n - 1]}</button>`)
     .join('');
 
   const faq = c.faq.items
@@ -134,7 +134,7 @@ ${mode === 'site' ? '<link rel="manifest" href="/site.webmanifest">' : ''}
       <img src="${asset('/media/appicon-128.webp')}" width="28" height="28" alt="">
       <span>StackDock</span><span class="ver mono">${funnel.version}</span>
     </a>
-    <nav class="links" aria-label="Main">
+    <nav class="links" aria-label="${locale === 'es' ? 'Navegación principal' : 'Main'}">
       <a href="#how" ${A('nav.how')}>${t('nav.how')}</a>
       <a href="#panel" ${A('nav.panel')}>${t('nav.panel')}</a>
       <a href="#proof" ${A('nav.proof')}>${t('nav.proof')}</a>
@@ -142,7 +142,7 @@ ${mode === 'site' ? '<link rel="manifest" href="/site.webmanifest">' : ''}
       <a href="#faq" ${A('nav.faq')}>${t('nav.faq')}</a>
     </nav>
     <div class="nav-r">
-      <div class="lang mono" role="group" aria-label="Language">
+      <div class="lang mono" role="group" aria-label="${locale === 'es' ? 'Idioma' : 'Language'}">
         <a href="/" data-lang="en" ${locale === 'en' ? 'aria-current="true"' : ''} hreflang="en">EN</a><span aria-hidden="true">|</span><a href="/es/" data-lang="es" ${locale === 'es' ? 'aria-current="true"' : ''} hreflang="es">ES</a>
       </div>
       <button type="button" class="btn btn-key btn-sm" data-open-download ${A('nav.download')}>${t('nav.download')}</button>
@@ -268,7 +268,7 @@ ${mode === 'site' ? '<link rel="manifest" href="/site.webmanifest">' : ''}
       <figure class="viewer" data-viewer data-reveal>
         <figcaption class="viewer-head mono"><span ${A('panel.figLabel')}>${t('panel.figLabel')}</span><span class="viewer-state" data-viewer-state ${A('panel.pending')}>${t('panel.pending')}</span></figcaption>
         <div class="viewer-body">
-          ${panelWireframe(esc(t('panel.figLabel')))}
+          ${panelWireframe(esc(t('panel.figLabel')), funnel.version)}
           <img class="viewer-img" data-panel-img data-src-en="${asset(funnel.panel.media.en)}" data-src-es="${asset(funnel.panel.media.es)}" src="${asset(funnel.panel.media[locale])}" alt="${esc(t('panel.figLabel'))}" loading="lazy" decoding="async" hidden>
           ${markers}
         </div>
@@ -442,7 +442,7 @@ ${mode === 'site' ? '<link rel="manifest" href="/site.webmanifest">' : ''}
 </a>
 
 <!-- Modales -->
-<dialog class="modal" data-modal="download" aria-labelledby="dl-t">
+<dialog class="modal" closedby="any" data-modal="download" aria-labelledby="dl-t">
   <form method="dialog" class="modal-in" data-dl-form novalidate>
     <header class="modal-h"><img src="${asset('/media/appicon-128.webp')}" width="44" height="44" alt=""><div><h3 id="dl-t" ${A('modal.dlTitle')}>${t('modal.dlTitle')}</h3><p ${A('modal.dlBody')}>${t('modal.dlBody')}</p></div><button type="button" class="x" data-close aria-label="${esc(t('modal.close'))}">✕</button></header>
     <label class="field"><span ${A('modal.emailLabel')}>${t('modal.emailLabel')}</span><input type="email" name="email" autocomplete="email" inputmode="email" placeholder="you@studio.com"><small ${A('modal.emailHint')}>${t('modal.emailHint')}</small><small class="err" data-err hidden ${A('modal.emailInvalid')}>${t('modal.emailInvalid')}</small></label>
@@ -460,14 +460,14 @@ ${mode === 'site' ? '<link rel="manifest" href="/site.webmanifest">' : ''}
   </form>
 </dialog>
 
-<dialog class="modal" data-modal="checkout" aria-labelledby="co-t">
+<dialog class="modal" closedby="any" data-modal="checkout" aria-labelledby="co-t">
   <div class="modal-in">
     <header class="modal-h"><div><h3 id="co-t" data-co-title></h3></div><button type="button" class="x" data-close aria-label="${esc(t('modal.close'))}">✕</button></header>
     <div data-co-body></div>
   </div>
 </dialog>
 
-<dialog class="modal" data-modal="legal" aria-labelledby="lg-t">
+<dialog class="modal" closedby="any" data-modal="legal" aria-labelledby="lg-t">
   <div class="modal-in">
     <header class="modal-h"><div><h3 id="lg-t" data-legal-title></h3></div><button type="button" class="x" data-close aria-label="${esc(t('modal.close'))}">✕</button></header>
     <div class="legal-body" data-legal-body></div>

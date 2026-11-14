@@ -23,7 +23,16 @@ export interface CheckoutPayload {
 export function initCommerce() {
   // Cerrar modales (botón ✕ o clic en el fondo)
   document.querySelectorAll<HTMLDialogElement>('dialog.modal').forEach((d) => {
-    d.addEventListener('click', (e) => { if (e.target === d) d.close(); });
+    // Fallback progresivo: solo navegadores sin `closedBy`. Exige que el gesto
+    // empiece y termine sobre el propio diálogo (no arrastrar desde dentro).
+    if (!('closedBy' in HTMLDialogElement.prototype)) {
+      let backdropPointerDown = false;
+      d.addEventListener('pointerdown', (e) => { backdropPointerDown = e.target === d; });
+      d.addEventListener('click', (e) => {
+        if (backdropPointerDown && e.target === d) d.close();
+        backdropPointerDown = false;
+      });
+    }
     d.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => d.close()));
   });
 

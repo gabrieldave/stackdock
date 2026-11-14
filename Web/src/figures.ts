@@ -70,7 +70,7 @@ export const figTeleport = `
 </svg>`;
 
 /** Fig 03 — Wireframe arquitectónico del Panel de Control 4.0.6 (respaldo) */
-export const panelWireframe = (title: string) => `
+export const panelWireframe = (title: string, version = '4.0.8') => `
 <svg viewBox="0 0 1200 760" class="wire" role="img" aria-label="${title}">
   <defs>
     <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
@@ -80,7 +80,7 @@ export const panelWireframe = (title: string) => `
   <rect x="40" y="30" width="1120" height="700" rx="14" class="w-frame"/>
   <path d="M40 74h1120" class="w-line"/>
   <circle cx="68" cy="52" r="6" class="w-dot"/><circle cx="88" cy="52" r="6" class="w-dot"/><circle cx="108" cy="52" r="6" class="w-dot"/>
-  <text x="600" y="57" class="w-t c">StackDock — Control Panel 4.0.6</text>
+  <text x="600" y="57" class="w-t c">StackDock — Control Panel ${version}</text>
   <path d="M280 74v656" class="w-line"/>
   <g class="w-side">
     <rect x="56" y="96" width="208" height="30" rx="6" class="w-sel"/>

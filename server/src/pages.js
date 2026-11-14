@@ -234,6 +234,9 @@ function orderRows(orders, locale) {
         ? `<code class="key" data-copy="${escapeHtml(orderKey)}" title="${escapeHtml(orderKey)}">${escapeHtml(orderKey)}</code>`
         : '<span class="muted">—</span>';
       const isRevoked = order.status === 'revoked' || order.status === 'refunded';
+      const copyBtn = hasKey
+        ? `<button type="button" class="btn btn-ghost" style="padding:6px 10px;font-size:12px" data-copy="${escapeHtml(orderKey)}">${locale === 'es' ? 'Copiar' : 'Copy'}</button>`
+        : '';
       const resend = `<button type="button" class="btn btn-ghost" style="padding:6px 10px;font-size:12px" data-resend="${Number(order.id)}">${hasKey ? (locale === 'es' ? 'Reenviar' : 'Resend') : (locale === 'es' ? 'Emitir y enviar' : 'Issue & send')}</button>`;
       const toggle = `<button type="button" class="btn btn-ghost" style="padding:6px 10px;font-size:12px" data-toggle="${Number(order.id)}">${isRevoked ? (locale === 'es' ? 'Reactivar' : 'Reactivate') : (locale === 'es' ? 'Revocar' : 'Revoke')}</button>`;
       const remove = `<button type="button" class="btn btn-ghost" style="padding:6px 10px;font-size:12px" data-delete="${Number(order.id)}">${locale === 'es' ? 'Eliminar' : 'Delete'}</button>`;
@@ -244,7 +247,7 @@ function orderRows(orders, locale) {
         <td class="num" style="white-space:nowrap">${escapeHtml(formatUsd(order.amount_cents))} <span class="muted">${escapeHtml(order.currency || 'usd')}</span></td>
         <td><span class="badge badge-soft">${escapeHtml(order.status || '—')}</span></td>
         <td>${keyHtml}</td>
-        <td><div class="row" style="gap:6px;flex-wrap:wrap">${resend}${toggle}${remove}</div></td>
+        <td><div class="row" style="gap:6px;flex-wrap:wrap">${copyBtn}${resend}${toggle}${remove}</div></td>
       </tr>`;
     })
     .join('');
@@ -333,7 +336,14 @@ const ADMIN_SCRIPT = `
         });
         out.appendChild(code);
       }
-      setToast('License issued for ' + data.email);
+      try {
+        await navigator.clipboard.writeText(data.licenseKey);
+        setToast('Copied · ' + data.email);
+      } catch (e) {
+        setToast('License issued for ' + data.email);
+      }
+      // Recarga suave para ver la nueva fila en la tabla sin pasos extra.
+      setTimeout(function () { location.reload(); }, 1100);
     } catch (error) {
       if (out) out.textContent = error.message;
       setToast(error.message);

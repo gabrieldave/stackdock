@@ -241,8 +241,8 @@ const en = {
       { value: '32', unit: 'MB', label: 'memory footprint*' },
     ],
     bullets: [
-      ['Network', 'Signed update feed only. No telemetry, no account.'],
-      ['License', 'Ed25519 signature verified on the Mac. No activation server.'],
+      ['Network', 'Signed update feed only, plus a light trial and Mac-seat sync. No account, no usage telemetry.'],
+      ['License', 'Ed25519 signature verified on the Mac, plus a light Mac-seat check (1 on Personal, 3 on Pro). No activation server, no account.'],
       ['Binary', 'Universal Swift (arm64 + x86_64). No Electron, no runtime.'],
       ['Distribution', 'Developer ID signed and notarized by Apple.'],
     ],
@@ -301,7 +301,7 @@ const en = {
       { q: 'Does it need Screen Recording?', a: 'No. StackDock reads windows through the Accessibility API and listens to system notifications. It never captures your screen, so macOS never asks for that permission.' },
       { q: 'Does it replace Apple’s Dock?', a: 'Your call. Solo hides Apple’s Dock (autohide with a 1000-second delay) and restores your original settings when you quit. Dual keeps both.' },
       { q: 'Which browsers show profile avatars?', a: 'Chrome, Brave and Edge. Reading profile names and pictures needs Full Disk Access once; it’s optional. Safari, Arc, Cursor and VS Code split per window with a label from the title.' },
-      { q: 'How many Macs can I use?', a: 'Personal covers 1 Mac, Pro up to 3. The key is checked offline on your Mac: no account, no activation server.' },
+      { q: 'How many Macs can I use?', a: 'Personal covers 1 Mac, Pro up to 3. The key is verified offline on your Mac with Ed25519; a light seat check keeps the Mac count accurate — no account, no activation server.' },
       { q: 'What happens after 14 days?', a: 'The StackDock Docks pause and the app asks for your key. Paste the SDOCK-… key from your email and everything comes back, no reinstall.' },
       { q: 'Can I get a refund?', a: 'Yes, within 14 days of purchase. Email stackdock@iareal.net with your receipt email and order ID. The key for that order is revoked.' },
       { q: 'Apple Silicon or Intel?', a: 'Both. It’s a single universal binary for macOS 13 Ventura or later.' },
@@ -349,7 +349,7 @@ const en = {
   },
   legal: {
     terms: { title: 'Terms of Service', body: '<p>StackDock is a macOS utility sold by BLACK EYE. A Personal license covers 1 Mac; Pro covers up to 3 Macs. Licenses are delivered as offline Ed25519 keys (SDOCK-…) after payment.</p><p>You may not redistribute the binary or license keys. The software is provided as-is for personal or internal business use on authorized Macs.</p><p>Contact: <a href="mailto:stackdock@iareal.net">stackdock@iareal.net</a></p>' },
-    privacy: { title: 'Privacy Policy', body: '<p>We collect only what is needed to fulfill purchases and optional trial onboarding: checkout email, optional trial email and license delivery metadata.</p><p>StackDock validates licenses offline on-device; there is no account and no continuous cloud check-in. The app contacts the network only for the signed update feed.</p><p>Emails are sent via Resend. Payments are processed by Stripe. Support: stackdock@iareal.net · WhatsApp +52 56 4567 4407 (questions only).</p>' },
+    privacy: { title: 'Privacy Policy', body: '<p>We collect only what is needed to fulfill purchases and optional trial onboarding: checkout email, optional trial email and license delivery metadata.</p><p>StackDock validates licenses offline on-device with Ed25519. The app only performs a light trial and Mac-seat sync (a device identifier derived from your Mac, nothing beyond your purchase email) and a signed update check. There is no account and no usage telemetry.</p><p>Emails are sent via Resend. Payments are processed by Stripe. Support: stackdock@iareal.net · WhatsApp +52 56 4567 4407 (questions only).</p>' },
     refund: { title: '14-Day Refund Policy', body: '<p>If StackDock does not work as described on a supported Mac (macOS 13+), email <a href="mailto:stackdock@iareal.net">stackdock@iareal.net</a> within 14 days of purchase for a full refund.</p><p>Include your receipt email and order ID. License keys associated with refunded orders are revoked.</p>' },
   },
 };
@@ -509,8 +509,8 @@ const es: Copy = {
       { value: '32', unit: 'MB', label: 'footprint de memoria*' },
     ],
     bullets: [
-      ['Red', 'Solo el feed firmado de actualizaciones. Sin telemetría ni cuentas.'],
-      ['Licencia', 'Firma Ed25519 verificada en la Mac. Sin servidor de activación.'],
+      ['Red', 'Solo el feed firmado de actualizaciones y una sincronización ligera de trial y cupo de Macs. Sin cuentas ni telemetría de uso.'],
+      ['Licencia', 'Firma Ed25519 verificada en la Mac y comprobación ligera de cupo (1 en Personal, 3 en Pro). Sin servidor de activación ni cuentas.'],
       ['Binario', 'Swift universal (arm64 + x86_64). Sin Electron ni runtimes.'],
       ['Distribución', 'Firmado con Developer ID y notarizado por Apple.'],
     ],
@@ -569,7 +569,7 @@ const es: Copy = {
       { q: '¿Necesita Grabación de pantalla?', a: 'No. StackDock lee las ventanas con la API de Accesibilidad y escucha notificaciones del sistema. Nunca captura tu pantalla, así que macOS nunca pide ese permiso.' },
       { q: '¿Reemplaza el Dock de Apple?', a: 'Tú decides. Solo oculta el Dock de Apple (autohide con 1000 segundos de retraso) y restaura tu configuración original al salir. Dual mantiene los dos.' },
       { q: '¿Qué navegadores muestran avatares?', a: 'Chrome, Brave y Edge. Para leer nombres y fotos de perfil hace falta Acceso total al disco una vez; es opcional. Safari, Arc, Cursor y VS Code se separan por ventana con una etiqueta del título.' },
-      { q: '¿En cuántas Macs puedo usarlo?', a: 'Personal cubre 1 Mac y Pro hasta 3. La clave se verifica offline en tu Mac: sin cuenta y sin servidor de activación.' },
+      { q: '¿En cuántas Macs puedo usarlo?', a: 'Personal cubre 1 Mac y Pro hasta 3. La clave se verifica offline en tu Mac con Ed25519; una comprobación ligera de cupo mantiene el recuento exacto: sin cuenta y sin servidor de activación.' },
       { q: '¿Qué pasa después de 14 días?', a: 'Los Docks de StackDock se pausan y la app te pide la clave. Pega la clave SDOCK-… de tu correo y todo vuelve, sin reinstalar.' },
       { q: '¿Puedo pedir reembolso?', a: 'Sí, dentro de los 14 días posteriores a la compra. Escribe a stackdock@iareal.net con el email del recibo y el número de orden. La clave de esa orden se revoca.' },
       { q: '¿Apple Silicon o Intel?', a: 'Ambos. Es un solo binario universal para macOS 13 Ventura o posterior.' },
@@ -617,7 +617,7 @@ const es: Copy = {
   },
   legal: {
     terms: { title: 'Términos del servicio', body: '<p>StackDock es una utilidad para macOS vendida por BLACK EYE. La licencia Personal cubre 1 Mac; Pro cubre hasta 3 Macs. Las licencias se entregan como claves offline Ed25519 (SDOCK-…) tras el pago.</p><p>No puedes redistribuir el binario ni las claves. El software se entrega tal cual para uso personal o interno de empresa en Macs autorizadas.</p><p>Contacto: <a href="mailto:stackdock@iareal.net">stackdock@iareal.net</a></p>' },
-    privacy: { title: 'Política de privacidad', body: '<p>Solo recopilamos lo necesario para completar compras y el onboarding opcional del trial: email del checkout, email opcional del trial y datos de entrega de la licencia.</p><p>StackDock valida la licencia offline en tu Mac; no hay cuenta ni verificación continua en la nube. La app solo se conecta a la red para el feed firmado de actualizaciones.</p><p>Los correos se envían con Resend. Los pagos los procesa Stripe. Soporte: stackdock@iareal.net · WhatsApp +52 56 4567 4407 (solo dudas).</p>' },
+    privacy: { title: 'Política de privacidad', body: '<p>Solo recopilamos lo necesario para completar compras y el onboarding opcional del trial: email del checkout, email opcional del trial y datos de entrega de la licencia.</p><p>StackDock valida la licencia offline en tu Mac con Ed25519. La app solo realiza una sincronización ligera de trial y cupo de Macs (un identificador derivado de tu Mac, sin más datos que el email de compra) y una comprobación firmada de actualizaciones. No hay cuenta ni telemetría de uso.</p><p>Los correos se envían con Resend. Los pagos los procesa Stripe. Soporte: stackdock@iareal.net · WhatsApp +52 56 4567 4407 (solo dudas).</p>' },
     refund: { title: 'Política de reembolso de 14 días', body: '<p>Si StackDock no funciona como se describe en una Mac compatible (macOS 13+), escribe a <a href="mailto:stackdock@iareal.net">stackdock@iareal.net</a> dentro de los 14 días posteriores a la compra para un reembolso completo.</p><p>Incluye el email del recibo y el número de orden. Las claves de órdenes reembolsadas se revocan.</p>' },
   },
 };
