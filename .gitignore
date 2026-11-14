@@ -15,7 +15,6 @@ build/
 .build/
 DerivedData/
 *.dmg
-!Web/public/download/*.dmg
 *.app/
 !Resources/
 !Resources/AppIcon.icns

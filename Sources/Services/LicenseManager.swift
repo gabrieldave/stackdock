@@ -198,3 +198,30 @@ final class LicenseManager {
         }
     }
 }
+
+// MARK: - Integridad del binario (solo lectura — no altera la criptografía Ed25519)
+//
+// En compilaciones Release firmadas con Developer ID se exige que el Team ID
+// real del proceso sea YH6W55MP95 y que el sello de código siga válido.
+// En builds locales (ad-hoc) devuelve `false` sin bloquear el desarrollo.
+
+extension LicenseManager {
+    var isBinaryIntegrityVerified: Bool {
+        guard case .verified = BinaryIntegrityVerifier.check() else { return false }
+        return true
+    }
+
+    func binaryIntegritySummary(language: String = "es") -> String {
+        BinaryIntegrityVerifier.summary(language: language)
+    }
+
+    /// Email enmascarado para badges públicos (nunca expone la dirección completa).
+    var maskedLicensedEmail: String? {
+        guard let email = licensedEmail,
+              let atIndex = email.firstIndex(of: "@") else { return licensedEmail }
+        let local = String(email[email.startIndex..<atIndex])
+        let domain = String(email[atIndex...])
+        let head = local.prefix(2)
+        return "\(head)•••\(domain)"
+    }
+}

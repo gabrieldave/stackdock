@@ -13,6 +13,33 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
     private var didRegisterSystemEvents = false
     /// Ítem "Buscar actualizaciones…" para mostrar progreso mientras se descarga.
     private var updateMenuItem: NSMenuItem?
+    /// Panel Grande mostrado al menos una vez (facilita conceder permisos TCC en el primer arranque).
+    private var didShowControlCenterOnboarding: Bool {
+        get { prefs.bool(forKey: "didShowControlCenterOnboarding") }
+        set { prefs.set(newValue, forKey: "didShowControlCenterOnboarding") }
+    }
+    /// Mostrar el icono de StackDock en el Dock de aplicaciones (.regular vs .accessory).
+    private var showsDockIcon: Bool {
+        get { prefs.bool(forKey: "showInAppDock") }
+        set { prefs.set(newValue, forKey: "showInAppDock") }
+    }
+    /// Posición del Dock elegida por monitor (override del ajuste global).
+    private var placementOverrides: [String: Int] {
+        get {
+            guard let raw = prefs.dictionary(forKey: "placementByScreen") else { return [:] }
+            var out: [String: Int] = [:]
+            for (key, value) in raw {
+                if let n = value as? Int { out[key] = n }
+                else if let n = value as? NSNumber { out[key] = n.intValue }
+            }
+            return out
+        }
+        set {
+            var raw: [String: Int] = [:]
+            for (key, value) in newValue { raw[key] = value }
+            prefs.set(raw, forKey: "placementByScreen")
+        }
+    }
 
     private var isVisible: Bool {
         get { prefs.object(forKey: "isVisible") == nil ? true : prefs.bool(forKey: "isVisible") }
@@ -129,6 +156,7 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         setupStatusBar()
         setupHotKeys()
+        applyActivationPolicy()
         // Nunca spamear el diálogo de Accesibilidad: solo comprobar en silencio.
         // Si falta permiso, el menú tiene "Autorizar…" (una sola vez a petición).
         _ = winService.isAXTrusted(prompt: false)
@@ -138,7 +166,12 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
 
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            if !self.didChooseAppleDockMode {
+            if !self.didShowControlCenterOnboarding {
+                // Primer arranque: Panel Grande al frente para conceder TCC sin buscar menús.
+                self.didShowControlCenterOnboarding = true
+                self.didChooseAppleDockMode = true
+                self.openControlCenter()
+            } else if !self.didChooseAppleDockMode {
                 self.presentAppleDockModeChooser(isFirstRun: true)
             } else if self.replaceAppleDock {
                 self.applySoloStackDockMode(persistChoice: false)
@@ -334,6 +367,11 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
     /// Auto por monitor: abajo en la pantalla donde vive el Dock de Apple,
     /// arriba (bajo la barra de menús) en los monitores extra.
     private func resolvedPlacement(for screen: NSScreen) -> DockPlacement {
+        // Override explícito elegido por monitor en el Panel Grande.
+        if let raw = placementOverrides["\(screenID(screen))"],
+           let override = DockPlacement(rawValue: raw) {
+            return override
+        }
         guard placement == .autoPerMonitor else { return placement }
         let screens = NSScreen.screens
         guard screens.count > 1 else { return .bottomElevated }
@@ -436,6 +474,15 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
             pair.panel.alphaValue = 1.0
             pair.panel.orderFrontRegardless()
         }
+        syncControlCenterIfVisible()
+    }
+
+    /// Mantiene los toggles del Panel Grande sincronizados con el menú.
+    private func syncControlCenterIfVisible() {
+        guard didShowControlCenterOnboarding,
+              let w = ControlCenterWindowController.shared.window,
+              w.isVisible else { return }
+        ControlCenterWindowController.shared.refreshFromHost()
     }
 
     private func layoutDock(_ bar: DockGlassBarView, panel: NSPanel, on screen: NSScreen, entries: [DockTileEntry]) {
@@ -1067,6 +1114,14 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
         let m = NSMenu()
         let v = UpdateChecker.shared
         let versionTag = "\(v.currentShortVersion) (\(v.currentBuild))"
+
+        // Ítem protagonista: Panel Grande (⌘,)
+        let openPanel = NSMenuItem(title: "Abrir Panel de StackDock…", action: #selector(openControlCenter), keyEquivalent: ",")
+        openPanel.keyEquivalentModifierMask = [.command]
+        openPanel.target = self
+        m.addItem(openPanel)
+        m.addItem(.separator())
+
         let h = NSMenuItem(title: "StackDock \(versionTag) • \(isVisible ? "ENCENDIDO" : "OCULTO")", action: nil, keyEquivalent: "")
         h.isEnabled = false
         m.addItem(h)
@@ -1225,25 +1280,46 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
     // MARK: - Acerca de / Actualizaciones
 
     @objc private func showAboutPanel() {
-        NSApp.activate(ignoringOtherApps: true)
-        let v = UpdateChecker.shared
-        let alert = NSAlert()
-        alert.alertStyle = .informational
-        alert.messageText = "StackDock"
-        alert.informativeText = """
-        Versión \(v.currentShortVersion) (build \(v.currentBuild))
+        AboutWindowController.shared.show()
+    }
 
-        Dock multimonitor con perfiles de navegador, teletransporte de ventanas y acceso a Descargas/Papelera.
+    // MARK: - Panel Grande (ControlCenter)
 
-        © 2026 Black Eye
-        stackdock.iareal.net
-        """
-        alert.icon = NSApp.applicationIconImage
-        alert.addButton(withTitle: "Cerrar")
-        alert.addButton(withTitle: "Sitio web")
-        if alert.runModal() == .alertSecondButtonReturn,
-           let url = URL(string: "https://stackdock.iareal.net/") {
-            NSWorkspace.shared.open(url)
+    @objc private func openControlCenter() {
+        ControlCenterWindowController.shared.show(host: self)
+    }
+
+    /// Aplica .regular (icono en el Dock) o .accessory (solo barra de menús).
+    private func applyActivationPolicy() {
+        NSApp.setActivationPolicy(showsDockIcon ? .regular : .accessory)
+    }
+
+    private func openSystemSettings(paths: [String]) {
+        for path in paths {
+            if let url = URL(string: path) {
+                NSWorkspace.shared.open(url)
+                return
+            }
+        }
+    }
+
+    private func cachedAvatarCount() -> Int {
+        let dir = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Application Support/StackDock/Avatars", isDirectory: true)
+        let files = (try? FileManager.default.contentsOfDirectory(atPath: dir.path)) ?? []
+        return files.filter { $0.hasSuffix(".png") }.count
+    }
+
+    private func startAtLoginEnabled() -> Bool {
+        if #available(macOS 13.0, *) {
+            return SMAppService.mainApp.status == .enabled
+        }
+        return false
+    }
+
+    private func setStartAtLogin(_ enabled: Bool) {
+        if #available(macOS 13.0, *) {
+            try? (enabled ? SMAppService.mainApp.register() : SMAppService.mainApp.unregister())
         }
     }
 
@@ -1455,4 +1531,223 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
     }
 
     @objc private func quitApp() { NSApp.terminate(nil) }
+}
+
+// MARK: - ControlCenterHost (puente limpio para el Panel Grande)
+//
+// Solo expone getters/setters. No duplica ni altera la lógica de docks,
+// perfiles, atajos o teletransporte.
+
+extension StackDockAppController: ControlCenterHost {
+
+    // MARK: Cabecera
+
+    var ccVersionString: String {
+        "\(UpdateChecker.shared.currentShortVersion) (\(UpdateChecker.shared.currentBuild))"
+    }
+
+    func ccRefreshAll() {
+        rebuildAllMonitors()
+        refreshStatusBarIcon()
+    }
+
+    func ccShowAboutWindow() { AboutWindowController.shared.show() }
+
+    func ccCheckForUpdates() { checkForUpdates() }
+
+    func ccPresentActivation() {
+        LicenseManager.shared.presentActivationDialog { [weak self] in
+            self?.rebuildAllMonitors()
+            self?.refreshStatusBarIcon()
+        }
+    }
+
+    // MARK: Docks y monitores
+
+    var ccIsVisible: Bool { isVisible }
+
+    func ccSetVisible(_ value: Bool) {
+        guard value != isVisible else { return }
+        toggleAllDocksAnimated()
+    }
+
+    var ccReplaceAppleDock: Bool { replaceAppleDock }
+
+    func ccSetReplaceAppleDock(_ value: Bool) {
+        guard value != replaceAppleDock else { return }
+        if value { applySoloStackDockMode(persistChoice: true) }
+        else { applyDualDockMode(persistChoice: true) }
+    }
+
+    var ccIncludeAppleDockScreen: Bool { includeAppleDockScreen }
+
+    func ccSetIncludeAppleDockScreen(_ value: Bool) {
+        guard value != includeAppleDockScreen else { return }
+        includeAppleDockScreen = value
+        rebuildAllMonitors()
+    }
+
+    var ccIsolatePerMonitor: Bool { isolateAppsPerMonitor }
+
+    func ccSetIsolatePerMonitor(_ value: Bool) {
+        guard value != isolateAppsPerMonitor else { return }
+        isolateAppsPerMonitor = value
+        rebuildAllMonitors()
+    }
+
+    var ccSyncAppleDockOnToggle: Bool { syncAppleDockOnToggle }
+
+    func ccSetSyncAppleDockOnToggle(_ value: Bool) {
+        syncAppleDockOnToggle = value
+    }
+
+    func ccScreens() -> [CCScreenInfo] {
+        let appleID = appleNativeDockScreenID()
+        return NSScreen.screens.enumerated().map { index, screen in
+            let id = screenID(screen)
+            let pixels = screen.convertRectToBacking(screen.frame).size
+            let scale = screen.backingScaleFactor > 1.5 ? " @2x" : ""
+            return CCScreenInfo(
+                id: id,
+                name: screen.localizedName,
+                resolution: "\(Int(pixels.width)) × \(Int(pixels.height))\(scale)",
+                isMain: index == 0,
+                hasAppleDock: appleID == id,
+                enabled: !disabledMonitors.contains(id),
+                placement: resolvedPlacement(for: screen)
+            )
+        }
+    }
+
+    func ccSetScreen(_ id: CGDirectDisplayID, enabled: Bool) {
+        var set = disabledMonitors
+        if enabled { set.remove(id) } else { set.insert(id) }
+        guard set != disabledMonitors else { return }
+        disabledMonitors = set
+        rebuildAllMonitors()
+    }
+
+    func ccSetPlacement(_ placement: DockPlacement, forScreen id: CGDirectDisplayID) {
+        var map = placementOverrides
+        if map["\(id)"] == placement.rawValue { return }
+        map["\(id)"] = placement.rawValue
+        placementOverrides = map
+        if NSScreen.screens.count <= 1 { self.placement = placement }
+        rebuildAllMonitors()
+    }
+
+    // MARK: Perfiles e integraciones
+
+    var ccUncombineMultiWindows: Bool { uncombineMultiWindows }
+
+    func ccSetUncombineMultiWindows(_ value: Bool) {
+        guard value != uncombineMultiWindows else { return }
+        uncombineMultiWindows = value
+        rebuildAllMonitors()
+    }
+
+    var ccChromeAvatarCount: Int { cachedAvatarCount() }
+
+    func ccLoadChromeAvatars() {
+        BrowserProfileLaunchService.shared.pickChromeFolderInteractive()
+        rebuildAllMonitors()
+    }
+
+    var ccFolderOpenerName: String { folderOpenerName }
+
+    var ccFindaroInstalled: Bool {
+        FileManager.default.fileExists(atPath: "/Applications/Findaro.app") || findaroAppURL != nil
+    }
+
+    var ccFolderOpenerIsFinder: Bool {
+        folderOpenerAppURL.standardizedFileURL.path == finderAppURL.standardizedFileURL.path
+    }
+
+    var ccFolderOpenerIsFindaro: Bool {
+        folderOpenerAppURL.standardizedFileURL.path == findaroAppURL?.standardizedFileURL.path
+    }
+
+    func ccSetFolderOpenerFinder() {
+        storedFolderOpenerPath = finderAppURL.path
+        rebuildAllMonitors()
+    }
+
+    func ccSetFolderOpenerFindaro() {
+        guard let url = findaroAppURL else { return }
+        storedFolderOpenerPath = url.path
+        rebuildAllMonitors()
+    }
+
+    func ccChooseCustomFolderOpener() { chooseFolderOpenerApp() }
+
+    // MARK: Atajos globales
+
+    var ccTogglePreset: HotKeyTogglePreset { togglePreset }
+
+    func ccSetTogglePreset(_ preset: HotKeyTogglePreset) {
+        guard preset != togglePreset else { return }
+        togglePreset = preset
+        reregisterHotKeys()
+        refreshStatusBarIcon()
+    }
+
+    var ccMovePreset: HotKeyMovePreset { movePreset }
+
+    func ccSetMovePreset(_ preset: HotKeyMovePreset) {
+        guard preset != movePreset else { return }
+        movePreset = preset
+        reregisterHotKeys()
+        refreshStatusBarIcon()
+    }
+
+    // MARK: Sistema y licencia
+
+    var ccLaunchAtLogin: Bool { startAtLoginEnabled() }
+
+    func ccSetLaunchAtLogin(_ value: Bool) { setStartAtLogin(value) }
+
+    var ccShowsDockIcon: Bool { showsDockIcon }
+
+    func ccSetShowsDockIcon(_ value: Bool) {
+        guard value != showsDockIcon else { return }
+        showsDockIcon = value
+        applyActivationPolicy()
+        if value { NSApp.activate(ignoringOtherApps: true) }
+    }
+
+    var ccAccessibilityGranted: Bool { winService.isAXTrusted(prompt: false) }
+
+    var ccScreenRecordingGranted: Bool { CGPreflightScreenCaptureAccess() }
+
+    func ccRequestAccessibility() {
+        _ = winService.isAXTrusted(prompt: true)
+        openSystemSettings(paths: [
+            "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+        ])
+    }
+
+    func ccRequestScreenRecording() {
+        if !CGPreflightScreenCaptureAccess() { _ = CGRequestScreenCaptureAccess() }
+        openSystemSettings(paths: [
+            "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"
+        ])
+    }
+
+    func ccOpenAccessibilitySettings() {
+        openSystemSettings(paths: [
+            "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+        ])
+    }
+
+    func ccOpenScreenRecordingSettings() {
+        openSystemSettings(paths: [
+            "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"
+        ])
+    }
+
+    var ccLicenseEmail: String? { LicenseManager.shared.licensedEmail }
+
+    var ccIsPro: Bool { LicenseManager.shared.isProUnlocked }
+
+    var ccTrialDays: Int { LicenseManager.shared.trialDaysRemaining }
 }

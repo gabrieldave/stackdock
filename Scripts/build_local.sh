@@ -33,9 +33,12 @@ SOURCES=(
   "${ROOT}/Sources/Services/UpdateChecker.swift"
   "${ROOT}/Sources/Services/UpdateInstaller.swift"
   "${ROOT}/Sources/Services/GlobalHotKeyCenter.swift"
+  "${ROOT}/Sources/Services/BinaryIntegrityVerifier.swift"
   "${ROOT}/Sources/Views/DockTileView.swift"
   "${ROOT}/Sources/Views/DockGlassBarView.swift"
   "${ROOT}/Sources/Views/DockSpecialIcons.swift"
+  "${ROOT}/Sources/Views/ControlCenterWindowController.swift"
+  "${ROOT}/Sources/Views/AboutWindowController.swift"
   "${ROOT}/Sources/App/StackDockAppController.swift"
   "${ROOT}/Sources/main.swift"
 )
