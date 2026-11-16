@@ -3,7 +3,7 @@ import SwiftUI
 import Combine
 import ApplicationServices
 
-// MARK: - StackDock — Control Panel 4.0.6
+// MARK: - StackDock — Control Panel
 //
 // Réplica nativa del plano FIG. 03 (1200×760) de Claude:
 // barra superior + sidebar de 6 items + cuadrícula Bento ①–⑥ con las
@@ -106,6 +106,9 @@ protocol ControlCenterHost: AnyObject {
     var ccMovePreset: HotKeyMovePreset { get }
     func ccSetMovePreset(_ preset: HotKeyMovePreset)
 
+    var ccDockSizePreset: DockSizePreset { get }
+    func ccSetDockSizePreset(_ preset: DockSizePreset)
+
     var ccLaunchAtLogin: Bool { get }
     func ccSetLaunchAtLogin(_ value: Bool)
 
@@ -148,6 +151,7 @@ final class ControlCenterModel: ObservableObject {
 
     @Published var togglePreset: HotKeyTogglePreset = .optionD
     @Published var movePreset: HotKeyMovePreset = .controlW
+    @Published var dockSizePreset: DockSizePreset = .mini
 
     @Published var launchAtLogin = false
     @Published var showsDockIcon = false
@@ -196,7 +200,9 @@ final class ControlCenterModel: ObservableObject {
     }
 
     var panelTitle: String {
-        t("StackDock — Panel de Control 4.0.6", "StackDock — Control Panel 4.0.6")
+        let ver = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+        let label = ver.isEmpty ? "StackDock" : "StackDock \(ver)"
+        return t("\(label) — Panel de Control", "\(label) — Control Panel")
     }
 
     func setLanguagePreference(_ value: String) {
@@ -269,6 +275,7 @@ final class ControlCenterModel: ObservableObject {
         folderOpenerIsFindaro = host.ccFolderOpenerIsFindaro
         togglePreset = host.ccTogglePreset
         movePreset = host.ccMovePreset
+        dockSizePreset = host.ccDockSizePreset
         launchAtLogin = host.ccLaunchAtLogin
         showsDockIcon = host.ccShowsDockIcon
         refreshLive()
@@ -344,6 +351,12 @@ final class ControlCenterModel: ObservableObject {
     func setTogglePreset(_ preset: HotKeyTogglePreset) {
         togglePreset = preset
         host?.ccSetTogglePreset(preset)
+        refresh()
+    }
+
+    func setDockSizePreset(_ preset: DockSizePreset) {
+        dockSizePreset = preset
+        host?.ccSetDockSizePreset(preset)
         refresh()
     }
 
@@ -606,7 +619,7 @@ struct ControlCenterChromeView: View {
             ZStack(alignment: .topLeading) {
                 CCPanelBackground()
 
-                // Título centrado (FIG. 03: "StackDock — Control Panel 4.0.6")
+                // Título centrado (versión dinámica desde Info.plist)
                 Text(model.panelTitle)
                     .font(.system(size: 11.5, weight: .semibold, design: .monospaced))
                     .foregroundColor(CCPalette.ink)
@@ -943,6 +956,16 @@ struct ControlCenterBentoView: View {
                     selectedIndex: model.replaceAppleDock ? 0 : 1,
                     onSelect: { model.setReplaceAppleDock($0 == 0) }
                 )
+                CCMiniSegmented(
+                    labels: [model.t("NORMAL", "NORMAL"), model.t("MINI", "MINI")],
+                    selectedIndex: model.dockSizePreset == .mini ? 1 : 0,
+                    onSelect: { model.setDockSizePreset($0 == 1 ? .mini : .normal) }
+                )
+                Text(model.t("Mini: iconos pequeños en todas las pantallas (ideal siempre visible).",
+                              "Mini: small icons on every display (ideal to keep visible)."))
+                    .font(.system(size: 7.5))
+                    .foregroundColor(CCPalette.muted)
+                    .fixedSize(horizontal: false, vertical: true)
                 CCTinyToggle(
                     label: model.t("Ocultar Dock de Apple al pulsar ⌥D",
                                    "Hide Apple Dock on ⌥D"),
@@ -1439,7 +1462,8 @@ final class ControlCenterWindowController: NSWindowController, NSWindowDelegate 
             backing: .buffered,
             defer: false
         )
-        win.title = "StackDock — Control Panel 4.0.6"
+        let ver = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+        win.title = ver.isEmpty ? "StackDock — Control Panel" : "StackDock \(ver) — Control Panel"
         win.titleVisibility = .hidden
         win.titlebarAppearsTransparent = true
         win.isReleasedWhenClosed = false
@@ -1448,7 +1472,7 @@ final class ControlCenterWindowController: NSWindowController, NSWindowDelegate 
         win.backgroundColor = NSColor(red: 0.960, green: 0.956, blue: 0.941, alpha: 1)
         win.minSize = NSSize(width: 760, height: 481)
         win.delegate = self
-        win.setFrameAutosaveName("StackDockControlCenter406")
+        win.setFrameAutosaveName("StackDockControlCenter")
 
         let host = NSHostingView(rootView: ControlCenterRootView(model: model))
         host.translatesAutoresizingMaskIntoConstraints = false

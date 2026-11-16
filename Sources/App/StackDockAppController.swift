@@ -99,10 +99,23 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
         get { prefs.object(forKey: "clickActiveToHide") == nil ? true : prefs.bool(forKey: "clickActiveToHide") }
         set { prefs.set(newValue, forKey: "clickActiveToHide") }
     }
-    private var iconSize: CGFloat {
-        get { let s = prefs.double(forKey: "iconSize"); return s > 0 ? CGFloat(s) : 38 }
-        set { prefs.set(Double(newValue), forKey: "iconSize") }
+    private var dockSizePreset: DockSizePreset {
+        get {
+            if prefs.object(forKey: "dockSizePreset") == nil {
+                // Migración: iconSize legacy grande → Normal; si no hay, Mini (siempre visible).
+                if let legacy = prefs.object(forKey: "iconSize") as? Double, legacy >= 34 {
+                    return .normal
+                }
+                return .mini
+            }
+            return DockSizePreset(rawValue: prefs.integer(forKey: "dockSizePreset")) ?? .mini
+        }
+        set {
+            prefs.set(newValue.rawValue, forKey: "dockSizePreset")
+            prefs.set(Double(newValue.iconSize), forKey: "iconSize")
+        }
     }
+    private var iconSize: CGFloat { dockSizePreset.iconSize }
     private var placement: DockPlacement {
         // Por defecto elevado para no cruzarse con el Dock de Apple si asoma
         get { DockPlacement(rawValue: prefs.integer(forKey: "placement")) ?? .bottomElevated }
@@ -489,15 +502,15 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
         bar.subviews.forEach { $0.removeFromSuperview() }
 
         let maxW = max(120, screen.frame.width - 28)
-        let spacing: CGFloat = 3
-        let pad: CGFloat = 8
-        let dividerW: CGFloat = 11
+        let spacing: CGFloat = dockSizePreset == .mini ? 2 : 3
+        let pad: CGFloat = dockSizePreset == .mini ? 6 : 8
+        let dividerW: CGFloat = dockSizePreset == .mini ? 9 : 11
         let totalSlots = max(1, CGFloat(entries.count + 2)) // + Descargas + Papelera
 
         var sz = iconSize
         let needed = pad * 2 + dividerW + totalSlots * (sz + 12) + max(0, totalSlots - 1) * spacing
         if needed > maxW {
-            sz = max(26, ((maxW - pad * 2 - dividerW - (totalSlots - 1) * spacing) / totalSlots) - 12)
+            sz = max(22, ((maxW - pad * 2 - dividerW - (totalSlots - 1) * spacing) / totalSlots) - 12)
         }
 
         let tileW = sz + 12
@@ -1246,6 +1259,19 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
         posRoot.submenu = posSub
         m.addItem(posRoot)
 
+        // Submenú Tamaño del Dock (todas las pantallas)
+        let sizeSub = NSMenu()
+        for p in DockSizePreset.allCases {
+            let it = NSMenuItem(title: p.title, action: #selector(selectDockSize(_:)), keyEquivalent: "")
+            it.tag = p.rawValue
+            it.state = (dockSizePreset == p) ? .on : .off
+            it.target = self
+            sizeSub.addItem(it)
+        }
+        let sizeRoot = NSMenuItem(title: "Tamaño del Dock (\(dockSizePreset.title))", action: nil, keyEquivalent: "")
+        sizeRoot.submenu = sizeSub
+        m.addItem(sizeRoot)
+
         if #available(macOS 13.0, *) {
             let loginIt = NSMenuItem(title: "Abrir al iniciar sesión", action: #selector(toggleLogin), keyEquivalent: "")
             loginIt.state = (SMAppService.mainApp.status == .enabled) ? .on : .off
@@ -1515,6 +1541,13 @@ final class StackDockAppController: NSObject, NSApplicationDelegate {
         if let pl = DockPlacement(rawValue: s.tag) { placement = pl; rebuildAllMonitors() }
     }
 
+    @objc private func selectDockSize(_ s: NSMenuItem) {
+        guard let p = DockSizePreset(rawValue: s.tag) else { return }
+        dockSizePreset = p
+        rebuildAllMonitors()
+        syncControlCenterIfVisible()
+    }
+
     @objc private func toggleLogin() {
         if #available(macOS 13.0, *) {
             try? (SMAppService.mainApp.status == .enabled ? SMAppService.mainApp.unregister() : SMAppService.mainApp.register())
@@ -1693,6 +1726,14 @@ extension StackDockAppController: ControlCenterHost {
     }
 
     var ccMovePreset: HotKeyMovePreset { movePreset }
+
+    var ccDockSizePreset: DockSizePreset { dockSizePreset }
+
+    func ccSetDockSizePreset(_ preset: DockSizePreset) {
+        guard preset != dockSizePreset else { return }
+        dockSizePreset = preset
+        rebuildAllMonitors()
+    }
 
     func ccSetMovePreset(_ preset: HotKeyMovePreset) {
         guard preset != movePreset else { return }

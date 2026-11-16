@@ -11,6 +11,26 @@ enum DockPlacement: Int {
     case autoPerMonitor = 3
 }
 
+/// Tamaño del Dock en todas las pantallas (Mini = siempre visible sin ocupar tanto).
+enum DockSizePreset: Int, CaseIterable {
+    case normal = 0
+    case mini   = 1
+
+    var iconSize: CGFloat {
+        switch self {
+        case .normal: return 38
+        case .mini:   return 26
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .normal: return "Normal"
+        case .mini:   return "Mini"
+        }
+    }
+}
+
 enum HotKeyTogglePreset: Int, CaseIterable {
     case optionD     = 0
     case ctrlOptionD = 1

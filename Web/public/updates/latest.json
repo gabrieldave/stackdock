@@ -1,9 +1,9 @@
 {
-  "version": "4.0.8",
-  "build": 408,
+  "version": "4.0.9",
+  "build": 409,
   "min_macos": "13.0",
-  "dmg_url": "https://stackdock.iareal.net/download/StackDock-4.0.8.dmg",
-  "sha256": "24c30eb463dd142dccd9596804bff34b4108db5769bd07858c74ecb6a33ca7f3",
+  "dmg_url": "https://stackdock.iareal.net/download/StackDock-4.0.9.dmg",
+  "sha256": "348ff24c4bfb761bd63cd3d5d7860f8d39c9c73a838749b8865aba15730c2fbb",
   "notes_url": "https://stackdock.iareal.net/",
-  "published_at": "2026-11-14T21:55:45Z"
+  "published_at": "2026-11-16T21:03:35Z"
 }

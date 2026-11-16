@@ -53,7 +53,7 @@ export const config = {
   publicUrl: str('PUBLIC_URL', 'https://stackdock.iareal.net').replace(/\/+$/, ''),
   sessionSecret: str('SESSION_SECRET', ''),
 
-  dmgFileName: 'StackDock-4.0.8.dmg',
+  dmgFileName: 'StackDock-4.0.9.dmg',
   sessionHours: 8,
   jsonLimitBytes: 64 * 1024,
   rateLimit: { max: 10, windowMs: 15 * 60 * 1000 },
